@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.8.0
+// @version      1.8.1
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -55,6 +55,7 @@ const applyFont=()=>{
     `html body #zeta-kakao-profile-toggle{display:none!important;}`+
     // 신고·수정·재생성 아이콘은 제타 원래 자리(입력바 위 오른쪽, 스냅샷 줄)로 — 위치는 아래 placeActions가 잡음
     `html body .zeta-kakao-native-actions.zeta-kakao-native-actions{opacity:1!important;}`+
+    `html body [data-sentry-component="LastMessageControlBar"]:has(>.zeta-kakao-native-actions){min-height:36px!important;}`+
     `html body .zeta-kakao-native-actions button,html body .zeta-kakao-native-actions svg,html body .zeta-kakao-native-actions svg *{color:#191919!important;opacity:1!important;}`;
   (d.head||d.documentElement).appendChild(st);
 };
@@ -128,14 +129,22 @@ const installAutoFix=()=>{
     const row=send&&send.closest('div.relative.flex.flex-row.items-end');
     if(row&&row.querySelector('textarea[name="message"]')&&!row.classList.contains('border-t'))row.classList.add('border-t');
   };
+  // 아이콘을 마지막 메시지 밑 줄(제타 원래 자리)에 붙여서, 스크롤하면 같이 움직이고 글과 안 겹치게
   const placeActions=()=>{
     const na=d.querySelector('.zeta-kakao-native-actions');
+    if(!na)return;
+    const bar=na.parentElement;
     const row=d.querySelector('div.relative.flex.flex-row.items-end.border-t');
-    if(!na||!row)return;
-    const r=row.getBoundingClientRect(),wd=na.getBoundingClientRect().width;
+    const list=d.querySelector('div[role="log"]')||d.querySelector('[data-sentry-component="ChatMessageList"]');
+    if(!bar)return;
+    const b=bar.getBoundingClientRect(),wd=na.getBoundingClientRect().width;
+    const top=list?list.getBoundingClientRect().top:0;
+    const bottom=Math.min(list?list.getBoundingClientRect().bottom:w.innerHeight,row?row.getBoundingClientRect().top:w.innerHeight);
+    const vis=b.height>0&&b.top>=top&&b.bottom<=bottom+2;
     const set=(k,v)=>{if(na.style.getPropertyValue(k)!==v||na.style.getPropertyPriority(k)!=='important')na.style.setProperty(k,v,'important')};
-    set('position','fixed');set('left',Math.round(r.right-12-wd)+'px');set('top',Math.round(r.top-32)+'px');set('right','auto');set('bottom','auto');set('margin','0');
+    set('position','fixed');set('left',Math.round(b.right-8-wd)+'px');set('top',Math.round(b.top+(b.height-28)/2)+'px');set('right','auto');set('bottom','auto');set('margin','0');set('visibility',vis?'visible':'hidden');
   };
+  d.addEventListener('scroll',()=>{try{placeActions()}catch(_){}},true);
   let t=0;
   const run=()=>{if(t)return;t=setTimeout(()=>{t=0;try{scanNarrator()}catch(_){}try{keepComposerRow()}catch(_){}try{placeActions()}catch(_){}},120)};
   w.addEventListener('resize',run);

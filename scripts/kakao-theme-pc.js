@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.7.1
+// @version      1.8.0
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -39,13 +39,23 @@ const applyFont=()=>{
   const st=d.createElement('style');
   st.id=FONT_ID;
   const B='html body [data-sentry-component="ChatBubbleContainer"]';
+  const R='html body .relative.flex.flex-row.items-end.gap-1\\.5.border-t:has(textarea[name="message"])';
   const N='html body :is([data-sentry-component="NarratorBubble"],[data-sentry-component="NarratorContentView"],[data-sentry-source-file="NarratorBubble.tsx"])';
   st.textContent=
     `${N},${N} :is(p,span,em,i,strong,b,div){font-size:${FONT.narrator}px!important;line-height:${lh(FONT.narrator)}!important;}`+
     `${B} .chat,${B} .chat p,${B} .chat :is(span,em,i,strong,b){font-size:${FONT.chat}px!important;line-height:${lh(FONT.chat)}!important;}`+
     `html body .relative.flex.flex-row.items-end.gap-1\\.5.border-t:has(textarea[name="message"]) textarea[name="message"],html body textarea[name="message"],html body textarea.zeta-kakao-edit-textarea{font-size:${FONT.input}px!important;line-height:${lh(FONT.input)}!important;}`+
-    // 제타가 입력칸 상자 안에 버튼까지 넣는 구조로 바뀌어서, 상자가 버튼 위치 기준이 되지 않게 풀어줌 → 버튼이 카톡 입력바 아래 줄로 돌아감
-    `html body .relative.flex.flex-row.items-end.gap-1\\.5.border-t:has(textarea[name="message"])>div:has(textarea[name="message"]){position:static!important;}`;
+    // 입력바는 제타 원래 배치대로: 한 줄짜리 둥근 칸 안에 [무료] 내용 입력하기 [*] [전송]
+    `${R}{height:auto!important;min-height:0!important;padding:8px 12px!important;background:transparent!important;border-top:0!important;display:flex!important;align-items:center!important;}`+
+    `${R}>div:has(textarea[name="message"]){position:relative!important;left:auto!important;top:auto!important;height:auto!important;min-height:48px!important;width:100%!important;background:#fff!important;border-radius:24px!important;padding:6px 8px!important;display:flex!important;align-items:center!important;gap:6px!important;box-shadow:0 1px 3px rgba(0,0,0,.08)!important;}`+
+    `${R} textarea[name="message"]{position:static!important;left:auto!important;top:auto!important;width:auto!important;flex:1 1 auto!important;height:auto!important;min-height:22px!important;max-height:120px!important;field-sizing:content!important;padding:4px!important;}`+
+    `${R} [data-sentry-component="QuickReplyButton"],${R} [data-testid="chat-send-button"]{position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;transform:none!important;margin:0!important;}`+
+    `${R} [data-sentry-component="QuickReplyButton"] svg{color:#191919!important;}`+
+    `${R} [data-sentry-component="AsteriskInputButton"]{display:flex!important;}`+
+    `html body #zeta-kakao-profile-toggle{display:none!important;}`+
+    // 신고·수정·재생성 아이콘은 제타 원래 자리(입력바 위 오른쪽, 스냅샷 줄)로 — 위치는 아래 placeActions가 잡음
+    `html body .zeta-kakao-native-actions.zeta-kakao-native-actions{opacity:1!important;}`+
+    `html body .zeta-kakao-native-actions button,html body .zeta-kakao-native-actions svg,html body .zeta-kakao-native-actions svg *{color:#191919!important;opacity:1!important;}`;
   (d.head||d.documentElement).appendChild(st);
 };
 
@@ -118,8 +128,17 @@ const installAutoFix=()=>{
     const row=send&&send.closest('div.relative.flex.flex-row.items-end');
     if(row&&row.querySelector('textarea[name="message"]')&&!row.classList.contains('border-t'))row.classList.add('border-t');
   };
+  const placeActions=()=>{
+    const na=d.querySelector('.zeta-kakao-native-actions');
+    const row=d.querySelector('div.relative.flex.flex-row.items-end.border-t');
+    if(!na||!row)return;
+    const r=row.getBoundingClientRect(),wd=na.getBoundingClientRect().width;
+    const set=(k,v)=>{if(na.style.getPropertyValue(k)!==v||na.style.getPropertyPriority(k)!=='important')na.style.setProperty(k,v,'important')};
+    set('position','fixed');set('left',Math.round(r.right-12-wd)+'px');set('top',Math.round(r.top-32)+'px');set('right','auto');set('bottom','auto');set('margin','0');
+  };
   let t=0;
-  const run=()=>{if(t)return;t=setTimeout(()=>{t=0;try{scanNarrator()}catch(_){}try{keepComposerRow()}catch(_){}},200)};
+  const run=()=>{if(t)return;t=setTimeout(()=>{t=0;try{scanNarrator()}catch(_){}try{keepComposerRow()}catch(_){}try{placeActions()}catch(_){}},120)};
+  w.addEventListener('resize',run);
   new MutationObserver(run).observe(d.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   setTimeout(run,300);setTimeout(run,1500);setTimeout(run,3500);
   w.__zetaKakaoAutoFix=1;

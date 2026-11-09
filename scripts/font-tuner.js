@@ -3218,5 +3218,3 @@ createUi();
 }
 );
 })();
-Published with Simplenote
-Report abuse

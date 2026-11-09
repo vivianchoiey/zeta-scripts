@@ -18,5 +18,4 @@ https://vivianchoiey.github.io/zeta-scripts/loader/zeta-master.user.js
 
 ## 로더로 안 옮기고 따로 까는 것
 - 제타 익명 캡처 (Tampermonkey 전용 기능 사용)
-- Chat2Img-Codex 자동 실행, Chat2Img 참조사진·설정 방별 동기화 (개인 서버 주소·키 포함)
 - 다음카페 댓글 사진 전체저장 (제타 아님)

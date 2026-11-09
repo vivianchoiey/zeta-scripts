@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         제타 스크립트 마스터 로더
 // @namespace    vivianchoiey-zeta-scripts
-// @version      1.0.0
+// @version      1.0.1
 // @description  GitHub(vivianchoiey/zeta-scripts)에 있는 제타 스크립트들을 불러옴 — 스크립트 켜고 끄기는 Tampermonkey 메뉴에서
 // @match        https://zeta-ai.io/*
 // @match        https://www.zeta-ai.io/*
@@ -46,6 +46,7 @@ const getEnabled=m=>{
 const inject=s=>{
   const el=d.createElement('script');
   el.src=BASE+s.file+'?v='+Date.now();
+  el.async=false;
   el.onload=()=>el.remove();
   el.onerror=()=>{el.remove();console.warn('[제타 마스터 로더] 불러오기 실패:',s.name)};
   (d.head||d.documentElement).appendChild(el);

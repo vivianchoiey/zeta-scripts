@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.6.0
+// @version      1.7.0
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -13,8 +13,7 @@
 const FONT={
   chat:15,   // 말풍선 대사·지문
   narrator:15, // 나레이션(줄 세 개 아이콘 붙은 지문 칸)
-  input:15,  // 아래 입력창 + 메시지 수정창
-  inputBoxHeight:48  // 아래 입력칸 전체 높이(px) — 테마 원래 78, 더 줄이고 싶으면 숫자 낮추기
+  input:15   // 아래 입력창 + 메시지 수정창
 };
 // ────────────────────────────────────────────────────────────
 
@@ -40,18 +39,11 @@ const applyFont=()=>{
   const st=d.createElement('style');
   st.id=FONT_ID;
   const B='html body [data-sentry-component="ChatBubbleContainer"]';
-  const C='.relative.flex.flex-row.items-end.gap-1\\.5.border-t:has(textarea[name="message"])';
-  const H=FONT.inputBoxHeight,line=parseInt(lh(FONT.input)),taH=Math.max(line,H-16),taTop=Math.round((H-taH)/2);
   const N='html body :is([data-sentry-component="NarratorBubble"],[data-sentry-component="NarratorContentView"],[data-sentry-source-file="NarratorBubble.tsx"])';
   st.textContent=
     `${N},${N} :is(p,span,em,i,strong,b,div){font-size:${FONT.narrator}px!important;line-height:${lh(FONT.narrator)}!important;}`+
     `${B} .chat,${B} .chat p,${B} .chat :is(span,em,i,strong,b){font-size:${FONT.chat}px!important;line-height:${lh(FONT.chat)}!important;}`+
-    `html body .relative.flex.flex-row.items-end.gap-1\\.5.border-t:has(textarea[name="message"]) textarea[name="message"],html body textarea[name="message"],html body textarea.zeta-kakao-edit-textarea{font-size:${FONT.input}px!important;line-height:${lh(FONT.input)}!important;}`+
-    `html body ${C}{height:auto!important;min-height:0!important;}`+
-    `html body ${C}>div:has(textarea[name="message"]){position:relative!important;height:${H}px!important;min-height:${H}px!important;}`+
-    `html body ${C} textarea[name="message"]{top:${taTop}px!important;height:${taH}px!important;min-height:${taH}px!important;max-height:${taH}px!important;overflow-y:auto!important;}`+
-    `html body ${C} [data-testid="chat-send-button"]{top:50%!important;bottom:auto!important;transform:translateY(-50%)!important;}`+
-    `html body ${C} [data-sentry-component="QuickReplyButton"]{top:50%!important;bottom:auto!important;transform:translateY(-50%)!important;}`;
+    `html body .relative.flex.flex-row.items-end.gap-1\\.5.border-t:has(textarea[name="message"]) textarea[name="message"],html body textarea[name="message"],html body textarea.zeta-kakao-edit-textarea{font-size:${FONT.input}px!important;line-height:${lh(FONT.input)}!important;}`;
   (d.head||d.documentElement).appendChild(st);
 };
 
@@ -96,17 +88,14 @@ const installBandFix=()=>{
   w.__zetaKakaoBandFix=1;
 };
 
-// 화면에서 직접 찾아서 고치기 — 나레이션 글자 크기 + 아래 입력칸 높이
+// 화면에서 직접 찾아서 고치기 — 나레이션 글자 크기 + 카톡 입력바 버튼 살리기
 const installAutoFix=()=>{
   if(w.__zetaKakaoAutoFix)return;
   const st=d.createElement('style');
   st.id='zeta-kakao-loader-autofix-style';
-  const nl=lh(FONT.narrator),il=lh(FONT.input);
+  const nl=lh(FONT.narrator);
   st.textContent=
-    `html body [data-zknar][data-zknar],html body [data-zknar][data-zknar] *,html body [data-sentry-component="NarratorBubble"] .chat,html body [data-sentry-component="NarratorBubble"] .chat *{font-size:${FONT.narrator}px!important;line-height:${nl}!important;}`+
-    `html body [data-zkbox][data-zkbox]{height:auto!important;min-height:0!important;padding-top:6px!important;padding-bottom:6px!important;}`+
-    `html body [data-zkbox] [data-zkwrap][data-zkwrap]{height:auto!important;min-height:0!important;padding-top:0!important;padding-bottom:0!important;}`+
-    `html body textarea[data-zkta][data-zkta]{field-sizing:content!important;height:auto!important;min-height:${il}!important;max-height:140px!important;padding-top:4px!important;padding-bottom:4px!important;overflow-y:auto!important;}`;
+    `html body [data-zknar][data-zknar],html body [data-zknar][data-zknar] *,html body [data-sentry-component="NarratorBubble"] .chat,html body [data-sentry-component="NarratorBubble"] .chat *{font-size:${FONT.narrator}px!important;line-height:${nl}!important;}`;
   (d.head||d.documentElement).appendChild(st);
   const clear=c=>!c||c==='transparent'||/rgba\([^)]*,\s*0\)$/.test(c)||/\/\s*0\)$/.test(c);
   const SKIP='[data-sentry-component="ChatBubbleContainer"],button,textarea,input,[contenteditable="true"],#chat2img-codex-root,#zeta-kakao-profile-settings,header';
@@ -120,31 +109,16 @@ const installAutoFix=()=>{
       if(fs<FONT.narrator)box.setAttribute('data-zknar','');
     });
   };
-  const scanComposer=()=>{
-    const ta=d.querySelector('textarea[name="message"]')||[...d.querySelectorAll('textarea')].find(t=>t.closest('[data-sentry-component="ChatInput"],[data-sentry-component="ChatComposer"]'));
-    if(!ta)return;
-    ta.setAttribute('data-zkta','');
-    if(!ta.__zkFit){
-      // 제타가 입력칸 높이를 55px로 직접 박아넣어서, 글자 양에 맞게 다시 맞춰줌
-      let busy=false,last='';
-      const fit=()=>{if(busy)return;busy=true;ta.style.setProperty('height','auto','important');const h=Math.min(140,Math.max(30,ta.scrollHeight));last=h+'px';ta.style.setProperty('height',last,'important');busy=false};
-      new MutationObserver(()=>{if(!busy&&ta.style.height!==last)fit()}).observe(ta,{attributes:true,attributeFilter:['style']});
-      ta.addEventListener('input',()=>setTimeout(fit,0));
-      ta.__zkFit=fit;
-    }
-    ta.__zkFit();
-    let box=null;
-    for(let e=ta.parentElement,k=0;e&&k<8;e=e.parentElement,k++){
-      const cs=getComputedStyle(e);
-      if(!clear(cs.backgroundColor)&&parseFloat(cs.borderTopLeftRadius)>0&&e.getBoundingClientRect().width>200){box=e;break}
-    }
-    if(!box)return;
-    box.setAttribute('data-zkbox','');
-    for(let e=ta.parentElement;e&&e!==box;e=e.parentElement)e.setAttribute('data-zkwrap','');
+  // 제타가 입력창 줄 구조를 바꿔서(border-t 클래스가 빠짐) 카톡테마가 입력창을 '메시지 수정창'으로 착각하고
+  // 아래 버튼들(이모지·사이렌·연필 등)을 숨겨버림 → 입력창 줄에 border-t를 다시 붙여서 원래 카톡 입력바로 인식하게 함
+  const keepComposerRow=()=>{
+    const send=d.querySelector('button[data-testid="chat-send-button"]');
+    const row=send&&send.closest('div.relative.flex.flex-row.items-end');
+    if(row&&row.querySelector('textarea[name="message"]')&&!row.classList.contains('border-t'))row.classList.add('border-t');
   };
   let t=0;
-  const run=()=>{if(t)return;t=setTimeout(()=>{t=0;try{scanNarrator()}catch(_){}try{scanComposer()}catch(_){}},200)};
-  new MutationObserver(run).observe(d.documentElement,{childList:true,subtree:true});
+  const run=()=>{if(t)return;t=setTimeout(()=>{t=0;try{scanNarrator()}catch(_){}try{keepComposerRow()}catch(_){}},200)};
+  new MutationObserver(run).observe(d.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   setTimeout(run,300);setTimeout(run,1500);setTimeout(run,3500);
   w.__zetaKakaoAutoFix=1;
 };

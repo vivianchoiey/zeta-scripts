@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.4.0
+// @version      1.5.0
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -96,6 +96,50 @@ const installBandFix=()=>{
   w.__zetaKakaoBandFix=1;
 };
 
+// 화면에서 직접 찾아서 고치기 — 나레이션 글자 크기 + 아래 입력칸 높이
+const installAutoFix=()=>{
+  if(w.__zetaKakaoAutoFix)return;
+  const st=d.createElement('style');
+  st.id='zeta-kakao-loader-autofix-style';
+  const nl=lh(FONT.narrator),il=lh(FONT.input);
+  st.textContent=
+    `[data-zknar],[data-zknar] *{font-size:${FONT.narrator}px!important;line-height:${nl}!important;}`+
+    `[data-zkbox]{height:auto!important;min-height:0!important;padding-top:6px!important;padding-bottom:6px!important;}`+
+    `[data-zkbox] [data-zkwrap]{height:auto!important;min-height:0!important;padding-top:0!important;padding-bottom:0!important;}`+
+    `textarea[data-zkta]{field-sizing:content!important;height:auto!important;min-height:${il}!important;max-height:140px!important;padding-top:4px!important;padding-bottom:4px!important;overflow-y:auto!important;}`;
+  (d.head||d.documentElement).appendChild(st);
+  const clear=c=>!c||c==='transparent'||/rgba\([^)]*,\s*0\)$/.test(c)||/\/\s*0\)$/.test(c);
+  const SKIP='[data-sentry-component="ChatBubbleContainer"],button,textarea,input,[contenteditable="true"],#chat2img-codex-root,#zeta-kakao-profile-settings,header';
+  const scanNarrator=()=>{
+    const list=d.querySelector('[data-sentry-component="ChatMessageList"]')||d.body;
+    list.querySelectorAll('em,i').forEach(em=>{
+      if(em.closest(SKIP)||em.closest('[data-zknar]'))return;
+      const box=em.closest('p')||em.parentElement;
+      if(!box||box===list||box.closest(SKIP))return;
+      const fs=parseFloat(getComputedStyle(em).fontSize);
+      if(fs<FONT.narrator)box.setAttribute('data-zknar','');
+    });
+  };
+  const scanComposer=()=>{
+    const ta=d.querySelector('textarea[name="message"]')||[...d.querySelectorAll('textarea')].find(t=>t.closest('[data-sentry-component="ChatInput"],[data-sentry-component="ChatComposer"]'));
+    if(!ta)return;
+    ta.setAttribute('data-zkta','');
+    let box=null;
+    for(let e=ta.parentElement,k=0;e&&k<8;e=e.parentElement,k++){
+      const cs=getComputedStyle(e);
+      if(!clear(cs.backgroundColor)&&parseFloat(cs.borderTopLeftRadius)>0&&e.getBoundingClientRect().width>200){box=e;break}
+    }
+    if(!box)return;
+    box.setAttribute('data-zkbox','');
+    for(let e=ta.parentElement;e&&e!==box;e=e.parentElement)e.setAttribute('data-zkwrap','');
+  };
+  let t=0;
+  const run=()=>{if(t)return;t=setTimeout(()=>{t=0;try{scanNarrator()}catch(_){}try{scanComposer()}catch(_){}},200)};
+  new MutationObserver(run).observe(d.documentElement,{childList:true,subtree:true});
+  setTimeout(run,300);setTimeout(run,1500);setTimeout(run,3500);
+  w.__zetaKakaoAutoFix=1;
+};
+
 const load=()=>{
   if(w.__zetaKakaoLoaderPending)return;
   w.__zetaKakaoLoaderPending=1;
@@ -110,5 +154,6 @@ const load=()=>{
 
 applyFont();
 installBandFix();
+installAutoFix();
 load();
 })();

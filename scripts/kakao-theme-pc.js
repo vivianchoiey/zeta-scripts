@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.8.1
+// @version      1.8.2
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -153,6 +153,24 @@ const installAutoFix=()=>{
   w.__zetaKakaoAutoFix=1;
 };
 
+// 카톡테마는 '글 쓰는 칸이 아닐 때 백스페이스 = 뒤로가기 막기'를 하는데,
+// 역병킬러·코냅샷처럼 별도 상자(shadow DOM) 안의 입력칸은 글 쓰는 칸으로 못 알아봐서 백스페이스를 막아버림 → 안쪽까지 확인하게 감쌈
+const deepActive=()=>{let a=d.activeElement;while(a&&a.shadowRoot&&a.shadowRoot.activeElement)a=a.shadowRoot.activeElement;return a};
+const isEditable=el=>!!(el&&(el.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||(el.closest&&el.closest('[contenteditable="true"],[role="textbox"]'))));
+const installBackspaceFix=()=>{
+  const tick=()=>{
+    const cur=w.__zetaKakaoBackspaceHandler;
+    if(typeof cur!=='function'||cur.__zkWrapped)return;
+    const orig=cur;
+    const wrapped=e=>{const k=e.key==='Backspace'||e.code==='Backspace'||e.keyCode===8;if(k&&isEditable(deepActive()))return;return orig(e)};
+    wrapped.__zkWrapped=1;
+    w.removeEventListener('keydown',orig,true);d.removeEventListener('keydown',orig,true);
+    w.__zetaKakaoBackspaceHandler=wrapped;
+    w.addEventListener('keydown',wrapped,true);
+  };
+  tick();setInterval(tick,1500);
+};
+
 const load=()=>{
   if(w.__zetaKakaoLoaderPending)return;
   w.__zetaKakaoLoaderPending=1;
@@ -160,7 +178,7 @@ const load=()=>{
   const s=d.createElement('script');
   s.referrerPolicy='no-referrer';
   s.src=SRC+'?v='+Date.now();
-  s.onload=()=>{w.__zetaKakaoLoaderPending=0;s.remove();applyFont();setTimeout(applyFont,800)};
+  s.onload=()=>{w.__zetaKakaoLoaderPending=0;s.remove();applyFont();setTimeout(applyFont,800);installBackspaceFix()};
   s.onerror=()=>{w.__zetaKakaoLoaderPending=0;s.remove();console.warn('[카톡테마 로더] 테마 파일을 불러오지 못했습니다. URL 또는 스크립트 차단 설정을 확인해 주세요.')};
   (d.head||d.documentElement).appendChild(s);
 };

@@ -58,6 +58,14 @@
       "default": false
     },
     {
+      "id": "romance-random-theme",
+      "name": "제타 로맨스 랜덤 테마 (5종)",
+      "file": "scripts/romance-random-theme.js",
+      "runAt": "idle",
+      "group": "",
+      "default": false
+    },
+    {
       "id": "font-tuner",
       "name": "Font Tuner",
       "file": "scripts/font-tuner.js",

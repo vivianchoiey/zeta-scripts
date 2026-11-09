@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>휄소 메모</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f6f6f4;color:#191919;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif;line-height:1.65}
+main{max-width:640px;margin:0 auto;padding:48px 20px 72px}
+h1{font-size:28px;margin:0 0 6px;letter-spacing:-.02em}
+.lead{color:#555;margin:0 0 32px;font-size:16px}
+h2{font-size:18px;margin:36px 0 10px}
+.card{background:#fff;border:1px solid #e6e6e2;border-radius:14px;padding:18px 18px 16px;margin:0 0 14px}
+.card h3{margin:0 0 6px;font-size:16px}
+.card p{margin:0 0 12px;color:#444;font-size:14px}
+.btn{display:inline-block;padding:11px 16px;border-radius:10px;background:#191919;color:#fff;text-decoration:none;font-weight:600;font-size:14px}
+.bm{display:inline-block;padding:11px 16px;border-radius:10px;background:#FEE500;color:#191919;text-decoration:none;font-weight:700;font-size:14px;border:1px dashed #c9b400}
+ol,ul{padding-left:20px;margin:0;font-size:14px;color:#333}
+li{margin:4px 0}
+.box{background:#fff;border:1px solid #e6e6e2;border-radius:14px;padding:16px 18px;font-size:14px;color:#333}
+.mock{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#fafaf8;border:1px solid #eee;border-radius:10px;padding:12px;white-space:pre-wrap;color:#333;margin-top:10px}
+.copy{margin-top:10px;width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;border:1px solid #ddd;border-radius:8px;padding:8px;height:70px;resize:none;color:#555}
+.small{font-size:12px;color:#888}
+footer{margin-top:48px;font-size:12px;color:#999}
+</style>
+</head>
+<body>
+<main>
+  <h1>📝 휄소 메모</h1>
+  <p class="lead">방마다 메모를 적어두면 그 방 휄소 맨 아래에 자동으로 들어가요.<br>유저노트처럼 매번 보내지 않아도, 채팅창에 글이 안 떠도 매 답변에 반영돼요.</p>
+
+  <div class="box">
+    <b>이렇게 동작해요</b>
+    <div class="mock">[내 휄소 원래 내용]
+…
+
+━━ 메모 ━━
+(지금 들어와 있는 방에 적어둔 메모)</div>
+    <ul style="margin-top:10px">
+      <li>휄소 원래 내용은 그대로 두고, 맨 아래에 메모만 붙여요.</li>
+      <li>다른 방에 들어가면 그 방 메모로 자동으로 바뀌어요. 메모가 없는 방이면 붙인 부분만 빠져요.</li>
+      <li>휄소 원래 내용 + 메모 합쳐서 1000자까지 돼요. 남은 글자는 메모 칸 아래에 떠요.</li>
+    </ul>
+  </div>
+
+  <h2>설치</h2>
+
+  <div class="card">
+    <h3>① 유저스크립트 (추천)</h3>
+    <p>Tampermonkey가 깔려 있으면 이걸로 하세요. 방에 들어갈 때마다 알아서 그 방 메모로 맞춰줘요.</p>
+    <a class="btn" href="hwelso-memo.user.js">유저스크립트 설치</a>
+    <p class="small" style="margin:10px 0 0">PC·맥 크롬, 아이폰·아이패드 Safari(Tampermonkey 앱) 모두 돼요.</p>
+  </div>
+
+  <div class="card">
+    <h3>② 북마클릿</h3>
+    <p>유저스크립트를 못 쓰면 이걸로 하세요. 제타 대화방에서 북마크를 한 번 누르면 메모 칸이 떠요. 새로고침하기 전까지는 방을 옮겨도 알아서 맞춰줘요.</p>
+    <a class="bm" id="bm" href="#">📝 휄소 메모</a>
+    <p class="small" style="margin:10px 0 0">PC: 노란 버튼을 북마크바로 끌어다 놓으세요.<br>폰: 아래 글자를 전체 복사해서, 아무 페이지나 북마크로 저장한 뒤 그 북마크 주소를 이걸로 바꾸세요.</p>
+    <textarea class="copy" id="bmtext" readonly></textarea>
+  </div>
+
+  <h2>쓰는 법</h2>
+  <ol>
+    <li>제타 대화방에 들어가면 오른쪽 아래에 📝 버튼이 떠요. 끌어서 옮길 수 있어요.</li>
+    <li>📝를 누르고 이 방에 기억시킬 내용을 적어요.</li>
+    <li><b>저장하고 적용</b>을 누르면 끝이에요. 다음 답변부터 반영돼요.</li>
+  </ol>
+
+  <h2>알아둘 것</h2>
+  <ul>
+    <li>메모는 <b>기기마다 따로</b> 저장돼요. 폰에서 쓴 메모는 폰에서만 불러와져요.</li>
+    <li>같은 휄소를 쓰는 방 두 개를 동시에 열어두면, 마지막에 연 방 메모가 들어가요.</li>
+    <li>휄소 설명 칸에서 <b>━━ 메모 ━━</b> 아래 부분은 이 툴이 관리해요. 휄소를 직접 고칠 땐 그 위쪽만 고쳐주세요.</li>
+    <li>그만 쓰고 싶으면 메모를 지우고 저장한 뒤 삭제하면 휄소가 원래대로 돌아가요.</li>
+    <li>제타 공식 기능이 아니에요. 제타가 바뀌면 안 될 수 있어요.</li>
+  </ul>
+
+  <footer>휄소 메모 · 개인이 만든 비공식 도구예요. 휄소·메모 내용은 내 제타 계정과 내 브라우저에만 저장되고, 다른 곳으로 보내지 않아요.</footer>
+</main>
+<script>
+const code="javascript:(()=>{if(window.__HWELSO_MEMO__){window.__HWELSO_MEMO__.open();return}const s=document.createElement('script');s.src='https://vivianchoiey.github.io/zeta-scripts/hwelso-memo/hwelso-memo.js?v='+Date.now();s.onload=()=>s.remove();s.onerror=()=>{s.remove();alert('휄소 메모를 불러오지 못했어요')};document.head.appendChild(s)})();";
+document.getElementById('bm').href=code;
+document.getElementById('bmtext').value=code;
+document.getElementById('bm').addEventListener('click',e=>{e.preventDefault();alert('이 버튼은 북마크바로 끌어다 놓아서 쓰는 거예요. 제타 대화방에서 그 북마크를 누르세요.')});
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.5.0
+// @version      1.6.0
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -103,10 +103,10 @@ const installAutoFix=()=>{
   st.id='zeta-kakao-loader-autofix-style';
   const nl=lh(FONT.narrator),il=lh(FONT.input);
   st.textContent=
-    `[data-zknar],[data-zknar] *{font-size:${FONT.narrator}px!important;line-height:${nl}!important;}`+
-    `[data-zkbox]{height:auto!important;min-height:0!important;padding-top:6px!important;padding-bottom:6px!important;}`+
-    `[data-zkbox] [data-zkwrap]{height:auto!important;min-height:0!important;padding-top:0!important;padding-bottom:0!important;}`+
-    `textarea[data-zkta]{field-sizing:content!important;height:auto!important;min-height:${il}!important;max-height:140px!important;padding-top:4px!important;padding-bottom:4px!important;overflow-y:auto!important;}`;
+    `html body [data-zknar][data-zknar],html body [data-zknar][data-zknar] *,html body [data-sentry-component="NarratorBubble"] .chat,html body [data-sentry-component="NarratorBubble"] .chat *{font-size:${FONT.narrator}px!important;line-height:${nl}!important;}`+
+    `html body [data-zkbox][data-zkbox]{height:auto!important;min-height:0!important;padding-top:6px!important;padding-bottom:6px!important;}`+
+    `html body [data-zkbox] [data-zkwrap][data-zkwrap]{height:auto!important;min-height:0!important;padding-top:0!important;padding-bottom:0!important;}`+
+    `html body textarea[data-zkta][data-zkta]{field-sizing:content!important;height:auto!important;min-height:${il}!important;max-height:140px!important;padding-top:4px!important;padding-bottom:4px!important;overflow-y:auto!important;}`;
   (d.head||d.documentElement).appendChild(st);
   const clear=c=>!c||c==='transparent'||/rgba\([^)]*,\s*0\)$/.test(c)||/\/\s*0\)$/.test(c);
   const SKIP='[data-sentry-component="ChatBubbleContainer"],button,textarea,input,[contenteditable="true"],#chat2img-codex-root,#zeta-kakao-profile-settings,header';
@@ -124,6 +124,15 @@ const installAutoFix=()=>{
     const ta=d.querySelector('textarea[name="message"]')||[...d.querySelectorAll('textarea')].find(t=>t.closest('[data-sentry-component="ChatInput"],[data-sentry-component="ChatComposer"]'));
     if(!ta)return;
     ta.setAttribute('data-zkta','');
+    if(!ta.__zkFit){
+      // 제타가 입력칸 높이를 55px로 직접 박아넣어서, 글자 양에 맞게 다시 맞춰줌
+      let busy=false,last='';
+      const fit=()=>{if(busy)return;busy=true;ta.style.setProperty('height','auto','important');const h=Math.min(140,Math.max(30,ta.scrollHeight));last=h+'px';ta.style.setProperty('height',last,'important');busy=false};
+      new MutationObserver(()=>{if(!busy&&ta.style.height!==last)fit()}).observe(ta,{attributes:true,attributeFilter:['style']});
+      ta.addEventListener('input',()=>setTimeout(fit,0));
+      ta.__zkFit=fit;
+    }
+    ta.__zkFit();
     let box=null;
     for(let e=ta.parentElement,k=0;e&&k<8;e=e.parentElement,k++){
       const cs=getComputedStyle(e);

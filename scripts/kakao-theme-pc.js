@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.8.2
+// @version      1.8.3
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -21,6 +21,10 @@ const d=document,w=window;
 const SRC='https://hllim-svg.github.io/kakao-theme/zeta-kakao.js';
 const SETTINGS_KEY='zeta-kakao-profile-settings-v1';
 const FONT_ID='zeta-kakao-loader-font-style';
+const deepActive=()=>{let a=d.activeElement;while(a&&a.shadowRoot&&a.shadowRoot.activeElement)a=a.shadowRoot.activeElement;return a};
+const isEditable=el=>!!(el&&(el.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||(el.closest&&el.closest('[contenteditable="true"],[role="textbox"]'))));
+// 역병킬러 같은 다른 창 입력칸에 글 쓰는 중엔 화면 다시 맞추기를 쉬어서 한글 입력을 방해하지 않게
+const typingElsewhere=()=>{const a=deepActive();return !!(a&&isEditable(a)&&!(a.matches&&a.matches('textarea[name="message"]')))};
 
 // 이름은 원래 대화방 이름, 프로필 사진은 원래 캐릭터 사진으로 고정
 const forceOriginal=()=>{
@@ -96,7 +100,7 @@ const installBandFix=()=>{
     setCss();
   };
   let t=0;const queue=()=>{if(t)return;t=setTimeout(()=>{t=0;try{scan()}catch(_){}},150)};
-  new MutationObserver(queue).observe(d.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']});
+  new MutationObserver(()=>{if(!typingElsewhere())queue()}).observe(d.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   setTimeout(queue,300);setTimeout(queue,1200);setTimeout(queue,3000);
   w.__zetaKakaoBandFix=1;
 };
@@ -148,15 +152,14 @@ const installAutoFix=()=>{
   let t=0;
   const run=()=>{if(t)return;t=setTimeout(()=>{t=0;try{scanNarrator()}catch(_){}try{keepComposerRow()}catch(_){}try{placeActions()}catch(_){}},120)};
   w.addEventListener('resize',run);
-  new MutationObserver(run).observe(d.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  new MutationObserver(()=>{if(!typingElsewhere())run()}).observe(d.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  d.addEventListener('focusout',()=>setTimeout(run,50),true);
   setTimeout(run,300);setTimeout(run,1500);setTimeout(run,3500);
   w.__zetaKakaoAutoFix=1;
 };
 
 // 카톡테마는 '글 쓰는 칸이 아닐 때 백스페이스 = 뒤로가기 막기'를 하는데,
 // 역병킬러·코냅샷처럼 별도 상자(shadow DOM) 안의 입력칸은 글 쓰는 칸으로 못 알아봐서 백스페이스를 막아버림 → 안쪽까지 확인하게 감쌈
-const deepActive=()=>{let a=d.activeElement;while(a&&a.shadowRoot&&a.shadowRoot.activeElement)a=a.shadowRoot.activeElement;return a};
-const isEditable=el=>!!(el&&(el.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||(el.closest&&el.closest('[contenteditable="true"],[role="textbox"]'))));
 const installBackspaceFix=()=>{
   const tick=()=>{
     const cur=w.__zetaKakaoBackspaceHandler;

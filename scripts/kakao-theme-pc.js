@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.8.4
+// @version      1.8.5
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -57,6 +57,9 @@ const applyFont=()=>{
     `${R} [data-sentry-component="QuickReplyButton"] svg{color:#191919!important;}`+
     `${R} [data-sentry-component="AsteriskInputButton"]{display:flex!important;}`+
     `html body #zeta-kakao-profile-toggle{display:none!important;}`+
+    `html body *{scrollbar-color:rgba(92,104,114,.45) transparent!important;}`+
+    `html body *::-webkit-scrollbar-track,html body *::-webkit-scrollbar-corner{background:transparent!important;}`+
+    `html body *::-webkit-scrollbar-thumb{background:rgba(92,104,114,.45)!important;border-radius:8px!important;}`+
     // 신고·수정·재생성 아이콘은 제타 원래 자리(입력바 위 오른쪽, 스냅샷 줄)로 — 위치는 아래 placeActions가 잡음
     `html body .zeta-kakao-native-actions.zeta-kakao-native-actions{opacity:1!important;}`+
     `html body [data-sentry-component="LastMessageControlBar"]:has(>.zeta-kakao-native-actions){min-height:36px!important;}`+

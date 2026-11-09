@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.14.3
+// @version      1.14.4
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -904,7 +904,7 @@ const coreBoot=(async()=>{
     </style>
     <button class="fab" id="fab" aria-label="Chat2Img-Codex 열기">🎨</button>
     <div class="panel" id="panel">
-      <div class="head"><div><div class="title">Chat2Img-Codex</div><div class="sub">제타용 이미지 생성</div></div><button class="close" id="close" aria-label="닫기">×</button></div>
+      <div class="head"><div><div class="title">Chat2Img-Codex</div><div class="sub">제타용 이미지 생성</div></div><div style="display:flex;align-items:center;gap:4px"><button class="close" id="sizeBtn" aria-label="창 크기" title="창 크기 바꾸기" style="font-size:12px;font-weight:700;width:auto;padding:0 8px">100%</button><button class="close" id="close" aria-label="닫기">×</button></div></div>
       <div class="tabs">
         <button class="tab" data-tab="create">생성</button>
         <button class="tab" data-tab="result">결과</button>
@@ -1010,6 +1010,18 @@ const coreBoot=(async()=>{
       els.modeSolo.checked=config.mode==='solo'; els.modeScene.checked=config.mode!=='solo'; els.genre.value=config.genre; els.stylePreset.value=config.stylePreset; els.sizeHint.value=config.sizeHint; els.qualityHint.value=config.qualityHint; els.extraPrompt.value=config.extraPrompt;
     }
 
+    // 창 크기: 버튼 누를 때마다 100% → 85% → 70% → 55% 순서로 바뀌고, 기기마다 기억함 (폰·아이패드는 처음에 70%)
+    (()=>{
+      const KEY='chat2img-codex-panel-zoom';
+      const STEPS=[100,85,70,55];
+      const btn=shadow.getElementById('sizeBtn');
+      const touch=matchMedia('(pointer:coarse)').matches;
+      let z=parseInt(localStorage.getItem(KEY)||'',10);
+      if(!STEPS.includes(z))z=touch?70:100;
+      const apply=()=>{els.panel.style.zoom=String(z/100);if(btn)btn.textContent=z+'%'};
+      apply();
+      if(btn)btn.addEventListener('click',e=>{e.stopPropagation();z=STEPS[(STEPS.indexOf(z)+1)%STEPS.length];try{localStorage.setItem(KEY,String(z))}catch(_){}apply()});
+    })();
     function setOpen(open){ state.open=!!open; els.panel.classList.toggle('hidden',!state.open); }
     function toggle(){ setOpen(!state.open); }
     function switchTab(tab){

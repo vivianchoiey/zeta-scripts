@@ -22,7 +22,7 @@
       "name": "카톡테마 (PC)",
       "file": "scripts/kakao-theme-pc.js",
       "runAt": "idle",
-      "group": "theme",
+      "group": "",
       "default": true
     },
     {
@@ -30,7 +30,7 @@
       "name": "랜덤테마 PC",
       "file": "scripts/random-theme-pc.js",
       "runAt": "idle",
-      "group": "theme",
+      "group": "",
       "default": false
     },
     {
@@ -38,7 +38,7 @@
       "name": "Zeta Random 8 Themes",
       "file": "scripts/zeta-random-8-themes.js",
       "runAt": "idle",
-      "group": "theme",
+      "group": "",
       "default": false
     },
     {
@@ -46,7 +46,7 @@
       "name": "구달's 미니홈피 랜덤 테마",
       "file": "scripts/gudal-minihompy.js",
       "runAt": "idle",
-      "group": "theme",
+      "group": "",
       "default": false
     },
     {
@@ -54,7 +54,7 @@
       "name": "설기 떡집 랜덤 테마",
       "file": "scripts/seolgi-ttokjip.js",
       "runAt": "idle",
-      "group": "theme",
+      "group": "",
       "default": false
     },
     {

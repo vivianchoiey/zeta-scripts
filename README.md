@@ -9,7 +9,6 @@ https://vivianchoiey.github.io/zeta-scripts/loader/zeta-master.user.js
 
 ## 켜고 끄기
 제타 페이지에서 Tampermonkey 아이콘 → 메뉴에 스크립트 목록이 ✅/⬜로 뜸 → 눌러서 켜기/끄기 (기기마다 따로 저장).
-테마(group: theme)는 하나를 켜면 나머지는 자동으로 꺼짐.
 
 ## 구조
 - `manifest.json` — 스크립트 목록 (이름, 파일, 실행 시점, 그룹, 기본 켜짐 여부)

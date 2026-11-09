@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.8.3
+// @version      1.8.4
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -149,8 +149,21 @@ const installAutoFix=()=>{
     set('position','fixed');set('left',Math.round(b.right-8-wd)+'px');set('top',Math.round(b.top+(b.height-28)/2)+'px');set('right','auto');set('bottom','auto');set('margin','0');set('visibility',vis?'visible':'hidden');
   };
   d.addEventListener('scroll',()=>{try{placeActions()}catch(_){}},true);
+  // 메시지 수정할 때 수정칸이 글 길이만큼 늘어나게 (화면 높이의 45%까지, 넘으면 스크롤)
+  const fitEdit=()=>{
+    d.querySelectorAll('textarea.zeta-kakao-edit-textarea').forEach(ta=>{
+      if(!ta.__zkEditFit){
+        let busy=false,last='';
+        const fit=()=>{if(busy)return;busy=true;ta.style.setProperty('height','auto','important');ta.style.setProperty('min-height','0px','important');const max=Math.round(innerHeight*0.45);const h=Math.min(max,Math.max(44,ta.scrollHeight+2));last=h+'px';ta.style.setProperty('height',last,'important');ta.style.setProperty('max-height',max+'px','important');ta.style.setProperty('overflow-y',ta.scrollHeight+2>max?'auto':'hidden','important');busy=false};
+        new MutationObserver(()=>{if(!busy&&ta.style.height!==last)fit()}).observe(ta,{attributes:true,attributeFilter:['style']});
+        ta.addEventListener('input',()=>requestAnimationFrame(fit));
+        ta.__zkEditFit=fit;
+      }
+      ta.__zkEditFit();
+    });
+  };
   let t=0;
-  const run=()=>{if(t)return;t=setTimeout(()=>{t=0;try{scanNarrator()}catch(_){}try{keepComposerRow()}catch(_){}try{placeActions()}catch(_){}},120)};
+  const run=()=>{if(t)return;t=setTimeout(()=>{t=0;try{scanNarrator()}catch(_){}try{keepComposerRow()}catch(_){}try{placeActions()}catch(_){}try{fitEdit()}catch(_){}},120)};
   w.addEventListener('resize',run);
   new MutationObserver(()=>{if(!typingElsewhere())run()}).observe(d.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   d.addEventListener('focusout',()=>setTimeout(run,50),true);

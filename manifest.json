@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "scripts": [
+    { "id": "kakao-theme-pc",       "name": "카톡테마 (PC)",           "file": "scripts/kakao-theme-pc.js",       "runAt": "idle",  "group": "theme", "default": true },
+    { "id": "random-theme-pc",      "name": "랜덤테마 PC",             "file": "scripts/random-theme-pc.js",      "runAt": "idle",  "group": "theme", "default": false },
+    { "id": "zeta-random-8-themes", "name": "Zeta Random 8 Themes",    "file": "scripts/zeta-random-8-themes.js", "runAt": "idle",  "group": "theme", "default": false },
+    { "id": "gudal-minihompy",      "name": "구달's 미니홈피 랜덤 테마", "file": "scripts/gudal-minihompy.js",      "runAt": "idle",  "group": "theme", "default": false },
+    { "id": "seolgi-ttokjip",       "name": "설기 떡집 랜덤 테마",       "file": "scripts/seolgi-ttokjip.js",       "runAt": "idle",  "group": "theme", "default": false },
+    { "id": "font-tuner",           "name": "Font Tuner",              "file": "scripts/font-tuner.js",           "runAt": "start", "group": "",      "default": false }
+  ]
+}

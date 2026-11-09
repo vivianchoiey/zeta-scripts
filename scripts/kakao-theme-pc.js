@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.7.0
+// @version      1.7.1
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -43,7 +43,9 @@ const applyFont=()=>{
   st.textContent=
     `${N},${N} :is(p,span,em,i,strong,b,div){font-size:${FONT.narrator}px!important;line-height:${lh(FONT.narrator)}!important;}`+
     `${B} .chat,${B} .chat p,${B} .chat :is(span,em,i,strong,b){font-size:${FONT.chat}px!important;line-height:${lh(FONT.chat)}!important;}`+
-    `html body .relative.flex.flex-row.items-end.gap-1\\.5.border-t:has(textarea[name="message"]) textarea[name="message"],html body textarea[name="message"],html body textarea.zeta-kakao-edit-textarea{font-size:${FONT.input}px!important;line-height:${lh(FONT.input)}!important;}`;
+    `html body .relative.flex.flex-row.items-end.gap-1\\.5.border-t:has(textarea[name="message"]) textarea[name="message"],html body textarea[name="message"],html body textarea.zeta-kakao-edit-textarea{font-size:${FONT.input}px!important;line-height:${lh(FONT.input)}!important;}`+
+    // 제타가 입력칸 상자 안에 버튼까지 넣는 구조로 바뀌어서, 상자가 버튼 위치 기준이 되지 않게 풀어줌 → 버튼이 카톡 입력바 아래 줄로 돌아감
+    `html body .relative.flex.flex-row.items-end.gap-1\\.5.border-t:has(textarea[name="message"])>div:has(textarea[name="message"]){position:static!important;}`;
   (d.head||d.documentElement).appendChild(st);
 };
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.3.0
+// @version      1.4.0
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -12,6 +12,7 @@
 // ───── 글자 크기 설정 (여기 숫자만 바꾸면 됨 / 테마 원래 크기는 13) ─────
 const FONT={
   chat:15,   // 말풍선 대사·지문
+  narrator:15, // 나레이션(줄 세 개 아이콘 붙은 지문 칸)
   input:15,  // 아래 입력창 + 메시지 수정창
   inputBoxHeight:48  // 아래 입력칸 전체 높이(px) — 테마 원래 78, 더 줄이고 싶으면 숫자 낮추기
 };
@@ -41,7 +42,9 @@ const applyFont=()=>{
   const B='html body [data-sentry-component="ChatBubbleContainer"]';
   const C='.relative.flex.flex-row.items-end.gap-1\\.5.border-t:has(textarea[name="message"])';
   const H=FONT.inputBoxHeight,line=parseInt(lh(FONT.input)),taH=Math.max(line,H-16),taTop=Math.round((H-taH)/2);
+  const N='html body :is([data-sentry-component="NarratorBubble"],[data-sentry-component="NarratorContentView"],[data-sentry-source-file="NarratorBubble.tsx"])';
   st.textContent=
+    `${N},${N} :is(p,span,em,i,strong,b,div){font-size:${FONT.narrator}px!important;line-height:${lh(FONT.narrator)}!important;}`+
     `${B} .chat,${B} .chat p,${B} .chat :is(span,em,i,strong,b){font-size:${FONT.chat}px!important;line-height:${lh(FONT.chat)}!important;}`+
     `html body .relative.flex.flex-row.items-end.gap-1\\.5.border-t:has(textarea[name="message"]) textarea[name="message"],html body textarea[name="message"],html body textarea.zeta-kakao-edit-textarea{font-size:${FONT.input}px!important;line-height:${lh(FONT.input)}!important;}`+
     `html body ${C}{height:auto!important;min-height:0!important;}`+

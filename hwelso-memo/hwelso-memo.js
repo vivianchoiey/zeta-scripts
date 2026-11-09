@@ -11,15 +11,31 @@ const POS_KEY='hwelso-memo:pos';
 const AUTO=!!window.__HWELSO_AUTO;
 
 /* ---------- 제타 API ---------- */
-const token=()=>{
-  const raw=localStorage.getItem('mmkv.default\\TOKEN');
-  if(!raw)return '';
-  try{const j=JSON.parse(raw);if(typeof j==='string')return j;if(j&&j.accessToken)return j.accessToken}catch(_){}
-  return raw;
+/* 로그인 토큰: 제타가 요청 보낼 때 쓰는 걸 그대로 따라 쓰고, 없으면 저장된 것 중 아직 안 끝난 최신 걸 씀 */
+let liveAuth='';
+try{
+  const H=XMLHttpRequest.prototype.setRequestHeader;
+  if(!H.__hwelso){
+    const wrapped=function(k,v){try{if(/^authorization$/i.test(k)&&/^Bearer\s+\S+/.test(v))liveAuth=v.replace(/^Bearer\s+/,'')}catch(_){}return H.apply(this,arguments)};
+    wrapped.__hwelso=1;XMLHttpRequest.prototype.setRequestHeader=wrapped;
+  }
+}catch(_){}
+const jwtExp=t=>{try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).exp*1000}catch(_){return 0}};
+const storedTokens=()=>{
+  const out=[];
+  for(let i=0;i<localStorage.length;i++){
+    const v=localStorage.getItem(localStorage.key(i))||'';
+    const m=v.match(/eyJ[\w-]+\.[\w-]+\.[\w-]+/g);
+    if(m)out.push(...m);
+  }
+  return out.filter(t=>jwtExp(t)>Date.now()+5000).sort((a,b)=>jwtExp(b)-jwtExp(a));
 };
+const token=()=>(liveAuth&&jwtExp(liveAuth)>Date.now()+5000)?liveAuth:(storedTokens()[0]||liveAuth||'');
 const api=async(path,opt={})=>{
-  const r=await fetch(API+path,{...opt,headers:{Authorization:'Bearer '+token(),Accept:'application/json','Content-Type':'application/json'}});
-  if(!r.ok)throw new Error('HTTP '+r.status);
+  const go=t=>fetch(API+path,{...opt,headers:{Authorization:'Bearer '+t,Accept:'application/json','Content-Type':'application/json'}});
+  let r=await go(token());
+  if(r.status===401){for(const t of storedTokens()){r=await go(t);if(r.status!==401)break}}
+  if(!r.ok)throw new Error(r.status===401?'로그인 정보를 못 읽었어요. 새로고침 후 다시 해주세요':'HTTP '+r.status);
   const t=await r.text();
   return t?JSON.parse(t):null;
 };

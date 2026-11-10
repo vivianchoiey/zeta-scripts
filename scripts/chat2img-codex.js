@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.15.0
+// @version      1.16.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -849,7 +849,7 @@ const coreBoot=(async()=>{
     console.log('[Chat2Img-Codex] boot');
 
     const KEY='__CHAT2IMG_CODEX__';
-    const VERSION='0.2.5';
+    const VERSION='0.2.6';
     const ROOT_ID='chat2img-codex-root';
     const RANGE_STYLE_ID='chat2img-codex-range-style';
     const ZETA_CHAT_DOM_URL='https://zetakit.pages.dev/tools/zeta-chat-dom.js';
@@ -1051,7 +1051,7 @@ const coreBoot=(async()=>{
         </section>
 
         <section class="view" data-view="history">
-          <div class="row" style="justify-content:space-between;margin-bottom:9px"><span class="mini">최근 생성 이미지 최대 30개</span><button class="btn ghost" id="clearHistory">이력 비우기</button></div>
+          <div class="row" style="justify-content:space-between;margin-bottom:9px"><span class="mini" id="historyLabel">최근 생성 이미지</span><button class="btn ghost" id="clearHistory">이력 비우기</button></div>
           <div id="historyList"></div>
         </section>
       </div>
@@ -1104,7 +1104,7 @@ const coreBoot=(async()=>{
       state.activeTab=tab;
       shadow.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===tab));
       shadow.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.dataset.view===tab));
-      if(tab==='history') renderHistory();
+      if(tab==='history'){ renderHistory(); fetchServerHistory(false); }
       saveConfig();
     }
     function setStatus(el,kind,text){ el.className=`status ${kind||''}`.trim(); el.textContent=text||''; el.classList.toggle('hidden',!text); }
@@ -1432,9 +1432,22 @@ ${scene}`].filter(Boolean).join('\n\n');}
     async function downloadUrl(url,filename){
       const res=await fetch(url);if(!res.ok)throw new Error(`이미지 저장 실패 (HTTP ${res.status})`);const blob=await res.blob();const object=URL.createObjectURL(blob);const a=document.createElement('a');a.href=object;a.download=filename||'codex-image.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(object),1500);
     }
+    async function fetchServerHistory(more){
+      try{
+        const last=more&&state.history.length?state.history[state.history.length-1].createdAt:0;
+        const res=await fetch(`${bridgeBase()}/history?limit=60${last?`&before=${last}`:''}`,{cache:'no-store'});
+        if(!res.ok)throw new Error('HTTP '+res.status);
+        const data=await res.json();if(!data?.ok||!Array.isArray(data.items))throw new Error('bad');
+        state.history=more?[...state.history,...data.items.filter(x=>!state.history.some(h=>h.filename===x.filename))]:data.items;
+        state.serverHistory=true;state.historyHasMore=!!data.hasMore;state.historyTotal=Number(data.total||0);
+      }catch(_){ if(!more){state.serverHistory=false;state.historyHasMore=false;} }
+      renderHistory();
+    }
     function renderHistory(){
+      const label=document.getElementById('historyLabel');
+      if(label)label.textContent=state.serverHistory?`모든 기기 이력 · 맥에 저장된 이미지 ${state.historyTotal||state.history.length}개`:'이 기기 이력 (맥 서버 연결 안 됨) · 최대 30개';
       if(!state.history.length){els.historyList.innerHTML='<div class="emptyHistory">생성 이력이 없습니다.</div>';return;}
-      els.historyList.innerHTML=`<div class="historyGrid">${state.history.map((item,i)=>`<div class="historyItem"><img class="historyImg" data-himg="${i}" alt="history"><div class="historyInfo">${esc(new Date(item.createdAt).toLocaleString())}</div><div class="historyActions"><button class="tiny" data-open-history="${i}">보기</button><button class="tiny" data-save-history="${i}">저장</button></div></div>`).join('')}</div>`;
+      els.historyList.innerHTML=`<div class="historyGrid">${state.history.map((item,i)=>`<div class="historyItem"><img class="historyImg" data-himg="${i}" alt="history"><div class="historyInfo">${esc(new Date(item.createdAt).toLocaleString())}</div><div class="historyActions"><button class="tiny" data-open-history="${i}">보기</button><button class="tiny" data-save-history="${i}">저장</button></div></div>`).join('')}</div>${state.serverHistory&&state.historyHasMore?'<div class="row" style="justify-content:center;margin-top:9px"><button class="btn ghost" data-more-history="1">더 보기</button></div>':''}`;
       els.historyList.querySelectorAll('[data-himg]').forEach(img=>{const item=state.history[Number(img.dataset.himg)];img.src=historyImageUrl(item)+'?h='+encodeURIComponent(item.id);img.onerror=()=>{img.style.opacity='.25';};});
     }
     function showHistoryItem(index){
@@ -1465,8 +1478,11 @@ ${scene}`].filter(Boolean).join('\n\n');}
     initFabDrag();els.close.addEventListener('click',()=>setOpen(false));els.pickRange.addEventListener('click',()=>startRangePicker().catch(e=>setConversationStatus(e?.message||String(e),'error')));els.clearScene.addEventListener('click',()=>{els.scene.value='';saveConfig();setConversationStatus('대화 내용을 지웠습니다.');});els.rangeCancel.addEventListener('click',()=>{finishPicker(true);setConversationStatus('구간 선택을 취소했습니다.');});
     els.checkStatus.addEventListener('click',()=>checkStatus(true));els.generate.addEventListener('click',generate);els.backCreate.addEventListener('click',()=>switchTab('create'));
     els.saveImage.addEventListener('click',()=>{if(!state.result?.imageUrl)return;downloadUrl(state.result.imageUrl,state.result.filename||'codex-image.png').catch(e=>setStatus(els.resultStatus,'err',e?.message||String(e)));});
-    els.clearHistory.addEventListener('click',()=>{if(!state.history.length)return;if(!confirm('최근 생성 이력 30개 목록을 비울까요?\n서버의 원본 이미지 파일은 삭제하지 않습니다.'))return;state.history=[];saveHistory();renderHistory();});
-    els.historyList.addEventListener('click',e=>{const open=e.target.closest?.('[data-open-history]'),save=e.target.closest?.('[data-save-history]');if(open){showHistoryItem(Number(open.dataset.openHistory));return;}if(save){const item=state.history[Number(save.dataset.saveHistory)];if(item)downloadUrl(historyImageUrl(item),item.filename||'codex-image.png').catch(err=>alert(err?.message||String(err)));}});
+    els.clearHistory.addEventListener('click',async()=>{if(!state.history.length)return;
+      if(state.serverHistory){if(!confirm('모든 기기의 이력 목록을 비울까요?\n맥에 저장된 이미지 파일은 지우지 않습니다.'))return;try{await fetch(`${bridgeBase()}/history/clear`,{method:'POST'});}catch(_){}}
+      else if(!confirm('이 기기의 이력 목록을 비울까요?\n서버의 원본 이미지 파일은 삭제하지 않습니다.'))return;
+      state.history=[];state.historyHasMore=false;state.historyTotal=0;saveHistory();renderHistory();});
+    els.historyList.addEventListener('click',e=>{const more=e.target.closest?.('[data-more-history]');if(more){more.disabled=true;more.textContent='불러오는 중…';fetchServerHistory(true);return;}const open=e.target.closest?.('[data-open-history]'),save=e.target.closest?.('[data-save-history]');if(open){showHistoryItem(Number(open.dataset.openHistory));return;}if(save){const item=state.history[Number(save.dataset.saveHistory)];if(item)downloadUrl(historyImageUrl(item),item.filename||'codex-image.png').catch(err=>alert(err?.message||String(err)));}});
     for(const el of [els.baseUrl,els.scene,els.soloTarget,els.genre,els.stylePreset,els.sizeHint,els.qualityHint,els.extraPrompt]){el.addEventListener('change',saveConfig);el.addEventListener('input',saveConfig);}
     shadow.querySelectorAll('[data-pick]').forEach(btn=>btn.addEventListener('click',()=>pickFile(btn.dataset.pick).catch(e=>alert(e?.message||String(e)))));shadow.querySelectorAll('[data-clipboard]').forEach(btn=>btn.addEventListener('click',()=>readClipboardImage(btn.dataset.clipboard).catch(e=>alert(e?.message||String(e)))));shadow.querySelectorAll('[data-clear]').forEach(btn=>btn.addEventListener('click',()=>snapshotRef(btn.dataset.clear,null)));
     shadow.querySelectorAll('[data-url-apply]').forEach(btn=>btn.addEventListener('click',()=>{const slot=btn.dataset.urlApply;const input=slot==='char'?els.charUrl:els.personaUrl;try{applyRefUrl(slot,input.value,slot==='char'?'캐릭터 URL':'유저 URL');}catch(e){alert(e?.message||String(e));}}));

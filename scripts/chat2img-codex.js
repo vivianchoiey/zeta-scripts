@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.14.4
+// @version      1.15.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -644,6 +644,70 @@ function makeYuniSpecial(kind){
 // =====================================================
 
 const NO_BUCKET='\n\n모든 인물: 버킷햇(벙거지 모자), 데님 재킷, 데님 베스트, 데님 치마(청치마), 아가일 무늬 옷은 절대 입히지 않는다.';
+// ===== 이지수 전용 풀 (고정 프롬프트에 '이지수'가 있을 때만 작동) =====
+// 20살 대학생, 188cm. 밖에서는 단정한 모범생 프레피, 평소엔 깔끔한 캐주얼, 집에서는 편한 차림
+const JISU_COLORS=['화이트','오프화이트','크림','아이보리','베이지','오트밀','연회색','그레이','차콜','네이비','스카이블루','카멜','브라운','세이지','버건디'];
+const JISU_STYLES={
+  프레피:{
+    top:['옥스포드 버튼다운 셔츠','케이블 니트 베스트와 옥스포드 셔츠 레이어드','셔츠 위 크루넥 니트 레이어드','브이넥 니트 카디건과 셔츠','럭비 셔츠','카라 니트 폴로','스트라이프 버튼다운 셔츠','케이블 크루넥 니트','셔츠 위 브이넥 니트','크리켓 니트'],
+    bottom:['베이지 치노 팬츠','네이비 슬랙스','그레이 울 슬랙스','플리츠 치노','코듀로이 팬츠','원워시 스트레이트 데님','버뮤다 쇼츠'],
+    outer:['네이비 더플코트','울 블레이저(캐주얼 단독)','코튼 맥코트','해링턴 재킷','니트 카디건','울 발마칸 코트','스타디움 재킷','없음','없음','없음'],
+    shoes:['페니 로퍼','브라운 스웨이드 로퍼','화이트 테니스 스니커즈','가죽 더비','캔버스 스니커즈'],
+    acc:['가죽 백팩','캔버스 토트백','얇은 실버 시계','가죽 스트랩 시계','니트 머플러','없음','없음','없음'],
+  },
+  캐주얼:{
+    top:['오버핏 맨투맨','오버핏 후드티','오버핏 반팔 티','보트넥 니트','루즈핏 니트','하프집업 스웨트셔츠','스트라이프 롱슬리브 티','오버핏 셔츠','와플 긴팔 티','그래픽 반팔 티'],
+    bottom:['와이드 데님','스트레이트 데님','배럴 데님','와이드 코튼 팬츠','카고 팬츠','스웻 팬츠','나일론 와이드 팬츠','하프 팬츠'],
+    outer:['오버핏 가디건','숏 패딩','플리스 재킷','코치 재킷','바람막이','니트 집업 카디건','스웨이드 블루종','없음','없음','없음'],
+    shoes:['캔버스 스니커즈','청키 스니커즈','뉴발란스 스니커즈','슬립온','화이트 스니커즈'],
+    acc:['에코백','크로스백','백팩','볼캡','없음','없음','없음'],
+  },
+};
+const JISU_HOME={
+  top:['소매가 손등까지 내려오는 오버핏 후드티','오버핏 맨투맨','루즈한 니트','헐렁한 반팔 티','와플 긴팔 티','집업 후드'],
+  bottom:['스웻 팬츠','체크 파자마 바지','코튼 이지 팬츠','스웻 쇼츠','트레이닝 팬츠'],
+  extra:['흰 양말','실내 슬리퍼','맨발','없음','없음'],
+};
+const JISU_RULE='. 이지수는 20살 대학생, 키 188cm. 밖에서는 단정하고 깔끔한 모범생처럼 보이게 입고, 집에서는 헐렁하고 편한 차림이다. 깔끔하고 귀여운 분위기, 과하게 꾸미지 않은 담백한 조합. 수트, 정장, 넥타이, 가죽 라이더 재킷, 체인, 큰 로고, 알록달록한 조잡한 조합, 근육이 드러나는 딱 붙는 옷은 금지.';
+function jisuWithColor(c,item){return /데님|청|체크|스트라이프|카키|네이비|베이지|그레이|화이트|코듀로이|파자마|흰|그래픽|뉴발란스|럭비|크리켓/.test(item)?item:`${c} ${item}`;}
+function makeJisuOutfit(scene){
+  const sc=scene||'';
+  const c1=rnd(JISU_COLORS);let c2=rnd(JISU_COLORS);let g=0;while(c2===c1&&g++<5)c2=rnd(JISU_COLORS);
+  if(/집에서|집 안|집안|거실|침실|침대|소파|부엌|주방|방 안|자기 방/.test(sc)&&!/외출|나가|학교|캠퍼스|강의|카페|식당/.test(sc)){
+    const parts=[jisuWithColor(c1,rnd(JISU_HOME.top)),jisuWithColor(c2,rnd(JISU_HOME.bottom))];
+    const e=rnd(JISU_HOME.extra);if(e!=='없음')parts.push(e);
+    return `집 편한 차림 — ${parts.join(', ')}`;
+  }
+  const season=/여름|더운|더워|폭염|바다|해변|반팔|장마/.test(sc)?'summer':/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|연말|입김/.test(sc)?'winter':'mid';
+  const name=/학교|캠퍼스|강의|도서관|과제|시험|교수|수업/.test(sc)?(Math.random()<0.7?'프레피':'캐주얼'):rnd(Object.keys(JISU_STYLES));
+  const st=JISU_STYLES[name];
+  let top=rnd(st.top),bottom=rnd(st.bottom),outer=rnd(st.outer);
+  if(season==='summer'){
+    top=rnd(['반팔 옥스포드 셔츠','폴로 셔츠','오버핏 반팔 티','린넨 셔츠','반팔 니트 폴로','그래픽 반팔 티']);
+    bottom=rnd(['버뮤다 쇼츠','치노 쇼츠','하프 팬츠','와이드 코튼 팬츠','연청 와이드 데님']);
+    outer='없음';
+  }else if(season==='winter'){
+    let g2=0;while(/반팔/.test(top)&&g2++<10)top=rnd(st.top);
+    g2=0;while(/쇼츠|하프 팬츠/.test(bottom)&&g2++<10)bottom=rnd(st.bottom);
+    if(outer==='없음')outer=rnd(['네이비 더플코트','숏 패딩','울 발마칸 코트','플리스 재킷']);
+  }
+  const parts=[jisuWithColor(c1,top),jisuWithColor(c2,bottom)];
+  if(outer!=='없음')parts.push(jisuWithColor(rnd(['네이비','차콜','카멜','베이지','크림','그레이','브라운']),outer));
+  parts.push(rnd(st.shoes));
+  const acc=rnd(st.acc);if(acc!=='없음')parts.push(acc);
+  return `${name} 룩 — ${parts.join(', ')}`;
+}
+const LAST_JISU_KEY='chat2img_codex_last_jisu';
+function pickJisuOutfit(scene){
+  let last='';try{last=localStorage.getItem(LAST_JISU_KEY)||'';}catch(e){}
+  let pick=makeJisuOutfit(scene);let g=0;while(pick===last&&g++<5)pick=makeJisuOutfit(scene);
+  try{localStorage.setItem(LAST_JISU_KEY,pick);}catch(e){}
+  return pick;
+}
+const J_SLEEP_RULE='. 20살 대학생답게 편하고 헐렁한 잠옷. 키 188cm.';
+const J_SWIM_RULE='. 20살 대학생, 키 188cm. 근육을 과장하지 않는다.';
+// =====================================================
+
 const _fetch=window.fetch;
 window.fetch=function(input,init){
   try{
@@ -670,6 +734,11 @@ window.fetch=function(input,init){
           const fo=makeFemaleSpecial(kind);
           let add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+fo+(kind==='sleep'?F_SLEEP_RULE:F_SWIM_RULE);
           console.log('[Chat2Img-Codex] 여주 '+kind+':',fo);
+          if(head.includes('이지수')){
+            const jo=makeYuniSpecial(kind).replace(/\(토끼 귀가 밖으로 나오게\)/g,'');
+            add+='\n\n이지수 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jo+(kind==='sleep'?J_SLEEP_RULE:J_SWIM_RULE);
+            console.log('[Chat2Img-Codex] 이지수 '+kind+':',jo);
+          }
           if(head.includes('윤이')){
             const yo=makeYuniSpecial(kind);
             add+='\n\n윤이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+yo+(kind==='sleep'?Y_SLEEP_RULE:Y_SWIM_RULE);
@@ -713,6 +782,12 @@ window.fetch=function(input,init){
             const sg=pickSeolgiOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n설기 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+sg+SEOLGI_RULE;
             console.log('[Chat2Img-Codex] 설기 의상:',sg);
+          }
+          // 이지수: 프레피·캐주얼 랜덤 조합, 집에서는 편한 차림. 탈의·잠옷 등 장면은 건너뜀
+          if(characterText.includes('이지수')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const jo=pickJisuOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n이지수 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jo+JISU_RULE;
+            console.log('[Chat2Img-Codex] 이지수 의상:',jo);
           }
           // 윤이: 아메카지·프레피·캐주얼 랜덤 조합. 탈의·잠옷 등 장면은 건너뜀
           if(characterText.includes('윤이')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){

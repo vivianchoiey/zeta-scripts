@@ -16,5 +16,5 @@ https://vivianchoiey.github.io/zeta-scripts/loader/zeta-master.user.js
 - `loader/zeta-master.user.js` — 기기에 까는 로더
 
 ## 로더로 안 옮기고 따로 까는 것
-- 제타 익명 캡처 (Tampermonkey 전용 기능 사용)
+- 제타 익명 캡처 (Tampermonkey 전용 기능 사용) — 백업: extras/zeta-anon-capture.user.js, 설치 링크: https://raw.githubusercontent.com/vivianchoiey/zeta-scripts/main/extras/zeta-anon-capture.user.js
 - 다음카페 댓글 사진 전체저장 (제타 아님)

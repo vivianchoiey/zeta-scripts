@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.19.0
+// @version      1.19.1
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -732,13 +732,13 @@ const DAMYOON_HOME={
   bottom:['스웻 팬츠','코튼 이지 팬츠','트레이닝 팬츠'],
   extra:['맨발','실내 슬리퍼','없음','없음'],
 };
-const DAMYOON_RULE='. 서담윤은 190cm가 넘는 장신에 넓은 어깨와 단단한 체격이다. 사복은 체격이 더 커 보이는 오버핏·두툼한 옷을 즐겨 입는다. 머리 위 담비 귀와 길고 풍성한 갈색 꼬리는 항상 보이게 그리고, 꼬리는 옷 밖으로 나온다. 큰 로고, 알록달록한 조잡한 조합, 귀여운 캐릭터 프린트는 금지.';
+const DAMYOON_RULE='. 서담윤은 190cm가 넘는 장신에 넓은 어깨와 단단한 체격이다. 사복은 입히지 않고 항상 센터 전투복을 입힌다. 머리 위 담비 귀와 길고 풍성한 갈색 꼬리는 항상 보이게 그리고, 꼬리는 옷 밖으로 나온다. 큰 로고, 알록달록한 조잡한 조합, 귀여운 캐릭터 프린트는 금지.';
 const D_SLEEP_RULE='. 190cm가 넘는 장신, 넓은 어깨. 담비 귀와 꼬리는 원래대로 유지하고 꼬리는 옷 밖으로 나온다.';
 const D_SWIM_RULE='. 190cm가 넘는 장신, 넓은 어깨와 단단한 체격. 담비 귀와 꼬리는 원래대로 유지하고 꼬리는 수영복 밖으로 나온다.';
 function damyoonWithColor(c,item){return /데님|청|레더|무톤/.test(item)?item:`${c} ${item}`;}
 function makeDamyoonOutfit(scene){
   const sc=scene||'';
-  if(DAMYOON_MISSION_RE.test(sc))return `임무복 — ${rnd(DAMYOON_UNIFORM)}`;
+  return `센터 전투복 — ${rnd(DAMYOON_UNIFORM)}`; // 사복 없음: 항상 전투복
   const c1=rnd(DAMYOON_COLORS);let c2=rnd(DAMYOON_COLORS);let g=0;while(c2===c1&&g++<5)c2=rnd(DAMYOON_COLORS);
   if(/집에서|집 안|집안|거실|침실|침대|소파|부엌|주방|방 안|숙소/.test(sc)&&!/외출|나가|카페|식당|데이트/.test(sc)){
     const parts=[`${c1} ${rnd(DAMYOON_HOME.top)}`,`${c2} ${rnd(DAMYOON_HOME.bottom)}`];
@@ -774,7 +774,7 @@ const F_SENTINEL_UNIFORM=[
   '흰색 하이넥 전투 슈트 위 회색 경량 택티컬 베스트, 검정 전술 장갑, 컴뱃 부츠',
   '검정 하이넥 이너 위 흰색 센터 제복 재킷(어깨 계급장), 슬림 전투 팬츠, 롱 컴뱃 부츠',
 ];
-const F_SENTINEL_RULE='. S급 센티넬다운 세련되고 날렵한 전투복. 백호 귀와 꼬리는 원래대로 유지하고 꼬리는 옷 밖으로 나온다.';
+const F_SENTINEL_RULE='. S급 센티넬다운 세련되고 날렵한 전투복. 사복은 입히지 않는다. 백호 귀와 꼬리는 원래대로 유지하고 꼬리는 옷 밖으로 나온다.';
 // =====================================================
 
 const _fetch=window.fetch;
@@ -826,7 +826,7 @@ window.fetch=function(input,init){
             const mo=pickMoaOutfit();
             add='\n\n최모아 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+mo+MOA_RULE;
             console.log('[Chat2Img-Codex] 모아 의상:',mo);
-          }else if(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('서담윤')&&DAMYOON_MISSION_RE.test(sceneText)){
+          }else if(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('서담윤')){
             const fu=rnd(F_SENTINEL_UNIFORM);
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): 임무복 — '+fu+F_SENTINEL_RULE;
             console.log('[Chat2Img-Codex] 여주 임무복:',fu);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.18.1
+// @version      1.19.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -708,6 +708,73 @@ function pickJisuOutfit(scene){
 }
 const J_SLEEP_RULE='. 20살 대학생답게 편하고 헐렁한 잠옷. 키 188cm.';
 const J_SWIM_RULE='. 20살 대학생, 키 188cm. 근육을 과장하지 않는다.';
+
+// ===== 서담윤 전용 풀 (고정 프롬프트에 '서담윤'이 있을 때만 작동) =====
+// 담비 수인 A급 가이드, 190cm 넘는 장신. 임무·센터에서는 흰 전투복, 평소엔 체격이 커 보이는 오버핏 사복.
+const DAMYOON_MISSION_RE=/임무|작전|출동|센터|훈련|가이딩|게이트|토벌|현장|브리핑|전투|던전|순찰|대기실|의무실/;
+const DAMYOON_UNIFORM=[
+  '흰색 하이넥 전투 슈트(몸에 맞게 떨어지는 매끈한 소재), 가슴을 가로지르는 흰 하네스 스트랩과 은색 버클, 흰 전술 장갑',
+  '흰색 하이넥 전투 슈트 위 흰색 경량 전술 아머(어깨·가슴 보호대), 허리 전술 벨트, 흰 전술 장갑',
+  '흰색 하이넥 전투 슈트 위 회색 택티컬 베스트(가슴 파우치), 흰 전술 장갑, 전술 벨트',
+  '소매를 걷은 흰 셔츠 위 올리브색 플레이트 캐리어, 올리브 카고 팬츠, 검정 전술 시계',
+  '검정 하이넥 이너 위 흰색 센터 제복 재킷(어깨 계급장), 슬림 전투 팬츠, 컴뱃 부츠',
+];
+const DAMYOON_COLORS=['블랙','차콜','그레이','오프화이트','크림','네이비','카멜','다크 브라운','올리브','버건디'];
+const DAMYOON_OFF={
+  top:['오버핏 헤비 코튼 티셔츠','두툼한 케이블 니트','오버핏 옥스포드 셔츠','헤비 코튼 크루넥 맨투맨','리브 하이넥 니트','오버핏 헨리넥 티','오버핏 니트 폴로','와플 긴팔 티'],
+  bottom:['와이드 슬랙스','와이드 치노 팬츠','진청 와이드 데님','깨끗한 원톤 중청 와이드 데님','카고 팬츠','울 와이드 팬츠'],
+  outer:['오버핏 레더 재킷','두꺼운 울 오버코트','무톤 재킷','오버핏 워크 재킷','오버핏 블레이저(캐주얼 단독)','오버핏 니트 카디건','없음','없음','없음'],
+  shoes:['첼시 부츠','컴뱃 부츠','블랙 더비','화이트 스니커즈','스웨이드 로퍼'],
+  acc:['가죽 스트랩 시계','얇은 실버 반지','블랙 레더 벨트','없음','없음','없음'],
+};
+const DAMYOON_HOME={
+  top:['오버핏 반팔 티','헐렁한 맨투맨','루즈한 니트','와플 긴팔 티','오버핏 후드티'],
+  bottom:['스웻 팬츠','코튼 이지 팬츠','트레이닝 팬츠'],
+  extra:['맨발','실내 슬리퍼','없음','없음'],
+};
+const DAMYOON_RULE='. 서담윤은 190cm가 넘는 장신에 넓은 어깨와 단단한 체격이다. 사복은 체격이 더 커 보이는 오버핏·두툼한 옷을 즐겨 입는다. 머리 위 담비 귀와 길고 풍성한 갈색 꼬리는 항상 보이게 그리고, 꼬리는 옷 밖으로 나온다. 큰 로고, 알록달록한 조잡한 조합, 귀여운 캐릭터 프린트는 금지.';
+const D_SLEEP_RULE='. 190cm가 넘는 장신, 넓은 어깨. 담비 귀와 꼬리는 원래대로 유지하고 꼬리는 옷 밖으로 나온다.';
+const D_SWIM_RULE='. 190cm가 넘는 장신, 넓은 어깨와 단단한 체격. 담비 귀와 꼬리는 원래대로 유지하고 꼬리는 수영복 밖으로 나온다.';
+function damyoonWithColor(c,item){return /데님|청|레더|무톤/.test(item)?item:`${c} ${item}`;}
+function makeDamyoonOutfit(scene){
+  const sc=scene||'';
+  if(DAMYOON_MISSION_RE.test(sc))return `임무복 — ${rnd(DAMYOON_UNIFORM)}`;
+  const c1=rnd(DAMYOON_COLORS);let c2=rnd(DAMYOON_COLORS);let g=0;while(c2===c1&&g++<5)c2=rnd(DAMYOON_COLORS);
+  if(/집에서|집 안|집안|거실|침실|침대|소파|부엌|주방|방 안|숙소/.test(sc)&&!/외출|나가|카페|식당|데이트/.test(sc)){
+    const parts=[`${c1} ${rnd(DAMYOON_HOME.top)}`,`${c2} ${rnd(DAMYOON_HOME.bottom)}`];
+    const e=rnd(DAMYOON_HOME.extra);if(e!=='없음')parts.push(e);
+    return `집 편한 차림 — ${parts.join(', ')}`;
+  }
+  const season=/여름|더운|더워|폭염|바다|해변|반팔|장마/.test(sc)?'summer':/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|연말|입김/.test(sc)?'winter':'mid';
+  let top=rnd(DAMYOON_OFF.top),bottom=rnd(DAMYOON_OFF.bottom),outer=rnd(DAMYOON_OFF.outer);
+  if(season==='summer'){
+    top=rnd(['오버핏 헤비 코튼 티셔츠','오버핏 린넨 셔츠','반팔 니트 폴로','오버핏 반팔 셔츠']);
+    bottom=rnd(['와이드 코튼 팬츠','린넨 와이드 팬츠','얇은 와이드 치노']);
+    outer='없음';
+  }else if(season==='winter'&&outer==='없음'){
+    outer=rnd(['두꺼운 울 오버코트','무톤 재킷','오버핏 레더 재킷']);
+  }
+  const parts=[damyoonWithColor(c1,top),damyoonWithColor(c2,bottom)];
+  if(outer!=='없음')parts.push(damyoonWithColor(rnd(['블랙','차콜','카멜','다크 브라운','그레이']),outer));
+  parts.push(rnd(DAMYOON_OFF.shoes));
+  const acc=rnd(DAMYOON_OFF.acc);if(acc!=='없음')parts.push(acc);
+  return `사복 — ${parts.join(', ')}`;
+}
+const LAST_DAMYOON_KEY='chat2img_codex_last_damyoon';
+function pickDamyoonOutfit(scene){
+  let last='';try{last=localStorage.getItem(LAST_DAMYOON_KEY)||'';}catch(e){}
+  let pick=makeDamyoonOutfit(scene);let g=0;while(pick===last&&g++<5)pick=makeDamyoonOutfit(scene);
+  try{localStorage.setItem(LAST_DAMYOON_KEY,pick);}catch(e){}
+  return pick;
+}
+// 담윤 방에서 임무·센터 장면이면 여주(백호 센티넬)도 전투복
+const F_SENTINEL_UNIFORM=[
+  '흰색 하이넥 전투 슈트(몸에 맞게 떨어지는 매끈한 소재), 허리 전술 벨트, 검정 전술 장갑, 컴뱃 부츠',
+  '검정 하이넥 전투 슈트 위 흰색 크롭 전술 재킷, 허리 전술 벨트, 컴뱃 부츠',
+  '흰색 하이넥 전투 슈트 위 회색 경량 택티컬 베스트, 검정 전술 장갑, 컴뱃 부츠',
+  '검정 하이넥 이너 위 흰색 센터 제복 재킷(어깨 계급장), 슬림 전투 팬츠, 롱 컴뱃 부츠',
+];
+const F_SENTINEL_RULE='. S급 센티넬다운 세련되고 날렵한 전투복. 백호 귀와 꼬리는 원래대로 유지하고 꼬리는 옷 밖으로 나온다.';
 // =====================================================
 
 const _fetch=window.fetch;
@@ -741,7 +808,12 @@ window.fetch=function(input,init){
             add+='\n\n이지수 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jo+(kind==='sleep'?J_SLEEP_RULE:J_SWIM_RULE);
             console.log('[Chat2Img-Codex] 이지수 '+kind+':',jo);
           }
-          if(head.includes('윤이')){
+          if(head.includes('서담윤')){
+            const dj=makeYuniSpecial(kind).replace(/\(토끼 귀가 밖으로 나오게\)/g,'');
+            add+='\n\n서담윤 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+dj+(kind==='sleep'?D_SLEEP_RULE:D_SWIM_RULE);
+            console.log('[Chat2Img-Codex] 서담윤 '+kind+':',dj);
+          }
+          if(/(^|[^담])윤이/.test(head)){
             const yo=makeYuniSpecial(kind);
             add+='\n\n윤이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+yo+(kind==='sleep'?Y_SLEEP_RULE:Y_SWIM_RULE);
             console.log('[Chat2Img-Codex] 윤이 '+kind+':',yo);
@@ -754,6 +826,10 @@ window.fetch=function(input,init){
             const mo=pickMoaOutfit();
             add='\n\n최모아 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+mo+MOA_RULE;
             console.log('[Chat2Img-Codex] 모아 의상:',mo);
+          }else if(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('서담윤')&&DAMYOON_MISSION_RE.test(sceneText)){
+            const fu=rnd(F_SENTINEL_UNIFORM);
+            add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): 임무복 — '+fu+F_SENTINEL_RULE;
+            console.log('[Chat2Img-Codex] 여주 임무복:',fu);
           }else{
             const outfit=pickOutfit();
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+outfit+OUTFIT_RULE;
@@ -791,8 +867,14 @@ window.fetch=function(input,init){
             add+='\n\n이지수 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jo+JISU_RULE;
             console.log('[Chat2Img-Codex] 이지수 의상:',jo);
           }
+          // 서담윤: 임무·센터면 흰 전투복, 평소엔 오버핏 사복, 집에서는 편한 차림
+          if(characterText.includes('서담윤')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복|본체화|본체로/.test(sceneText)){
+            const dy=pickDamyoonOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n서담윤 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+dy+DAMYOON_RULE;
+            console.log('[Chat2Img-Codex] 서담윤 의상:',dy);
+          }
           // 윤이: 아메카지·프레피·캐주얼 랜덤 조합. 탈의·잠옷 등 장면은 건너뜀
-          if(characterText.includes('윤이')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+          if(/(^|[^담])윤이/.test(characterText)&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
             const yo=pickYuniOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n윤이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+yo+YUNI_RULE;
             console.log('[Chat2Img-Codex] 윤이 의상:',yo);

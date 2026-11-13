@@ -66,6 +66,14 @@
       "default": false
     },
     {
+      "id": "tactical-black-ops",
+      "name": "택티컬 테마 (BLACK OPS)",
+      "file": "scripts/tactical-black-ops.js",
+      "runAt": "idle",
+      "group": "",
+      "default": false
+    },
+    {
       "id": "font-tuner",
       "name": "Font Tuner",
       "file": "scripts/font-tuner.js",

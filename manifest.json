@@ -67,7 +67,7 @@
     },
     {
       "id": "tactical-black-ops",
-      "name": "택티컬 테마 (BLACK OPS)",
+      "name": "택티컬 테마 (랜덤 15종)",
       "file": "scripts/tactical-black-ops.js",
       "runAt": "idle",
       "group": "",

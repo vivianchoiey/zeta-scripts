@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Chat2Img 참조사진·설정 방별 동기화
 // @namespace    zeta-local
-// @version      1.2.1
-// @description  Chat2Img-Codex 참조사진(캐릭터·유저·스타일)과 생성 설정을 방마다 Supabase에 저장해 폰·윈도우·맥 어디서든 자동으로 채움 + 아이폰 사진 넣기 오류 보정
+// @version      1.3.0
+// @description  방 들어올 때 프로필 사진 자동 불러오기 + Chat2Img-Codex 참조사진(캐릭터·유저·스타일)과 생성 설정을 방마다 Supabase에 저장해 폰·윈도우·맥 어디서든 자동으로 채움 + 아이폰 사진 넣기 오류 보정
 // @match        https://zeta-ai.io/*
 // @match        https://www.zeta-ai.io/*
 // @run-at       document-idle
@@ -197,7 +197,16 @@
       const room = roomId(); const root = panel();
       if (!room || !root || busy || room === lastRoom) return;
       busy = true; lastRoom = room;
-      await new Promise(r => setTimeout(r, 2000));   // Chat2Img의 프사 자동 감지가 끝난 뒤에 채움
+      await new Promise(r => setTimeout(r, 2000));   // 방 화면이 다 뜰 때까지 대기
+      // 방에 들어올 때마다 캐릭터·유저 프로필 사진을 자동으로 불러옴 (안 잡히면 몇 번 더 시도)
+      for (let k = 0; k < 4 && roomId() === room; k++) {
+        const r2 = panel(); const lp = r2?.getElementById('loadProfiles');
+        if (lp) lp.click();
+        await new Promise(r => setTimeout(r, 800));
+        const got = (id) => { const t = panel()?.getElementById(id); return t && !t.classList.contains('hidden') && t.getAttribute('src'); };
+        if (got('charThumb')) break;
+        await new Promise(r => setTimeout(r, 1500));
+      }
       if (roomId() === room) await loadSettings(room);
       for (const slot of SLOTS) {
         if (roomId() !== room) break;
@@ -216,7 +225,7 @@
     const tick = () => { hookPanel(); fillRoom(); };
     setInterval(tick, 1500);
     tick();
-    window.__C2I_REFSYNC__ = { version: '1.2.1', cloud: cloudOn, refill: () => { lastRoom = null; tick(); } };
+    window.__C2I_REFSYNC__ = { version: '1.3.0', cloud: cloudOn, refill: () => { lastRoom = null; tick(); } };
     log(cloudOn ? '켜짐 (클라우드 동기화)' : '켜짐 (Supabase 설정 없음: 아이폰 보정만 작동)'); setTimeout(() => toast(cloudOn ? '켜짐' : '켜짐 (클라우드 설정 없음)'), 1500);
   })();
 })();

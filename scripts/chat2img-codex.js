@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.19.1
+// @version      1.20.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -767,6 +767,57 @@ function pickDamyoonOutfit(scene){
   try{localStorage.setItem(LAST_DAMYOON_KEY,pick);}catch(e){}
   return pick;
 }
+// ===== 선우현 전용 풀 (고정 프롬프트에 '선우현'이 있을 때만 작동) =====
+// 26살 미술 강사, 181cm 마른 체형, 전동휠체어 사용. 부드럽고 차분한 담백한 옷, 앉은 자세에 맞는 여유 있는 핏.
+const WOOHYUN_COLORS=['오트밀','크림','아이보리','베이지','카멜','브라운','그레이','차콜','네이비','세이지','블랙','오프화이트'];
+const WOOHYUN_OUT={
+  top:['오버핏 브이넥 니트','크루넥 캐시미어 니트','옥스포드 셔츠','린넨 셔츠','셔츠 위 크루넥 니트 레이어드','셔츠 위 무지 니트 베스트','하이넥 니트','헨리넥 긴팔 티','오버핏 맨투맨','브이넥 니트 카디건과 흰 티'],
+  bottom:['와이드 코튼 팬츠','울 슬랙스','코듀로이 와이드 팬츠','와이드 치노 팬츠','진청 와이드 데님','린넨 혼방 팬츠'],
+  outer:['니트 가디건','숄칼라 가디건','싱글 울 코트','코튼 맥코트','오버핏 셔츠 재킷','없음','없음','없음'],
+  shoes:['부드러운 가죽 로퍼','스웨이드 로퍼','캔버스 스니커즈','화이트 스니커즈','첼시 부츠'],
+  acc:['가죽 스트랩 시계','얇은 실버 반지','없음','없음','없음'],
+};
+const WOOHYUN_HOME={
+  top:['헐렁한 니트','오버핏 맨투맨','부드러운 긴팔 티','니트 가디건과 흰 티','오버핏 후드티'],
+  bottom:['코튼 이지 팬츠','스웻 팬츠','니트 조거 팬츠'],
+  extra:['무릎 담요','흰 양말','없음','없음'],
+};
+const WOOHYUN_RULE='. 선우현은 26살 미술 강사, 181cm에 다소 마른 체형. 부드럽고 차분한 분위기의 담백한 옷. 항상 전동휠체어에 앉아 있으므로 앉은 자세에서 자연스럽게 떨어지는 여유 있는 핏으로 그린다. 수트, 넥타이, 가죽 라이더 재킷, 체인, 큰 로고, 알록달록한 조잡한 조합, 운동복 차림은 금지.';
+const W_SLEEP_RULE='. 181cm에 다소 마른 체형. 하반신마비라 다리에 힘이 없는 자세로 자연스럽게 그린다.';
+const W_SWIM_RULE='. 181cm에 다소 마른 체형. 하반신마비라 서 있지 않는다. 물가나 휠체어에 앉은 자세로 그린다.';
+function woohyunWithColor(c,item){return /데님|흰/.test(item)?item:`${c} ${item}`;}
+function makeWoohyunOutfit(scene){
+  const sc=scene||'';
+  const c1=rnd(WOOHYUN_COLORS);let c2=rnd(WOOHYUN_COLORS);let g=0;while(c2===c1&&g++<5)c2=rnd(WOOHYUN_COLORS);
+  if(/집에서|집 안|집안|거실|침실|침대|소파|부엌|주방|방 안/.test(sc)&&!/외출|나가|카페|식당|학원|데이트/.test(sc)){
+    const parts=[woohyunWithColor(c1,rnd(WOOHYUN_HOME.top)),woohyunWithColor(c2,rnd(WOOHYUN_HOME.bottom))];
+    const e=rnd(WOOHYUN_HOME.extra);if(e!=='없음')parts.push(e);
+    return `집 편한 차림 — ${parts.join(', ')}`;
+  }
+  const season=/여름|더운|더워|폭염|바다|해변|반팔|장마/.test(sc)?'summer':/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|연말|입김/.test(sc)?'winter':'mid';
+  let top=rnd(WOOHYUN_OUT.top),bottom=rnd(WOOHYUN_OUT.bottom),outer=rnd(WOOHYUN_OUT.outer);
+  if(season==='summer'){
+    top=rnd(['린넨 셔츠','반팔 니트','오버핏 반팔 셔츠','헨리넥 반팔 티']);
+    bottom=rnd(['린넨 혼방 팬츠','와이드 코튼 팬츠','얇은 와이드 치노']);
+    outer='없음';
+  }else if(season==='winter'&&outer==='없음'){
+    outer=rnd(['싱글 울 코트','숄칼라 가디건','코튼 맥코트']);
+  }
+  const parts=[woohyunWithColor(c1,top),woohyunWithColor(c2,bottom)];
+  if(outer!=='없음')parts.push(woohyunWithColor(rnd(['카멜','차콜','네이비','베이지','브라운','그레이']),outer));
+  parts.push(rnd(WOOHYUN_OUT.shoes));
+  if(season==='winter'&&Math.random()<0.5)parts.push('무릎 위에 덮은 부드러운 울 담요');
+  if(/학원|화실|수업|그림 그리|붓|물감|캔버스|이젤/.test(sc))parts.push('옷 위에 물감이 살짝 묻은 리넨 앞치마');
+  const acc=rnd(WOOHYUN_OUT.acc);if(acc!=='없음')parts.push(acc);
+  return parts.join(', ');
+}
+const LAST_WOOHYUN_KEY='chat2img_codex_last_woohyun';
+function pickWoohyunOutfit(scene){
+  let last='';try{last=localStorage.getItem(LAST_WOOHYUN_KEY)||'';}catch(e){}
+  let pick=makeWoohyunOutfit(scene);let g=0;while(pick===last&&g++<5)pick=makeWoohyunOutfit(scene);
+  try{localStorage.setItem(LAST_WOOHYUN_KEY,pick);}catch(e){}
+  return pick;
+}
 // 담윤 방에서 임무·센터 장면이면 여주(백호 센티넬)도 전투복
 const F_SENTINEL_UNIFORM=[
   '흰색 하이넥 전투 슈트(몸에 맞게 떨어지는 매끈한 소재), 허리 전술 벨트, 검정 전술 장갑, 컴뱃 부츠',
@@ -807,6 +858,11 @@ window.fetch=function(input,init){
             const jo=makeYuniSpecial(kind).replace(/\(토끼 귀가 밖으로 나오게\)/g,'');
             add+='\n\n이지수 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jo+(kind==='sleep'?J_SLEEP_RULE:J_SWIM_RULE);
             console.log('[Chat2Img-Codex] 이지수 '+kind+':',jo);
+          }
+          if(head.includes('선우현')){
+            const wj=makeYuniSpecial(kind).replace(/\(토끼 귀가 밖으로 나오게\)/g,'');
+            add+='\n\n선우현 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+wj+(kind==='sleep'?W_SLEEP_RULE:W_SWIM_RULE);
+            console.log('[Chat2Img-Codex] 선우현 '+kind+':',wj);
           }
           if(head.includes('서담윤')){
             const dj=makeYuniSpecial(kind).replace(/\(토끼 귀가 밖으로 나오게\)/g,'');
@@ -866,6 +922,12 @@ window.fetch=function(input,init){
             const jo=pickJisuOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n이지수 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jo+JISU_RULE;
             console.log('[Chat2Img-Codex] 이지수 의상:',jo);
+          }
+          // 선우현: 부드럽고 차분한 담백한 옷, 휠체어에 앉은 핏
+          if(characterText.includes('선우현')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const wh=pickWoohyunOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n선우현 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+wh+WOOHYUN_RULE;
+            console.log('[Chat2Img-Codex] 선우현 의상:',wh);
           }
           // 서담윤: 임무·센터면 흰 전투복, 평소엔 오버핏 사복, 집에서는 편한 차림
           if(characterText.includes('서담윤')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복|본체화|본체로/.test(sceneText)){

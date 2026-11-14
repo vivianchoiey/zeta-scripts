@@ -82,6 +82,14 @@
       "default": false
     },
     {
+      "id": "sms-quote",
+      "name": "문자 자동 카드 (문자: → >)",
+      "file": "scripts/sms-quote.js",
+      "runAt": "idle",
+      "group": "",
+      "default": true
+    },
+    {
       "id": "font-tuner",
       "name": "Font Tuner",
       "file": "scripts/font-tuner.js",

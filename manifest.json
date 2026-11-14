@@ -74,6 +74,14 @@
       "default": false
     },
     {
+      "id": "clean-cozy",
+      "name": "Clean Cozy · 파스텔 테마",
+      "file": "scripts/clean-cozy.js",
+      "runAt": "idle",
+      "group": "",
+      "default": false
+    },
+    {
       "id": "font-tuner",
       "name": "Font Tuner",
       "file": "scripts/font-tuner.js",

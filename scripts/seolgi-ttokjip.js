@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         설기 떡집 랜덤 테마
 // @namespace    seolgi-ttokjip
-// @version      2.0.3
+// @version      2.0.4
 // @description  제타 채팅 테마 — 설기 떡 맛 10종 중 하나가 랜덤으로 적용. 들어갈 때마다 사이트에서 최신 테마를 불러와서 자동으로 업데이트돼요.
 // @match        https://zeta-ai.io/*
 // @match        https://www.zeta-ai.io/*
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 (() => {
-  const SRC = "https://vivianchoiey.github.io/zeta-scripts/share/seolgi-core.js";
+  const SRC = "https://chic-tanuki-19b051.netlify.app/seolgi-core.js";
   window.__seolgiAuto = 1;
   if (window.__seolgiTtokjip) return;
   if (window.__seolgiLoading) return;

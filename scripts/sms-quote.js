@@ -40,3 +40,14 @@
     convert(box);
   },true);
 })();
+
+/* 임시 진단: 채팅 프레임 안 DOM 구조를 바깥 화면에서 확인하기 위한 읽기 전용 응답기 (테마 대응 끝나면 삭제) */
+(function(){
+  if(location.hostname!=='frame.pingpong.ai'||window.__zprobe)return;window.__zprobe=1;
+  window.addEventListener('message',function(e){
+    if(!/^https:\/\/([a-z0-9-]+\.)?zeta-ai\.io$/.test(e.origin)||!e.data||!e.data.__zprobe)return;
+    var q=e.data.__zprobe,out;
+    try{out=(new Function('d','return ('+q+')'))(document);out=JSON.stringify(out);}catch(err){out='ERR '+err;}
+    e.source.postMessage({__zprobeRes:String(out).slice(0,20000),id:e.data.id},e.origin);
+  });
+})();

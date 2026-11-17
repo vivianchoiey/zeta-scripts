@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.21.1
+// @version      1.21.2
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -846,7 +846,7 @@ function makeDohyungOutfit(scene){
   const home=/집에서|집 안|집안|거실|침실|침대|소파|부엌|주방|자취방|원룸/.test(sc)&&!/출근|회사|사무실|외출|나가|약속|데이트/.test(sc);
   if(home)return `집 편한 차림 — ${rnd(DOHYUNG_HOME.top)}, ${rnd(DOHYUNG_HOME.bottom)}`;
   const work=/회사|사무실|출근|회의|미팅|업무|야근|퇴근|출장|거래처|프레젠테이션|발표|면접|결혼식|장례식|정장|수트/.test(sc);
-  const off=/주말|휴일|쉬는 날|연차|휴가|사복|캐주얼|데이트|여행|캠핑|산책|호프|술집|포차|편의점|마트|동창회|동기 모임/.test(sc);
+  const off=/주말|휴일|쉬는 날|연차|휴가|사복|캐주얼|데이트|여행|캠핑|산책|호프|술집|포차|편의점|마트|동창회|동기 모임|바다|해변|공원|카페|전시|영화관|드라이브|놀이공원/.test(sc);
   if(work||(!off&&Math.random()<0.7)){
     const parts=[`${rnd(DOHYUNG_SUIT.brand)} ${rnd(DOHYUNG_SUIT.color)} 울 수트(${rnd(DOHYUNG_SUIT.cut)})`];
     const shirt=rnd(DOHYUNG_SUIT.shirt);let tie=rnd(DOHYUNG_SUIT.tie);
@@ -860,6 +860,7 @@ function makeDohyungOutfit(scene){
   let top=rnd(DOHYUNG_OFF.top),outer=rnd(DOHYUNG_OFF.outer);
   if(summer){top=rnd(['폴로 랄프로렌 흰색 피케 폴로셔츠','폴로 랄프로렌 네이비 피케 폴로셔츠','폴로 랄프로렌 흰색 옥스퍼드 버튼다운 셔츠(소매 걷음)','폴로 랄프로렌 하늘색 린넨 셔츠']);outer='없음';}
   else if(winter&&(outer==='없음'||/카디건|블레이저/.test(outer)))outer=rnd(['네이비 발마칸 코트','카멜 폴로 코트','폴로 랄프로렌 헤링본 트위드 재킷 위 네이비 울 코트']);
+  if(/카디건/.test(outer)&&/니트/.test(top))outer=rnd(['폴로 랄프로렌 네이비 블레이저(금장 단추)','없음']);
   const parts=[top,rnd(DOHYUNG_OFF.bottom)];
   if(outer!=='없음')parts.push(outer);
   parts.push(rnd(DOHYUNG_OFF.shoes));

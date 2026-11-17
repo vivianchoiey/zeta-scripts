@@ -41,13 +41,21 @@
   },true);
 })();
 
-/* 임시 진단: 채팅 프레임 안 DOM 구조를 바깥 화면에서 확인하기 위한 읽기 전용 응답기 (테마 대응 끝나면 삭제) */
+/* 임시 진단: 채팅 프레임 안 DOM 구조를 바깥으로 보내 테마 대응용으로 확인 (끝나면 삭제) */
 (function(){
-  if(location.hostname!=='frame.pingpong.ai'||window.__zprobe)return;window.__zprobe=1;
-  window.addEventListener('message',function(e){
-    if(!/^https:\/\/([a-z0-9-]+\.)?zeta-ai\.io$/.test(e.origin)||!e.data||!e.data.__zprobe)return;
-    var q=e.data.__zprobe,out;
-    try{out=(new Function('d','return ('+q+')'))(document);out=JSON.stringify(out);}catch(err){out='ERR '+err;}
-    e.source.postMessage({__zprobeRes:String(out).slice(0,20000),id:e.data.id},e.origin);
-  });
+  if(location.hostname!=='frame.pingpong.ai'||window.__zprobe2)return;window.__zprobe2=1;
+  function chain(el,n){var o=[];for(var i=0;i<n&&el&&el!==document.documentElement;i++){var cs=getComputedStyle(el);o.push(el.tagName+'.'+String(el.className).slice(0,160)+' [sc '+(el.getAttribute('data-sentry-component')||'')+'] bg:'+cs.backgroundColor+' col:'+cs.color+' bd:'+cs.borderTopWidth+' '+cs.borderTopColor);el=el.parentElement}return o}
+  function textEl(re){var all=document.querySelectorAll('body *');for(var i=all.length-1;i>=0;i--){var e=all[i];for(var j=0;j<e.childNodes.length;j++){var n=e.childNodes[j];if(n.nodeType===3&&re.test(n.nodeValue))return e}}return null}
+  function dump(){
+    var sc={};document.querySelectorAll('[data-sentry-component]').forEach(function(e){sc[e.getAttribute('data-sentry-component')]=1});
+    var cls={};document.querySelectorAll('[class]').forEach(function(e){String(e.className).split(/\s+/).forEach(function(c){if(/bg-|bubble|narrat|rounded-[lr]|self-(start|end)|text-white/.test(c))cls[c]=1})});
+    var em=document.querySelector('.chat em, em');var narr=document.querySelector('[data-sentry-component="NarratorBubble"]');
+    var data={sentry:Object.keys(sc),classes:Object.keys(cls).slice(0,150),styles:[].map.call(document.querySelectorAll('style[id]'),function(s){return s.id}),
+      body:document.body.className+' | html:'+document.documentElement.className,
+      emChain:em?chain(em,9):null,narrChain:narr?chain(narr.querySelector('.chat,p')||narr,8):null,
+      userChain:(function(){var u=document.querySelector('[class*=bg-bubble-user],[data-sentry-component=RightTextContent] .chat');return u?chain(u,7):null})(),
+      header:(function(){var h=document.querySelector('header');return h?chain(h,3):null})()};
+    try{window.parent.postMessage({__zprobeAuto:JSON.stringify(data)},'*')}catch(e){}
+  }
+  setTimeout(dump,5000);setTimeout(dump,10000);setInterval(dump,15000);
 })();

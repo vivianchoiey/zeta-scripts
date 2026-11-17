@@ -91,6 +91,14 @@
       "frameRemote": "https://clean-theme-js.netlify.app/clean-cozy.js"
     },
     {
+      "id": "pastel-cat-player",
+      "name": "Pastel Cat Player · 파스텔 고양이 테마 (랜덤 50색)",
+      "file": "scripts/pastel-cat-player.js",
+      "runAt": "idle",
+      "group": "",
+      "default": false
+    },
+    {
       "id": "sms-quote",
       "name": "문자 자동 카드 (문자: → >)",
       "file": "scripts/sms-quote.js",

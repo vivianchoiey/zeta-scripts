@@ -1,15 +1,27 @@
 // ==UserScript==
 // @name         제타 채팅 프레임 호환 (테마용)
 // @namespace    vivianchoiey-zeta-frame-compat
-// @version      1.0.0
+// @version      1.1.0
 // @description  2026-11 제타가 채팅방을 frame.pingpong.ai 안에서 그리면서 data-sentry-component 표시와 <main>이 사라짐 → 예전 이름표를 다시 붙이고 테마 CSS의 main 선택자를 프레임 구조에 맞춰 복제해서, 기존 테마들이 그대로 먹게 함
 // @match        https://frame.pingpong.ai/*
+// @match        https://zeta-ai.io/*
 // @grant        none
 // ==/UserScript==
 (function(){
   'use strict';
-  if(location.hostname!=='frame.pingpong.ai'||window.__zetaFrameCompatV1)return;window.__zetaFrameCompatV1=1;
   var D=document;
+  // ── 바깥 화면(zeta-ai.io): 채팅 프레임을 화면 전체로 펼쳐서, 안·밖 테마가 따로 놀지 않게 함 (채팅 폭은 프레임 안에서 480px로 유지)
+  if(location.hostname!=='frame.pingpong.ai'){
+    if(window.top!==window||window.__zetaFrameCompatTop)return;window.__zetaFrameCompatTop=1;
+    var css='html.zfc-room iframe[src*="frame.pingpong.ai"]{position:fixed!important;inset:0!important;left:0!important;top:0!important;width:100vw!important;height:100%!important;max-width:none!important;z-index:2147480000!important;border:0!important;background:transparent!important}';
+    var st=D.createElement('style');st.id='zfc-top';st.textContent=css;(D.head||D.documentElement).appendChild(st);
+    var tick=function(){if(!st.isConnected)(D.head||D.documentElement).appendChild(st);D.documentElement.classList.toggle('zfc-room',!!D.querySelector('iframe[src*="frame.pingpong.ai"]'));};
+    tick();setInterval(tick,500);
+    return;
+  }
+  if(window.__zetaFrameCompatV1)return;window.__zetaFrameCompatV1=1;
+  // ── 프레임 안: 화면 전체로 펼쳐진 프레임에서 채팅 영역만 가운데 480px로
+  (function(){var st=D.createElement('style');st.id='zfc-frame';st.textContent='#zeta{max-width:480px!important;margin-left:auto!important;margin-right:auto!important;}';(D.head||D.documentElement).appendChild(st);setInterval(function(){if(!st.isConnected)(D.head||D.documentElement).appendChild(st)},1500);})();
   function tag(el,name){if(el&&el.nodeType===1&&el.getAttribute('data-sentry-component')!==name)el.setAttribute('data-sentry-component',name);}
   function up(el,n){while(el&&n-->0)el=el.parentElement;return el;}
   function run(){

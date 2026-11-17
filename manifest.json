@@ -2,6 +2,14 @@
   "version": 1,
   "scripts": [
     {
+      "id": "frame-compat",
+      "name": "채팅 프레임 호환 (테마용, 끄지 마세요)",
+      "file": "scripts/frame-compat.js",
+      "runAt": "idle",
+      "group": "",
+      "default": true
+    },
+    {
       "id": "chat2img-codex",
       "name": "코냅샷 (Chat2Img-Codex)",
       "file": "scripts/chat2img-codex.js",

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         제타 스크립트 마스터 로더
 // @namespace    vivianchoiey-zeta-scripts
-// @version      1.1.0
+// @version      1.1.1
 // @description  GitHub(vivianchoiey/zeta-scripts)에 있는 제타 스크립트들을 불러옴 — 스크립트 켜고 끄기는 Tampermonkey 메뉴에서
 // @match        https://zeta-ai.io/*
 // @match        https://www.zeta-ai.io/*
@@ -94,6 +94,7 @@ getManifest().then(m=>{
   m.scripts.forEach(s=>{
     if(!enabled[s.id])return;
     if(!IS_TOP&&!IN_FRAME)return;
+    if(IN_FRAME&&/^chat2img/.test(s.id))return; // 코냅샷은 아직 바깥 화면에서만 (프레임 대응은 따로 확인 후)
     if(s.runAt==='start')inject(s);
     else whenReady(()=>inject(s));
   });

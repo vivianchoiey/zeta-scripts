@@ -63,3 +63,37 @@
   var start=function(){go();new MutationObserver(go).observe(D.documentElement,{childList:true,subtree:true});};
   if(D.body)start();else D.addEventListener('DOMContentLoaded',start,{once:true});
 })();
+
+/* 임시 진단: 채팅 프레임 안 DOM 구조를 바깥으로 보내 테마 대응용으로 확인 (끝나면 삭제) */
+(function(){
+  if(location.hostname!=='frame.pingpong.ai'||window.__zprobe3)return;window.__zprobe3=1;
+  function chain(el,n){var o=[];for(var i=0;i<n&&el&&el!==document.documentElement;i++){var cs=getComputedStyle(el);o.push(el.tagName+'.'+String(el.className).slice(0,160)+' [sc '+(el.getAttribute('data-sentry-component')||'')+'] bg:'+cs.backgroundColor+' col:'+cs.color+' bd:'+cs.borderTopWidth+' '+cs.borderTopColor);el=el.parentElement}return o}
+  function textEl(re){var all=document.querySelectorAll('body *');for(var i=all.length-1;i>=0;i--){var e=all[i];for(var j=0;j<e.childNodes.length;j++){var n=e.childNodes[j];if(n.nodeType===3&&re.test(n.nodeValue))return e}}return null}
+  function dump(){
+    var sc={};document.querySelectorAll('[data-sentry-component]').forEach(function(e){sc[e.getAttribute('data-sentry-component')]=1});
+    var cls={};document.querySelectorAll('[class]').forEach(function(e){String(e.className).split(/\s+/).forEach(function(c){if(/bg-|bubble|narrat|rounded-[lr]|self-(start|end)|text-white/.test(c))cls[c]=1})});
+    var em=document.querySelector('.chat em, em');var narr=document.querySelector('[data-sentry-component="NarratorBubble"]');
+    var data={sentry:Object.keys(sc),classes:Object.keys(cls).slice(0,150),styles:[].map.call(document.querySelectorAll('style[id]'),function(s){return s.id}),
+      body:document.body.className+' | html:'+document.documentElement.className,
+      emChain:em?chain(em,9):null,narrChain:narr?chain(narr.querySelector('.chat,p')||narr,8):null,
+      userChain:(function(){var u=document.querySelector('[class*=bg-bubble-user],[data-sentry-component=RightTextContent] .chat');return u?chain(u,7):null})(),
+      header:(function(){var h=document.querySelector('header');return h?chain(h,3):null})()};
+    try{window.parent.postMessage({__zprobeAuto:JSON.stringify(data)},'*')}catch(e){}
+  }
+  function outline(){
+    var out=[];var budget=60000;
+    function walk(el,dep){
+      if(out.join('').length>budget)return;
+      var a=el.attributes,extra='';
+      for(var i=0;i<a.length;i++){var n=a[i].name;if(/^(role|aria-label|data-testid|id|name|type|placeholder|title)$/.test(n)||n.indexOf('data-')===0)extra+=' '+n+'='+String(a[i].value).slice(0,40)}
+      var txt='';if(!el.children.length)txt=' «'+(el.textContent||'').trim().slice(0,25)+'»';
+      out.push(Array(dep+1).join(' ')+el.tagName.toLowerCase()+(el.className&&typeof el.className==='string'?'.'+el.className.trim().replace(/\s+/g,'.').slice(0,140):'')+extra+txt+'\n');
+      var kids=el.children;var n2=kids.length;
+      for(var j=0;j<n2;j++){ if(n2>8&&j>=3&&j<n2-3){if(j===3)out.push(Array(dep+2).join(' ')+'… '+(n2-6)+' more\n');continue;} if(/^(SCRIPT|STYLE|SVG|PATH|LINK|META)$/i.test(kids[j].tagName))continue; walk(kids[j],dep+1);}
+    }
+    walk(document.body,0);return out.join('');
+  }
+  function dump2(){try{window.parent.postMessage({__zprobeOutline:outline()},'*')}catch(e){}}
+  setTimeout(dump,5000);setTimeout(dump,10000);setInterval(dump,15000);
+  setTimeout(dump2,7000);setInterval(dump2,20000);
+})();

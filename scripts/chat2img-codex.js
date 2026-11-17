@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.20.0
+// @version      1.21.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -818,6 +818,60 @@ function pickWoohyunOutfit(scene){
   try{localStorage.setItem(LAST_WOOHYUN_KEY,pick);}catch(e){}
   return pick;
 }
+// ===== 권도형 전용 풀 (고정 프롬프트에 '권도형'이 있을 때만 작동) =====
+// 32살 회사원, 188cm 넓은 어깨. 정장 위주(회사·업무·기본값), 쉬는 날은 깔끔한 미니멀 캐주얼, 집에서는 편한 차림.
+const DOHYUNG_SUIT={
+  color:['차콜','네이비','블랙','미드나잇 네이비','다크 그레이'],
+  cut:['슬림핏 투버튼 싱글 재킷','노치 라펠 싱글 재킷','피크 라펠 싱글 재킷','더블 브레스티드 재킷'],
+  shirt:['깨끗한 흰색 셔츠','옅은 하늘색 셔츠','흰색 셔츠','블랙 셔츠'],
+  tie:['네이비 솔리드 넥타이','블랙 솔리드 넥타이','버건디 솔리드 넥타이','다크 그린 니트 타이','차콜 니트 타이','없음(맨 위 단추 하나 풀림)','없음(맨 위 단추 하나 풀림)'],
+  shoes:['블랙 옥스퍼드','블랙 더비','블랙 페니 로퍼','다크 브라운 옥스퍼드'],
+  acc:['실버 메탈 시계','블랙 가죽 스트랩 시계','없음'],
+};
+const DOHYUNG_OFF={
+  top:['흰색 옥스퍼드 셔츠','네이비 크루넥 니트','블랙 크루넥 니트','차콜 하프집업 니트','흰 티셔츠 위 오트밀 크루넥 니트','블랙 터틀넥 니트','네이비 니트 폴로','몸에 맞는 블랙 반팔 티셔츠','몸에 맞는 흰색 반팔 티셔츠','그레이 크루넥 맨투맨','스트라이프 코튼 셔츠'],
+  bottom:['블랙 슬랙스','차콜 와이드 슬랙스','네이비 울 팬츠','진청 스트레이트 데님','크림 치노 팬츠','블랙 스트레이트 팬츠'],
+  outer:['네이비 싱글 울 코트','블랙 싱글 울 코트','블랙 맥코트','차콜 캐주얼 울 블레이저','네이비 니트 카디건','미니멀한 블랙 가죽 셔츠 재킷','없음','없음','없음'],
+  shoes:['흰색 미니멀 가죽 스니커즈','블랙 로퍼','블랙 첼시 부츠','다크 브라운 스웨이드 로퍼','블랙 미니멀 스니커즈'],
+  acc:['실버 메탈 시계','블랙 가죽 스트랩 시계','없음','없음'],
+};
+const DOHYUNG_HOME={
+  top:['헐렁한 흰색 반팔 티셔츠','네이비 긴팔 티셔츠','그레이 맨투맨','블랙 후드티','오버핏 회색 반팔 티셔츠'],
+  bottom:['그레이 스웻 팬츠','블랙 이지 팬츠','네이비 코튼 이지 팬츠'],
+};
+const DOHYUNG_RULE='. 권도형은 32살 회사원, 188cm에 넓은 어깨와 탄탄한 체격. 몸에 잘 맞는 깔끔한 핏. 베이지·브라운·밝은 회색 정장, 광택 번쩍이는 원단, 헐렁한 정장, 큰 로고, 알록달록한 조잡한 조합, 체크 셔츠는 금지.';
+function makeDohyungOutfit(scene){
+  const sc=scene||'';
+  const home=/집에서|집 안|집안|거실|침실|침대|소파|부엌|주방|자취방|원룸/.test(sc)&&!/출근|회사|사무실|외출|나가|약속|데이트/.test(sc);
+  if(home)return `집 편한 차림 — ${rnd(DOHYUNG_HOME.top)}, ${rnd(DOHYUNG_HOME.bottom)}`;
+  const work=/회사|사무실|출근|회의|미팅|업무|야근|퇴근|출장|거래처|프레젠테이션|발표|면접|결혼식|장례식|정장|수트/.test(sc);
+  const off=/주말|휴일|쉬는 날|연차|휴가|사복|캐주얼|데이트|여행|캠핑|산책|호프|술집|포차|편의점|마트|동창회|동기 모임/.test(sc);
+  if(work||(!off&&Math.random()<0.7)){
+    const parts=[`${rnd(DOHYUNG_SUIT.color)} 울 수트(${rnd(DOHYUNG_SUIT.cut)})`];
+    const shirt=rnd(DOHYUNG_SUIT.shirt);let tie=rnd(DOHYUNG_SUIT.tie);if(shirt==='블랙 셔츠')tie='없음(맨 위 단추 하나 풀림)';
+    parts.push(shirt);parts.push(/^없음/.test(tie)?'넥타이 없이 셔츠 맨 위 단추 하나 풀림':tie);
+    if(/퇴근|야근|술|회식|밤/.test(sc))parts.push(rnd(['재킷을 벗어 한쪽 팔에 걸침','넥타이를 느슨하게 풀고 셔츠 소매를 걷음','재킷 단추를 풀어 둠']));
+    parts.push(rnd(DOHYUNG_SUIT.shoes));
+    const acc=rnd(DOHYUNG_SUIT.acc);if(acc!=='없음')parts.push(acc);
+    return `정장 — ${parts.join(', ')}`;
+  }
+  const summer=/여름|더운|더워|폭염|바다|해변|반팔|장마/.test(sc),winter=/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|연말|입김/.test(sc);
+  let top=rnd(DOHYUNG_OFF.top),outer=rnd(DOHYUNG_OFF.outer);
+  if(summer){top=rnd(['흰색 옥스퍼드 셔츠','몸에 맞는 블랙 반팔 티셔츠','몸에 맞는 흰색 반팔 티셔츠','네이비 반팔 니트 폴로','스트라이프 코튼 셔츠']);outer='없음';}
+  else if(winter&&(outer==='없음'||/카디건|가죽/.test(outer)))outer=rnd(['네이비 싱글 울 코트','블랙 싱글 울 코트','블랙 맥코트']);
+  const parts=[top,rnd(DOHYUNG_OFF.bottom)];
+  if(outer!=='없음')parts.push(outer);
+  parts.push(rnd(DOHYUNG_OFF.shoes));
+  const acc=rnd(DOHYUNG_OFF.acc);if(acc!=='없음')parts.push(acc);
+  return `깔끔한 미니멀 캐주얼 — ${parts.join(', ')}`;
+}
+const LAST_DOHYUNG_KEY='chat2img_codex_last_dohyung';
+function pickDohyungOutfit(scene){
+  let last='';try{last=localStorage.getItem(LAST_DOHYUNG_KEY)||'';}catch(e){}
+  let pick=makeDohyungOutfit(scene);let g=0;while(pick===last&&g++<5)pick=makeDohyungOutfit(scene);
+  try{localStorage.setItem(LAST_DOHYUNG_KEY,pick);}catch(e){}
+  return pick;
+}
 // 담윤 방에서 임무·센터 장면이면 여주(백호 센티넬)도 전투복
 const F_SENTINEL_UNIFORM=[
   '흰색 하이넥 전투 슈트(몸에 맞게 떨어지는 매끈한 소재), 허리 전술 벨트, 검정 전술 장갑, 컴뱃 부츠',
@@ -940,6 +994,12 @@ window.fetch=function(input,init){
             const yo=pickYuniOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n윤이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+yo+YUNI_RULE;
             console.log('[Chat2Img-Codex] 윤이 의상:',yo);
+          }
+          // 권도형: 정장 위주, 쉬는 날엔 깔끔한 미니멀 캐주얼, 집에서는 편한 차림
+          if(characterText.includes('권도형')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const dh=pickDohyungOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n권도형 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+dh+DOHYUNG_RULE;
+            console.log('[Chat2Img-Codex] 권도형 의상:',dh);
           }
           body.prompt=p+add+NO_BUCKET;
           init={...init,body:JSON.stringify(body)};

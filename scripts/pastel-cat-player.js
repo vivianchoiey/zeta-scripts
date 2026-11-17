@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pastel Cat Player (랜덤 파스텔 테마)
 // @namespace    vivianchoiey-pastel-cat-player
-// @version      1.2.0
+// @version      1.2.1
 // @description  파스텔 고양이 발바닥 + LP판 프로필 테마, 들어갈 때마다 50가지 색 중 랜덤. 북마클릿을 유저스크립트로 바꾸고 2026-11 제타 채팅 프레임(frame.pingpong.ai) 대응
 // @match        https://zeta-ai.io/*
 // @match        https://www.zeta-ai.io/*
@@ -31,6 +31,7 @@ function __outCss(paw){
   css+='body :is([class*="text-white/"],[class~=text-footer],[class~=text-gray-300],[class~=text-gray-400],[class~=text-gray-500],[class~=text-gray-600],[class~=text-gray-700]){color:'+SUB+'!important}';
   css+='body :is([class*="bg-black/"],[class~=from-black],[class*="from-black/"]),body :is([class*="bg-black/"],[class~=from-black],[class*="from-black/"]) *{color:#fff!important}';
   css+='body :is([class*="border-white/"],[class*="border-b-white/"],[class*="border-t-white/"],[class*="border-gray-"]){border-color:hsl(~h 26% 42% / .15)!important}';
+  css+='body :is([class*=bg-primary],[class*=bg-purple],[class*=bg-violet]),body :is([class*=bg-primary],[class*=bg-purple],[class*=bg-violet]) *{color:#fff!important}';
   // 위 제목줄·아래 메뉴
   css+='html>body>header{background:'+PL+'!important;border:0!important;border-radius:0 0 18px 18px!important;box-shadow:0 3px 0 '+LINE+'!important}';
   css+='body div:has(>#navigation-item-Home){background:'+PL+'!important;border-radius:18px 18px 0 0!important;box-shadow:0 -3px 0 '+LINE+'!important;border:0!important}';

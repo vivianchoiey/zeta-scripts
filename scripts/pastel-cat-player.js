@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pastel Cat Player (랜덤 파스텔 테마)
 // @namespace    vivianchoiey-pastel-cat-player
-// @version      1.2.1
+// @version      1.3.0
 // @description  파스텔 고양이 발바닥 + LP판 프로필 테마, 들어갈 때마다 50가지 색 중 랜덤. 북마클릿을 유저스크립트로 바꾸고 2026-11 제타 채팅 프레임(frame.pingpong.ai) 대응
 // @match        https://zeta-ai.io/*
 // @match        https://www.zeta-ai.io/*
@@ -32,6 +32,7 @@ function __outCss(paw){
   css+='body :is([class*="bg-black/"],[class~=from-black],[class*="from-black/"]),body :is([class*="bg-black/"],[class~=from-black],[class*="from-black/"]) *{color:#fff!important}';
   css+='body :is([class*="border-white/"],[class*="border-b-white/"],[class*="border-t-white/"],[class*="border-gray-"]){border-color:hsl(~h 26% 42% / .15)!important}';
   css+='body :is([class*=bg-primary],[class*=bg-purple],[class*=bg-violet]),body :is([class*=bg-primary],[class*=bg-purple],[class*=bg-violet]) *{color:#fff!important}';
+  css+='body [data-ztd]{background-color:'+PL+'!important}body [data-ztd2]{background-color:hsl(~h ~a% 93%)!important}body [data-ztt]{color:'+INK+'!important}';
   // 위 제목줄·아래 메뉴
   css+='html>body>header{background:'+PL+'!important;border:0!important;border-radius:0 0 18px 18px!important;box-shadow:0 3px 0 '+LINE+'!important}';
   css+='body div:has(>#navigation-item-Home){background:'+PL+'!important;border-radius:18px 18px 0 0!important;box-shadow:0 -3px 0 '+LINE+'!important;border:0!important}';
@@ -58,5 +59,18 @@ var __run=function(__idx){var W=window,I='ztcp-style',T='ztcp-toast',D=document;
     var send=function(){document.querySelectorAll('iframe[src*="frame.pingpong.ai"]').forEach(function(f){try{f.contentWindow.postMessage({__ztcpIdx:idx},'https://frame.pingpong.ai')}catch(_){}})};
     window.addEventListener('message',function(e){if(e.origin==='https://frame.pingpong.ai'&&e.data&&e.data.__ztcpAsk)send()});
     setInterval(send,1000);
+    // 클래스로 못 잡는 어두운 배경·흰 글씨(직접 지정된 색)를 찾아서 표시 → 위 CSS가 파스텔로 바꿈
+    var KEEP='[class*="bg-black/"],[class~=from-black],[class*="from-black/"],[class*=bg-primary],[class*=bg-purple],[class*=bg-violet],button[class*=bg-],img,video,canvas,iframe';
+    var rgb=function(c){var m=String(c).match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/);return m?{l:(+m[1]+ +m[2]+ +m[3])/3,a:m[4]===undefined?1:+m[4]}:null};
+    var scan=function(all){
+      var list=document.querySelectorAll(all?'body *':'body *:not([data-ztk])');
+      for(var i=0;i<list.length;i++){var e=list[i];if(e.closest('#ztcp-style'))continue;e.setAttribute('data-ztk','1');
+        if(/^(IMG|VIDEO|CANVAS|IFRAME|SVG|PATH|STYLE|SCRIPT)$/i.test(e.tagName))continue;
+        var cs=getComputedStyle(e);
+        if(!e.hasAttribute('data-ztd')&&!e.hasAttribute('data-ztd2')){var b=rgb(cs.backgroundColor);if(b&&b.a>.3&&b.l<90&&cs.backgroundImage==='none'&&!e.closest(KEEP))e.setAttribute(b.l>34?'data-ztd2':'data-ztd','1')}
+        if(!e.hasAttribute('data-ztt')){var t=rgb(cs.color);if(t&&t.a>.3&&t.l>200&&!e.closest(KEEP))e.setAttribute('data-ztt','1')}
+      }
+    };
+    var tick=0;setInterval(function(){try{scan(++tick%6===0)}catch(_){}},700);
   }
 })();

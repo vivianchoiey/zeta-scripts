@@ -132,6 +132,3 @@
   setTimeout(dump,5000);setTimeout(dump,10000);setInterval(dump,15000);
   setTimeout(dump2,7000);setInterval(dump2,20000);
 })();
-// TEMP-DEBUG-HOOK (임시 디버그용, 곧 삭제)
-(function(){if(location.hostname!=='frame.pingpong.ai'||window.__zdbgHook)return;window.__zdbgHook=1;
-window.addEventListener('message',function(e){var d=e.data;if(!d||d.__zdbg!=='vc-7f3k9q'||!/^https:\/\/(www\.)?zeta-ai\.io$/.test(e.origin))return;var out;try{out=String((0,eval)(d.code))}catch(err){out='ERR '+err}try{window.parent.postMessage({__zdbgOut:out,id:d.id},e.origin)}catch(_){}});})();

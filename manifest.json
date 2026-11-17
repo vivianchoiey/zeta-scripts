@@ -113,6 +113,14 @@
       "runAt": "start",
       "group": "",
       "default": false
+    },
+    {
+      "id": "ios-keyboard-fix",
+      "name": "iOS 사파리 키보드 내려감 픽스",
+      "file": "scripts/ios-keyboard-fix.js",
+      "runAt": "idle",
+      "group": "",
+      "default": true
     }
   ]
 }

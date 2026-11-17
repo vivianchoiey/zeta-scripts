@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         제타 채팅 프레임 호환 (테마용)
 // @namespace    vivianchoiey-zeta-frame-compat
-// @version      1.2.0
+// @version      1.3.0
 // @description  2026-11 제타가 채팅방을 frame.pingpong.ai 안에서 그리면서 data-sentry-component 표시와 <main>이 사라짐 → 예전 이름표를 다시 붙이고 테마 CSS의 main 선택자를 프레임 구조에 맞춰 복제해서, 기존 테마들이 그대로 먹게 함
 // @match        https://frame.pingpong.ai/*
 // @match        https://zeta-ai.io/*
@@ -71,6 +71,28 @@
       new MutationObserver(function(){c.textContent=(st.textContent||'').replace(MAINRE,'$1#zeta');}).observe(st,{childList:true,characterData:true,subtree:true});
     });
   }
+  // 테마가 채팅 목록 칸에만 그린 배경(무늬)을 화면 전체(body)로 옮겨서 안·밖이 같은 배경이 되게 함
+  var hoisted=null;
+  function hoist(){
+    var log=D.querySelector('#zeta [role="log"]');if(!log)return;
+    var el=log,pick=null;
+    for(var i=0;i<8&&el&&el!==D.body;i++,el=el.parentElement){
+      if(el===hoisted)continue;
+      var cs=getComputedStyle(el);
+      if(cs.backgroundImage!=='none'){pick=el;break;}
+    }
+    if(!pick)return;
+    var cs2=getComputedStyle(pick);
+    var key=cs2.backgroundImage.length+'|'+cs2.backgroundImage.slice(0,200)+'|'+cs2.backgroundColor;
+    if(D.body.getAttribute('data-zfc-bg')===key)return;
+    var b=D.body.style,h=D.documentElement.style;
+    ['background-color','background-image','background-size','background-repeat','background-position'].forEach(function(p){
+      var v=cs2.getPropertyValue(p);b.setProperty(p,v,'important');h.setProperty(p,v,'important');});
+    b.setProperty('background-attachment','fixed','important');h.setProperty('background-attachment','fixed','important');
+    D.body.setAttribute('data-zfc-bg',key);
+    pick.style.setProperty('background','transparent','important');hoisted=pick;
+  }
+  setInterval(function(){try{hoist()}catch(e){}},1200);
   var q=0;function go(){if(q)return;q=1;requestAnimationFrame(function(){q=0;try{run();cloneMain();}catch(e){}});}
   var start=function(){go();new MutationObserver(go).observe(D.documentElement,{childList:true,subtree:true});};
   if(D.body)start();else D.addEventListener('DOMContentLoaded',start,{once:true});

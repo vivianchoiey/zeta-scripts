@@ -79,7 +79,8 @@
       "file": "scripts/clean-cozy.js",
       "runAt": "idle",
       "group": "",
-      "default": false
+      "default": false,
+      "frameRemote": "https://clean-theme-js.netlify.app/clean-cozy.js"
     },
     {
       "id": "sms-quote",

@@ -9,11 +9,15 @@
 // ==/UserScript==
 (function(){
   'use strict';
-  if(!/(^|\.)zeta-ai\.io$/.test(location.hostname))return;
-  var s=document.createElement('script');
-  s.src="https://clean-theme-js.netlify.app/clean-cozy.js"+'?v='+Date.now();
-  s.onerror=function(){console.error('[Clean Cozy] JS 불러오기 실패');};
-  (document.head||document.documentElement).appendChild(s);
+  var IN_FRAME=location.hostname==='frame.pingpong.ai';
+  if(!/(^|\.)zeta-ai\.io$/.test(location.hostname)&&!IN_FRAME)return;
+  // 채팅 프레임 안에서는 마스터 로더가 Clean Cozy 본체를 대신 넣어줌 (본체가 zeta-ai.io에서만 돌게 되어 있어서)
+  if(!IN_FRAME){
+    var s=document.createElement('script');
+    s.src="https://clean-theme-js.netlify.app/clean-cozy.js"+'?v='+Date.now();
+    s.onerror=function(){console.error('[Clean Cozy] JS 불러오기 실패');};
+    (document.head||document.documentElement).appendChild(s);
+  }
   // 보정: 캐릭터 말풍선 테두리 복구 + 내레이션 칸 가운데 꽉 차게 (Clean Cozy v41이 말풍선 테두리를 없애고 내레이션을 왼쪽으로 붙여서)
   var B='html body [role="log"][aria-label="Chat messages"] [data-sentry-component="LeftTextContent"] [data-sentry-component="ChatBubbleContainer"][data-sentry-component]';
   var N='html body [role="log"][aria-label="Chat messages"] [data-sentry-component="NarratorBubble"]';

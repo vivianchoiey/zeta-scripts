@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         제타 스크립트 마스터 로더
 // @namespace    vivianchoiey-zeta-scripts
-// @version      1.1.1
+// @version      1.2.0
 // @description  GitHub(vivianchoiey/zeta-scripts)에 있는 제타 스크립트들을 불러옴 — 스크립트 켜고 끄기는 Tampermonkey 메뉴에서
 // @match        https://zeta-ai.io/*
 // @match        https://www.zeta-ai.io/*
@@ -15,6 +15,7 @@
 // @grant        GM_addElement
 // @connect      vivianchoiey.github.io
 // @connect      raw.githubusercontent.com
+// @connect      clean-theme-js.netlify.app
 // @updateURL    https://vivianchoiey.github.io/zeta-scripts/loader/zeta-master.user.js
 // @downloadURL  https://vivianchoiey.github.io/zeta-scripts/loader/zeta-master.user.js
 // ==/UserScript==
@@ -53,6 +54,11 @@ const injectText=(s,code)=>{
   catch(e){const el=d.createElement('script');el.textContent=code;(d.head||d.documentElement).appendChild(el);el.remove();}
 };
 const inject=s=>{
+  if(IN_FRAME&&s.frameRemote){
+    // 남이 만든 원격 테마: zeta-ai.io 에서만 돌게 막혀 있어서 주소 검사만 통과시키고 넣음
+    GM_xmlhttpRequest({method:'GET',url:s.frameRemote+'?v='+Date.now(),timeout:10000,
+      onload:r=>{if(r.status>=200&&r.status<300)injectText(s,r.responseText.replace(/location\.hostname/g,'"zeta-ai.io"').replace(/location\.host\b/g,'"zeta-ai.io"'));}});
+  }
   if(IN_FRAME){
     // 프레임 안은 다른 도메인이라 <script src>가 막힐 수 있어서 코드를 받아 직접 넣음
     GM_xmlhttpRequest({method:'GET',url:BASE+s.file+'?v='+Date.now(),timeout:10000,

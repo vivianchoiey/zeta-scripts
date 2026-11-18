@@ -67,11 +67,18 @@
   let tick=0;setInterval(()=>{try{scan(++tick%6===0)}catch(_){}},700);
   // 채팅 글씨 1px 키우기 (대사·지문·내레이션·이름 전부). 원래 크기를 한 번 재서 +1px로 고정
   if(IN_FRAME){
+    let readyAt=0;
     const grow=()=>{
       const log=D.querySelector('[role="log"]');if(!log)return;
+      // 테마 스타일이 다 들어온 뒤에만 잼 (테마가 글씨 크기를 바꾸기 전에 재면 너무 커짐)
+      if(!D.getElementById('zeta-cozy-style')){readyAt=0;return}
+      if(!readyAt){readyAt=Date.now();return}
+      if(Date.now()-readyAt<1200)return;
       // 먼저 전부 재고 나서 한꺼번에 키움 (부모가 먼저 커져서 자식이 두 번 커지는 것 방지)
       const todo=[];
-      log.querySelectorAll('*:not([data-zfs])').forEach(e=>{
+      // 말풍선·내레이션 글씨만 (속마음·상태창 같은 정보 박스는 건드리지 않음)
+      log.querySelectorAll(':is([data-sentry-component="ChatBubbleContainer"],[data-sentry-component="NarratorBubble"]) :not([data-zfs]),[data-sentry-component="ChatBubbleContainer"]:not([data-zfs])').forEach(e=>{
+        if(e.closest('[data-sentry-component="InfoBoxContent"],[data-ztib]'))return;
         if(/^(IMG|SVG|PATH|VIDEO|CANVAS|BUTTON)$/i.test(e.tagName))return;
         let has=false;for(const n of e.childNodes)if(n.nodeType===3&&n.nodeValue.trim()){has=true;break}
         if(!has)return;

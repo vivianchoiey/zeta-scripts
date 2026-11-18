@@ -2818,3 +2818,50 @@ const themes=[theme0,theme1,theme2,theme4,theme5,theme7,theme8,theme9,themeBunge
   window.__zetaRandomEightPicked=['토끼','눈사람','다람쥐','크리스마스','검정고양이','푸딩·메론소다','멜론빵 거북이','파스텔 우주','붕어빵 가게','비눗방울 햄스터','치즈 생쥐'][picked];
 
 })();
+
+// ── 추가 보정: 채팅방 밖(플롯 만들기·목록·홈 등) 흰 글씨/검정 칸, 채팅 위쪽 모델 이름 흰 글씨 ──
+(()=>{
+  'use strict';
+  if(window.__zcExtraFixV1)return;window.__zcExtraFixV1=1;
+  const IN_FRAME=location.hostname==='frame.pingpong.ai';
+  if(!IN_FRAME&&window.top!==window)return;
+  const D=document;
+  const css=D.createElement('style');css.id='zeta-cozy-extra-fix';
+  css.textContent=IN_FRAME?
+    '[data-ztlt]{color:var(--zc-text,#654838)!important;-webkit-text-fill-color:var(--zc-text,#654838)!important}'
+   :'html>body[class]{color:var(--zc-text,#654838)!important}'
+   +'body :is([class~=text-white],[class~=text-gray-50],[class~=text-gray-100],[class~=text-gray-200]):not(:is([class*=bg-primary],[class*=bg-purple],[class*=bg-violet],[class*="bg-black/"]) *):not([class*=bg-primary]){color:var(--zc-text,#654838)!important}'
+   +'body :is([class*="text-white/"],[class~=text-footer],[class~=text-gray-300],[class~=text-gray-400],[class~=text-gray-500]):not(:is([class*="bg-black/"],[class~=from-black]) *){color:var(--zc-sub,#A38271)!important}'
+   +'body :is(input,textarea)::placeholder{color:var(--zc-sub,#A38271)!important;-webkit-text-fill-color:var(--zc-sub,#A38271)!important}'
+   +'body :is(input,textarea,[contenteditable=true]){color:var(--zc-text,#654838)!important;-webkit-text-fill-color:var(--zc-text,#654838)!important;caret-color:var(--zc-text,#654838)}'
+   +'body [data-ztdk]{background-color:var(--zc-bg,#FFF9F0)!important}'
+   +'body [data-ztdk2]{background-color:color-mix(in srgb,var(--zc-border,#EAD5BE) 55%,#fff)!important}'
+   +'body [data-ztlt]{color:var(--zc-text,#654838)!important;-webkit-text-fill-color:var(--zc-text,#654838)!important}'
+   +'body :is([class~=from-gray-main],[class~=from-gray-sub1],[class~=from-gray-sub2]){--tw-gradient-from:var(--zc-bg,#FFF9F0)!important}'
+   +'body :is([class~=to-gray-main],[class~=to-gray-sub1],[class~=to-gray-sub2],[class~=via-gray-main]){--tw-gradient-to:var(--zc-bg,#FFF9F0)!important;--tw-gradient-via:var(--zc-bg,#FFF9F0)!important}'
+   +'body :is([class*="border-white/"],[class*="border-b-white/"],[class*="border-t-white/"]){border-color:var(--zc-border,#EAD5BE)!important}'
+   +'html,html *{scrollbar-color:var(--zc-border,#EAD5BE) transparent}';
+  (D.head||D.documentElement).appendChild(css);
+  setInterval(()=>{if(!css.isConnected)(D.head||D.documentElement).appendChild(css)},1500);
+  const rgb=c=>{const m=String(c).match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/);return m?{l:(+m[1]+ +m[2]+ +m[3])/3,a:m[4]===undefined?1:+m[4]}:null};
+  // 글씨 뒤에 실제로 깔린 배경이 밝은지 확인 (사진 위·진한 버튼 위 흰 글씨는 그대로 둠)
+  const bgUnder=e=>{for(let x=e,n=0;x&&n<14;x=x.parentElement,n++){const cs=getComputedStyle(x);if(cs.backgroundImage&&cs.backgroundImage!=='none')return 'img';const b=rgb(cs.backgroundColor);if(b&&b.a>.35)return b.l;if(/^(IMG|VIDEO|CANVAS)$/.test(x.tagName))return 'img';}return IN_FRAME?'img':255};
+  const scan=all=>{
+    const list=D.querySelectorAll(all?'body *':'body *:not([data-ztk2])');
+    for(const e of list){
+      e.setAttribute('data-ztk2','1');
+      if(/^(IMG|VIDEO|CANVAS|IFRAME|SVG|PATH|STYLE|SCRIPT|BR)$/i.test(e.tagName))continue;
+      if(!IN_FRAME&&!e.closest('#zeta')&&!e.hasAttribute('data-ztdk')&&!e.hasAttribute('data-ztdk2')){
+        const cs=getComputedStyle(e),b=rgb(cs.backgroundColor);
+        if(b&&b.a>.35&&b.l<90&&cs.backgroundImage==='none'&&!e.closest('[class*=bg-primary],[class*="bg-black/"],[class~=from-black],img,video'))e.setAttribute(b.l>34?'data-ztdk2':'data-ztdk','1');
+      }
+      if(!e.hasAttribute('data-ztlt')){
+        let has=false;for(const n of e.childNodes)if(n.nodeType===3&&n.nodeValue.trim()){has=true;break}
+        if(!has&&!/^(INPUT|TEXTAREA)$/.test(e.tagName))continue;
+        const t=rgb(getComputedStyle(e).color);
+        if(t&&t.a>.3&&t.l>205){const under=bgUnder(e);if(under!=='img'&&under>185)e.setAttribute('data-ztlt','1')}
+      }
+    }
+  };
+  let tick=0;setInterval(()=>{try{scan(++tick%6===0)}catch(_){}},700);
+})();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         제타 채팅 프레임 호환 (테마용)
 // @namespace    vivianchoiey-zeta-frame-compat
-// @version      1.3.0
+// @version      1.3.1
 // @description  2026-11 제타가 채팅방을 frame.pingpong.ai 안에서 그리면서 data-sentry-component 표시와 <main>이 사라짐 → 예전 이름표를 다시 붙이고 테마 CSS의 main 선택자를 프레임 구조에 맞춰 복제해서, 기존 테마들이 그대로 먹게 함
 // @match        https://frame.pingpong.ai/*
 // @match        https://zeta-ai.io/*
@@ -21,7 +21,7 @@
   }
   if(window.__zetaFrameCompatV1)return;window.__zetaFrameCompatV1=1;
   // ── 프레임 안: 화면 전체로 펼쳐진 프레임에서 채팅 영역만 가운데 480px로
-  (function(){var st=D.createElement('style');st.id='zfc-frame';st.textContent='#zeta header,#zeta [role="log"],#zeta [data-testid="chat-bottom-dock"]{max-width:480px!important;width:100%!important;margin-left:auto!important;margin-right:auto!important;}#zeta [role="log"]{left:0!important;right:0!important;}';(D.head||D.documentElement).appendChild(st);setInterval(function(){if(!st.isConnected)(D.head||D.documentElement).appendChild(st)},1500);})();
+  (function(){var st=D.createElement('style');st.id='zfc-frame';st.textContent='#zeta header,#zeta [role="log"],#zeta [data-testid="chat-bottom-dock"]{max-width:480px!important;width:100%!important;margin-left:auto!important;margin-right:auto!important;}#zeta [role="log"]{left:0!important;right:0!important;}#zeta div:has(>header){background-color:transparent!important;background-image:none!important;}';(D.head||D.documentElement).appendChild(st);setInterval(function(){if(!st.isConnected)(D.head||D.documentElement).appendChild(st)},1500);})();
   function tag(el,name){if(el&&el.nodeType===1&&el.getAttribute('data-sentry-component')!==name)el.setAttribute('data-sentry-component',name);}
   function up(el,n){while(el&&n-->0)el=el.parentElement;return el;}
   function run(){

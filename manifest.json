@@ -99,6 +99,14 @@
       "default": false
     },
     {
+      "id": "zeta-cozy-14",
+      "name": "코지 테마 랜덤 14종 (토끼·눈사람·고양이 등)",
+      "file": "scripts/zeta-cozy-14.js",
+      "runAt": "idle",
+      "group": "",
+      "default": false
+    },
+    {
       "id": "sms-quote",
       "name": "문자 자동 카드 (문자: → >)",
       "file": "scripts/sms-quote.js",

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.26.0
+// @version      1.27.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -18,7 +18,7 @@ const MOBILE_URL='https://node.tail6a1536.ts.net/chat2img-codex';   // 아이폰
 // ===== 여주 의상 랜덤 조합 재료 (자유롭게 추가·삭제) =====
 // 색은 뉴트럴 + 데님 + 포인트 몇 개. 파스텔 없음
 const COLORS=['화이트','아이보리','크림','베이지','카멜','브라운','그레이','차콜','블랙','네이비','버건디','올리브','코발트 블루','버터 옐로'];
-const BRAND_RE=/벨스타프|랄프로렌|폴로 랄프|르메르|오라리|아워레가시|바버|드레익스|크로켓앤존스|처치스|알든|존 롭|에드워드 그린/;
+const BRAND_RE=/더블탭스|캐피탈|니들스|팔라스|아크테릭스|리얼맥코이|히스테릭|몽벨|벨스타프|랄프로렌|폴로 랄프|르메르|오라리|아워레가시|바버|드레익스|크로켓앤존스|처치스|알든|존 롭|에드워드 그린/;
 const STYLES={
   // 크리스탈 — 데님 베이스, 톰보이 섞인 프렌치
   데님시크:{
@@ -1001,6 +1001,43 @@ function pickJeongwooOutfit(scene){
   try{localStorage.setItem(LAST_JEONGWOO_KEY,pick);}catch(e){}
   return pick;
 }
+// ===== 권이림 전용 풀 (고정 프롬프트에 '권이림'이 있을 때만 작동) =====
+// 28살 직장인, 188cm. 더블탭스·캐피탈·니들스 나비바지·팔라스·아크테릭스·리얼맥코이·히스테릭 글래머·몽벨 위주 스트릿/아메카지/아웃도어.
+const IRIM={
+  top:['더블탭스 블랙 오버핏 롱슬리브 티셔츠','더블탭스 올리브 정글 셔츠','더블탭스 블랙 크루넥 스웻셔츠','더블탭스 그레이 후드티','팔라스 블랙 트라이퍼그 로고 후드티','팔라스 그레이 트라이퍼그 크루넥 스웻셔츠','팔라스 화이트 로고 반팔 티셔츠','히스테릭 글래머 블랙 그래픽 티셔츠','히스테릭 글래머 블랙 그래픽 후드티','리얼맥코이 헤비 스웻셔츠(그레이)','리얼맥코이 블랙 포켓 티셔츠','캐피탈 보로 패치워크 셔츠','캐피탈 스마일 키타 니트(네이비)','아크테릭스 블랙 크루넥 티셔츠'],
+  bottom:['니들스 블랙 나비 트랙 팬츠(퍼플 사이드라인)','니들스 네이비 나비 트랙 팬츠(그린 사이드라인)','니들스 블랙 나비 트랙 팬츠(레드 사이드라인)','니들스 다크 그린 나비 트랙 팬츠(블랙 사이드라인)','더블탭스 올리브 카고 팬츠','더블탭스 블랙 카고 팬츠','아크테릭스 블랙 감마 팬츠','리얼맥코이 진청 로우 데님','히스테릭 글래머 진청 스트레이트 데님','캐피탈 블랙 와이드 팬츠'],
+  outer:['아크테릭스 베타 LT 블랙 고어텍스 재킷','아크테릭스 아톰 블랙 후디 재킷','몽벨 블랙 플리스 재킷','몽벨 라이트 다운 재킷(블랙)','몽벨 네이비 나일론 윈드 파카','더블탭스 올리브 M-65 필드 재킷','니들스 블랙 트랙 재킷(퍼플 사이드라인)','팔라스 블랙 트랙 재킷','리얼맥코이 부코 블랙 가죽 라이더 재킷','리얼맥코이 N-1 네이비 덱 재킷','캐피탈 링 코트(네이비)','캐피탈 블랙 플리스 재킷','없음','없음'],
+  shoes:['뉴발란스 993 그레이','살로몬 XT-6 블랙','반스 올드스쿨 블랙','레드윙 아이리시 세터 부츠','닥터마틴 1461 블랙','나이키 에어포스 1 화이트'],
+  acc:['실버 체인 목걸이','아크테릭스 블랙 비니','블랙 디지털 스포츠 시계','없음','없음'],
+};
+const IRIM_HOME={
+  top:['팔라스 화이트 로고 반팔 티셔츠','더블탭스 블랙 오버핏 롱슬리브 티셔츠','히스테릭 글래머 블랙 그래픽 티셔츠','리얼맥코이 그레이 헤비 스웻셔츠','더블탭스 그레이 후드티'],
+  bottom:['니들스 블랙 나비 트랙 팬츠(퍼플 사이드라인)','니들스 네이비 나비 트랙 팬츠(그린 사이드라인)','니들스 그레이 H.D 스웻 팬츠'],
+};
+const IRIM_RULE='. 권이림은 28살 직장인, 188cm에 넓은 어깨와 탄탄한 체격. 무심하게 툭 걸친 오버핏 스트릿·아메카지·아웃도어 믹스. 적힌 브랜드 옷 그대로 그린다. 볼캡·버킷햇·반바지·연청 데님·블루종은 금지.';
+function makeIrimOutfit(scene){
+  const sc=scene||'';
+  if(/결혼식|장례식|상견례|제사|명절|본식|피로연/.test(sc))return `격식 차림 — 블랙 울 수트, 흰 셔츠, 블랙 솔리드 넥타이, 블랙 더비 구두`;
+  if(/집에서|집 안|집안|거실|침실|침대|소파|부엌|자취방|원룸/.test(sc)&&!/출근|회사|외출|나가|약속|데이트/.test(sc))
+    return `집 편한 차림 — ${rnd(IRIM_HOME.top)}, ${rnd(IRIM_HOME.bottom)}`;
+  const work=/회사|사무실|출근|회의|미팅|업무|야근|퇴근|출장/.test(sc);
+  const winter=/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|연말|입김/.test(sc),summer=!winter&&/여름|더운|더워|폭염|바다|해변|반팔|장마/.test(sc);
+  let top=rnd(IRIM.top),bottom=rnd(IRIM.bottom),outer=rnd(IRIM.outer);
+  if(work){bottom=rnd(['더블탭스 블랙 카고 팬츠','아크테릭스 블랙 감마 팬츠','캐피탈 블랙 와이드 팬츠','블랙 슬랙스']);top=rnd(['더블탭스 블랙 크루넥 스웻셔츠','캐피탈 스마일 키타 니트(네이비)','더블탭스 올리브 정글 셔츠','리얼맥코이 헤비 스웻셔츠(그레이)']);}
+  if(summer){top=rnd(['팔라스 화이트 로고 반팔 티셔츠','히스테릭 글래머 블랙 그래픽 티셔츠','리얼맥코이 블랙 포켓 티셔츠','아크테릭스 블랙 크루넥 티셔츠']);outer='없음';}
+  else if(winter&&(outer==='없음'||/셔츠 재킷|트랙 재킷|덱 재킷/.test(outer)))outer=rnd(['아크테릭스 베타 LT 블랙 고어텍스 재킷','몽벨 라이트 다운 재킷(블랙)','캐피탈 링 코트(네이비)','아크테릭스 아톰 블랙 후디 재킷']);
+  if(/트랙 재킷/.test(outer)&&!/나비 트랙 팬츠/.test(bottom)&&Math.random()<0.6)bottom=rnd(IRIM.bottom.filter(b=>/나비/.test(b)));
+  const parts=[top,bottom];if(outer!=='없음')parts.push(outer);parts.push(rnd(IRIM.shoes));
+  const acc=rnd(IRIM.acc);if(acc!=='없음')parts.push(acc);
+  return `스트릿·아메카지 — ${parts.join(', ')}`;
+}
+const LAST_IRIM_KEY='chat2img_codex_last_irim';
+function pickIrimOutfit(scene){
+  let last='';try{last=localStorage.getItem(LAST_IRIM_KEY)||'';}catch(e){}
+  let pick=makeIrimOutfit(scene);let g=0;while(pick===last&&g++<5)pick=makeIrimOutfit(scene);
+  try{localStorage.setItem(LAST_IRIM_KEY,pick);}catch(e){}
+  return pick;
+}
 // 담윤 방에서 임무·센터 장면이면 여주(백호 센티넬)도 전투복
 const F_SENTINEL_UNIFORM=[
   '흰색 하이넥 전투 슈트(몸에 맞게 떨어지는 매끈한 소재), 허리 전술 벨트, 검정 전술 장갑, 컴뱃 부츠',
@@ -1136,6 +1173,12 @@ window.fetch=function(input,init){
             const yo=pickYuniOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n윤이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+yo+YUNI_RULE;
             console.log('[Chat2Img-Codex] 윤이 의상:',yo);
+          }
+          // 권이림: 더블탭스·캐피탈·니들스·팔라스·아크테릭스·리얼맥코이·히스테릭 글래머·몽벨
+          if(characterText.includes('권이림')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const ir=pickIrimOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n권이림 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+ir+IRIM_RULE;
+            console.log('[Chat2Img-Codex] 권이림 의상:',ir);
           }
           // 서정우: 공유풍 꾸안꾸 + 벨스타프·폴로 랄프로렌, 집에서는 편한 차림
           if(characterText.includes('서정우')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){

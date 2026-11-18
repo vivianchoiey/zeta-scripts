@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.27.1
+// @version      1.28.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -18,7 +18,7 @@ const MOBILE_URL='https://node.tail6a1536.ts.net/chat2img-codex';   // 아이폰
 // ===== 여주 의상 랜덤 조합 재료 (자유롭게 추가·삭제) =====
 // 색은 뉴트럴 + 데님 + 포인트 몇 개. 파스텔 없음
 const COLORS=['화이트','아이보리','크림','베이지','카멜','브라운','그레이','차콜','블랙','네이비','버건디','올리브','코발트 블루','버터 옐로'];
-const BRAND_RE=/더블탭스|캐피탈|니들스|팔라스|아크테릭스|리얼맥코이|히스테릭|몽벨|벨스타프|랄프로렌|폴로 랄프|르메르|오라리|아워레가시|바버|드레익스|크로켓앤존스|처치스|알든|존 롭|에드워드 그린/;
+const BRAND_RE=/질 샌더|더 로우|이세이 미야케|요지 야마모토|꼼데가르송|더블탭스|캐피탈|니들스|팔라스|아크테릭스|리얼맥코이|히스테릭|몽벨|벨스타프|랄프로렌|폴로 랄프|르메르|오라리|아워레가시|바버|드레익스|크로켓앤존스|처치스|알든|존 롭|에드워드 그린/;
 const STYLES={
   // 크리스탈 — 데님 베이스, 톰보이 섞인 프렌치
   데님시크:{
@@ -1040,6 +1040,47 @@ function pickIrimOutfit(scene){
   try{localStorage.setItem(LAST_IRIM_KEY,pick);}catch(e){}
   return pick;
 }
+// ===== 권이현 전용 풀 (고정 프롬프트에 '권이현'이 있을 때만 작동) =====
+// 32살 건축가, 도쿄 거주. 올블랙 위주 미니멀(질 샌더·더 로우·르메르·이세이 미야케 옴므 플리세·요지 야마모토·꼼데가르송 옴므) + 랄프로렌 퍼플라벨·폴로 + 벨스타프.
+const IHYUN={
+  top:['질 샌더 블랙 캐시미어 터틀넥','더 로우 블랙 캐시미어 모크넥 니트','르메르 차콜 울 터틀넥','랄프로렌 퍼플라벨 블랙 캐시미어 터틀넥','질 샌더 블랙 칼라리스 셔츠','요지 야마모토 블랙 롱 셔츠','꼼데가르송 옴므 블랙 셔츠','더 로우 화이트 포플린 셔츠','이세이 미야케 옴므 플리세 블랙 플리츠 셔츠','폴로 랄프로렌 블랙 케이블 니트','벨스타프 블랙 하프집업 니트'],
+  bottom:['질 샌더 블랙 울 와이드 슬랙스','더 로우 차콜 울 와이드 팬츠','요지 야마모토 블랙 와이드 팬츠','이세이 미야케 옴므 플리세 블랙 플리츠 팬츠','르메르 블랙 트위스트 팬츠','랄프로렌 퍼플라벨 차콜 플란넬 팬츠'],
+  outer:['질 샌더 블랙 울 롱 코트','더 로우 차콜 캐시미어 오버코트','르메르 블랙 울 맥코트','요지 야마모토 블랙 롱 재킷','꼼데가르송 옴므 블랙 울 재킷','이세이 미야케 옴므 플리세 블랙 플리츠 재킷','랄프로렌 퍼플라벨 블랙 캐시미어 코트','랄프로렌 퍼플라벨 차콜 캐시미어 블레이저','벨스타프 트라이얼마스터 블랙 왁스 재킷','벨스타프 블랙 V 레이서 가죽 재킷','벨스타프 블랙 퀼팅 재킷','폴로 랄프로렌 블랙 울 피코트','없음','없음'],
+  shoes:['질 샌더 블랙 가죽 더비','더 로우 블랙 가죽 로퍼','존 롭 블랙 첼시 부츠','르메르 블랙 가죽 부츠','커먼 프로젝트 블랙 가죽 스니커즈','랄프로렌 퍼플라벨 블랙 옥스퍼드'],
+  acc:['까르띠에 탱크 시계(블랙 가죽 스트랩)','예거 르쿨트르 리베르소 시계','까르띠에 탱크 시계(블랙 가죽 스트랩)','얇은 블랙 금속테 안경','없음'],
+};
+const IHYUN_HOME={
+  top:['블랙 캐시미어 니트','폴로 랄프로렌 블랙 맨투맨(작은 포니 자수)','질 샌더 화이트 반팔 티셔츠','블랙 긴팔 티셔츠','폴로 랄프로렌 그레이 후드 집업'],
+  bottom:['폴로 랄프로렌 블랙 스웻 팬츠','블랙 캐시미어 조거 팬츠','이세이 미야케 옴므 플리세 블랙 플리츠 팬츠'],
+  extra:['얇은 블랙 금속테 안경','없음','없음'],
+};
+const IHYUN_RULE='. 권이현은 32살 건축가, 도쿄 거주. 블랙·차콜 위주의 군더더기 없는 미니멀 건축가 룩. 넥타이는 매지 않는다. 로고 큰 옷, 알록달록한 색, 화려한 패턴, 촌스러운 조합은 금지.';
+function makeIhyunOutfit(scene){
+  const sc=scene||'';
+  if(/집에서|집 안|집안|거실|침실|침대|소파|부엌|주방/.test(sc)&&!/출근|회사|사무소|외출|나가|약속|데이트|현장/.test(sc)){
+    const parts=[rnd(IHYUN_HOME.top),rnd(IHYUN_HOME.bottom)];const e=rnd(IHYUN_HOME.extra);if(e!=='없음')parts.push(e);
+    return `집 편한 차림 — ${parts.join(', ')}`;
+  }
+  if(FORMAL_RE.test(sc)||/상견례|미팅|발표|프레젠테이션|수주|클라이언트|시상식/.test(sc)){
+    const parts=[`${rnd(['랄프로렌 퍼플라벨','질 샌더','더 로우','요지 야마모토'])} 블랙 울 수트(${rnd(['노치 라펠 싱글 재킷','피크 라펠 싱글 재킷','칼라리스 미니멀 재킷'])})`,rnd(['블랙 캐시미어 터틀넥','블랙 셔츠(넥타이 없이 맨 위 단추까지 잠금)','화이트 셔츠(넥타이 없이 맨 위 단추 하나 풀림)']),rnd(['존 롭 블랙 옥스퍼드','랄프로렌 퍼플라벨 블랙 옥스퍼드','질 샌더 블랙 가죽 더비']),rnd(['까르띠에 탱크 시계(블랙 가죽 스트랩)','예거 르쿨트르 리베르소 시계'])];
+    if(FORMAL_RE.test(sc)&&Math.random()<0.5)parts.push('가슴 주머니에 블랙 실크 행커치프');
+    return `노타이 블랙 정장 — ${parts.join(', ')}`;
+  }
+  const winter=/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|연말|입김/.test(sc),summer=!winter&&/여름|더운|더워|폭염|바다|해변|반팔|장마/.test(sc);
+  let top=rnd(IHYUN.top),outer=rnd(IHYUN.outer);
+  if(summer){top=rnd(['더 로우 화이트 포플린 셔츠','질 샌더 블랙 칼라리스 셔츠','이세이 미야케 옴므 플리세 블랙 플리츠 셔츠','질 샌더 블랙 반팔 니트']);outer='없음';}
+  else if(winter&&(outer==='없음'||/블레이저|플리츠 재킷|롱 재킷|울 재킷/.test(outer)))outer=rnd(['질 샌더 블랙 울 롱 코트','더 로우 차콜 캐시미어 오버코트','랄프로렌 퍼플라벨 블랙 캐시미어 코트','벨스타프 트라이얼마스터 블랙 왁스 재킷']);
+  const parts=[top,rnd(IHYUN.bottom)];if(outer!=='없음')parts.push(outer);parts.push(rnd(IHYUN.shoes));
+  const acc=rnd(IHYUN.acc);if(acc!=='없음')parts.push(acc);
+  return `올블랙 미니멀 건축가 룩 — ${parts.join(', ')}`;
+}
+const LAST_IHYUN_KEY='chat2img_codex_last_ihyun';
+function pickIhyunOutfit(scene){
+  let last='';try{last=localStorage.getItem(LAST_IHYUN_KEY)||'';}catch(e){}
+  let pick=makeIhyunOutfit(scene);let g=0;while(pick===last&&g++<5)pick=makeIhyunOutfit(scene);
+  try{localStorage.setItem(LAST_IHYUN_KEY,pick);}catch(e){}
+  return pick;
+}
 // 담윤 방에서 임무·센터 장면이면 여주(백호 센티넬)도 전투복
 const F_SENTINEL_UNIFORM=[
   '흰색 하이넥 전투 슈트(몸에 맞게 떨어지는 매끈한 소재), 허리 전술 벨트, 검정 전술 장갑, 컴뱃 부츠',
@@ -1175,6 +1216,12 @@ window.fetch=function(input,init){
             const yo=pickYuniOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n윤이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+yo+YUNI_RULE;
             console.log('[Chat2Img-Codex] 윤이 의상:',yo);
+          }
+          // 권이현: 올블랙 미니멀 건축가 룩 + 퍼플라벨·폴로·벨스타프
+          if(characterText.includes('권이현')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const ih=pickIhyunOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n권이현 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+ih+IHYUN_RULE;
+            console.log('[Chat2Img-Codex] 권이현 의상:',ih);
           }
           // 권이림: 더블탭스·캐피탈·니들스·팔라스·아크테릭스·리얼맥코이·히스테릭 글래머·몽벨
           if(characterText.includes('권이림')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){

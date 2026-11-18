@@ -89,6 +89,18 @@
         todo.push([e,fs]);
       });
       todo.forEach(([e,fs])=>{e.setAttribute('data-zfs',fs);e.style.setProperty('font-size',(fs+1)+'px','important');});
+      // 속마음·상태창 같은 정보 칸 글씨가 말풍선 대사보다 크면 말풍선 대사 크기에 맞춤
+      const ref=log.querySelector('[data-sentry-component="ChatBubbleContainer"] [data-zfs], [data-sentry-component="ChatBubbleContainer"][data-zfs]');
+      if(ref){
+        const rs=parseFloat(getComputedStyle(ref).fontSize);
+        log.querySelectorAll('*:not([data-zfi])').forEach(e=>{
+          if(e.closest('[data-sentry-component="ChatBubbleContainer"],[data-sentry-component="NarratorBubble"],button,textarea'))return;
+          let has=false;for(const n of e.childNodes)if(n.nodeType===3&&n.nodeValue.trim()){has=true;break}
+          if(!has)return;
+          const fs=parseFloat(getComputedStyle(e).fontSize);
+          if(fs>rs+0.4){e.setAttribute('data-zfi','1');e.style.setProperty('font-size',rs+'px','important');e.style.setProperty('line-height','1.55','important');}
+        });
+      }
     };
     setInterval(()=>{try{grow()}catch(_){}},800);
   }

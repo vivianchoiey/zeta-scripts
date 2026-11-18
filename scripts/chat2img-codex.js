@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.28.0
+// @version      1.28.1
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1220,13 +1220,13 @@ window.fetch=function(input,init){
           // 권이현: 올블랙 미니멀 건축가 룩 + 퍼플라벨·폴로·벨스타프
           if(characterText.includes('권이현')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
             const ih=pickIhyunOutfit(sceneIdx>=0?sceneText:'');
-            add+='\n\n권이현 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+ih+IHYUN_RULE;
+            add+='\n\n권이현 의상 (이 인물이 지금 장면에 등장할 때만 적용한다. 장면에 없는 인물은 그리지 않는다. 대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+ih+IHYUN_RULE;
             console.log('[Chat2Img-Codex] 권이현 의상:',ih);
           }
           // 권이림: 더블탭스·캐피탈·니들스·팔라스·아크테릭스·리얼맥코이·히스테릭 글래머·몽벨
           if(characterText.includes('권이림')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
             const ir=pickIrimOutfit(sceneIdx>=0?sceneText:'');
-            add+='\n\n권이림 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+ir+IRIM_RULE;
+            add+='\n\n권이림 의상 (이 인물이 지금 장면에 등장할 때만 적용한다. 장면에 없는 인물은 그리지 않는다. 대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+ir+IRIM_RULE;
             console.log('[Chat2Img-Codex] 권이림 의상:',ir);
           }
           // 서정우: 공유풍 꾸안꾸 + 벨스타프·폴로 랄프로렌, 집에서는 편한 차림

@@ -2829,9 +2829,7 @@ const themes=[theme0,theme1,theme2,theme4,theme5,theme7,theme8,theme9,themeBunge
   const css=D.createElement('style');css.id='zeta-cozy-extra-fix';
   css.textContent=IN_FRAME?
     '[data-ztlt]{color:var(--zc-text,#654838)!important;-webkit-text-fill-color:var(--zc-text,#654838)!important}'
-   :'html>body[class]{color:var(--zc-text,#654838)!important}'
-   +'body :is([class~=text-white],[class~=text-gray-50],[class~=text-gray-100],[class~=text-gray-200]):not(:is([class*=bg-primary],[class*=bg-purple],[class*=bg-violet],[class*="bg-black/"]) *):not([class*=bg-primary]){color:var(--zc-text,#654838)!important}'
-   +'body :is([class*="text-white/"],[class~=text-footer],[class~=text-gray-300],[class~=text-gray-400],[class~=text-gray-500]):not(:is([class*="bg-black/"],[class~=from-black]) *){color:var(--zc-sub,#A38271)!important}'
+   :''
    +'body :is(input,textarea)::placeholder{color:var(--zc-sub,#A38271)!important;-webkit-text-fill-color:var(--zc-sub,#A38271)!important}'
    +'body :is(input,textarea,[contenteditable=true]){color:var(--zc-text,#654838)!important;-webkit-text-fill-color:var(--zc-text,#654838)!important;caret-color:var(--zc-text,#654838)}'
    +'body [data-ztdk]{background-color:var(--zc-bg,#FFF9F0)!important}'

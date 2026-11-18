@@ -69,13 +69,19 @@
   if(IN_FRAME){
     const grow=()=>{
       const log=D.querySelector('[role="log"]');if(!log)return;
+      // 먼저 전부 재고 나서 한꺼번에 키움 (부모가 먼저 커져서 자식이 두 번 커지는 것 방지)
+      const todo=[];
       log.querySelectorAll('*:not([data-zfs])').forEach(e=>{
         if(/^(IMG|SVG|PATH|VIDEO|CANVAS|BUTTON)$/i.test(e.tagName))return;
         let has=false;for(const n of e.childNodes)if(n.nodeType===3&&n.nodeValue.trim()){has=true;break}
         if(!has)return;
-        const fs=parseFloat(getComputedStyle(e).fontSize);if(!fs)return;
-        e.setAttribute('data-zfs',fs);e.style.setProperty('font-size',(fs+1)+'px','important');
+        const par=e.parentElement&&e.parentElement.closest('[data-zfs]');
+        let fs=parseFloat(getComputedStyle(e).fontSize);if(!fs)return;
+        // 이미 키운 부모에게서 크기를 물려받은 경우엔 원래 크기로 되돌려 계산
+        if(par&&Math.abs(fs-parseFloat(getComputedStyle(par).fontSize))<0.01)fs=+par.getAttribute('data-zfs');
+        todo.push([e,fs]);
       });
+      todo.forEach(([e,fs])=>{e.setAttribute('data-zfs',fs);e.style.setProperty('font-size',(fs+1)+'px','important');});
     };
     setInterval(()=>{try{grow()}catch(_){}},800);
   }

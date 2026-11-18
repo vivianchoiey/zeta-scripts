@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.29.1
+// @version      1.30.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -18,7 +18,7 @@ const MOBILE_URL='https://node.tail6a1536.ts.net/chat2img-codex';   // 아이폰
 // ===== 여주 의상 랜덤 조합 재료 (자유롭게 추가·삭제) =====
 // 색은 뉴트럴 + 데님 + 포인트 몇 개. 파스텔 없음
 const COLORS=['화이트','아이보리','크림','베이지','카멜','브라운','그레이','차콜','블랙','네이비','버건디','올리브','코발트 블루','버터 옐로'];
-const BRAND_RE=/토템|셀린느|생로랑|카이트|막스마라|버버리|프라다|지안비토|아페쎄|아크네|미우미우|르페토|알라이아|에르메스|보테가|질 샌더|더 로우|이세이 미야케|요지 야마모토|꼼데가르송|더블탭스|캐피탈|니들스|팔라스|아크테릭스|리얼맥코이|히스테릭|몽벨|벨스타프|랄프로렌|폴로 랄프|르메르|오라리|아워레가시|바버|드레익스|크로켓앤존스|처치스|알든|존 롭|에드워드 그린/;
+const BRAND_RE=/띠어리|리바이스|지미추|마놀로|토템|셀린느|생로랑|카이트|막스마라|버버리|프라다|지안비토|아페쎄|아크네|미우미우|르페토|알라이아|에르메스|보테가|질 샌더|더 로우|이세이 미야케|요지 야마모토|꼼데가르송|더블탭스|캐피탈|니들스|팔라스|아크테릭스|리얼맥코이|히스테릭|몽벨|벨스타프|랄프로렌|폴로 랄프|르메르|오라리|아워레가시|바버|드레익스|크로켓앤존스|처치스|알든|존 롭|에드워드 그린/;
 const STYLES={
   // 크리스탈 결 — 매니시 시크. 오버핏 셔츠·테일러드 팬츠·가죽, 무채색 위주
   매니시시크:{
@@ -1086,6 +1086,54 @@ function pickIhyunOutfit(scene){
   try{localStorage.setItem(LAST_IHYUN_KEY,pick);}catch(e){}
   return pick;
 }
+// ===== 아나운서 카야 방송 의상 (고정 프롬프트에 '아나운서'가 있고 방송·뉴스·스튜디오 장면일 때) =====
+const ANCHOR_RE=/방송국|방송|스튜디오|뉴스|생방|앵커|녹화|리허설|분장실|대기실|프롬프터|원고|카메라 앞/;
+const ANCHOR={
+  top:['막스마라 아이보리 실크 블라우스','띠어리 화이트 실크 블라우스','질 샌더 블랙 크루넥 니트 탑','막스마라 카멜 캐시미어 니트','띠어리 네이비 슬리브리스 니트 탑','토템 크림 실크 셔츠'],
+  bottom:['막스마라 블랙 펜슬 스커트','띠어리 네이비 펜슬 스커트','막스마라 카멜 테일러드 슬랙스','띠어리 블랙 와이드 슬랙스','질 샌더 아이보리 미디 스커트'],
+  outer:['막스마라 카멜 테일러드 재킷','띠어리 블랙 싱글 재킷','질 샌더 아이보리 재킷','막스마라 네이비 테일러드 재킷','없음'],
+  set:['막스마라 아이보리 투피스 셋업(재킷+펜슬 스커트)','띠어리 네이비 팬츠 수트','질 샌더 블랙 미디 원피스','막스마라 카멜 랩 원피스'],
+  shoes:['지안비토 로시 누드 펌프스','마놀로 블라닉 블랙 펌프스','지미추 블랙 포인티드 펌프스'],
+  acc:['작은 진주 귀걸이','작은 다이아몬드 스터드 귀걸이','얇은 골드 드롭 귀걸이','얇은 골드 시계'],
+};
+const ANCHOR_RULE='. 대한민국 원탑 아나운서답게 단정하고 고급스러운 방송 의상. 몸에 잘 맞는 깔끔한 핏, 무릎 길이 펜슬 스커트나 슬랙스. 화려한 패턴, 큰 로고, 노출 심한 옷, 유치한 장식은 금지.';
+function makeAnchorOutfit(){
+  const parts=Math.random()<0.35?[rnd(ANCHOR.set)]:[rnd(ANCHOR.top),rnd(ANCHOR.bottom)];
+  const o=rnd(ANCHOR.outer);if(parts.length===2&&o!=='없음')parts.push(o);
+  parts.push(rnd(ANCHOR.shoes),rnd(ANCHOR.acc));
+  return `아나운서 방송 의상 — ${parts.join(', ')}`;
+}
+// ===== 우채결 전용 풀 (고정 프롬프트에 '우채결'이 있을 때만 작동) =====
+// 30살 소방청 재난대응팀 구조대원, 192cm 근육질. 근무·출동·사복·집 장면별.
+const CHAEGYEOL_OFF={
+  top:['몸에 붙는 블랙 반팔 티셔츠','몸에 붙는 화이트 반팔 티셔츠','리얼맥코이 블랙 헨리넥 티셔츠','블랙 크루넥 니트','폴로 랄프로렌 화이트 옥스퍼드 셔츠(단추 풀고 블랙 티셔츠 위에 걸침)','폴로 랄프로렌 네이비 케이블 니트','벨스타프 차콜 크루넥 니트'],
+  bottom:['리바이스 501 진청 데님','블랙 카고 팬츠','블랙 스트레이트 팬츠','폴로 랄프로렌 베이지 치노 팬츠'],
+  outer:['벨스타프 블랙 V 레이서 가죽 재킷','벨스타프 트라이얼마스터 블랙 왁스 재킷','벨스타프 로드마스터 올리브 왁스 재킷','폴로 랄프로렌 네이비 블레이저(금장 단추)','블랙 울 오버코트','없음','없음'],
+  shoes:['레드윙 아이리시 세터 부츠','닥터마틴 1460 블랙 부츠','블랙 가죽 스니커즈','반스 올드스쿨 블랙'],
+  acc:['블랙 스포츠 시계','실버 군번줄 목걸이','없음','없음'],
+};
+const CHAEGYEOL_HOME={top:['블랙 민소매','헐렁한 화이트 반팔 티셔츠','그레이 반팔 티셔츠','폴로 랄프로렌 네이비 맨투맨'],bottom:['그레이 스웻 팬츠','블랙 트레이닝 팬츠','네이비 소방서 체육복 바지']};
+const CHAEGYEOL_RULE='. 우채결은 30살 구조대원, 192cm 근육질에 구릿빛 피부. 귀찮다는 듯 툭 걸쳐도 몸이 좋아 보이는 차림. 소방 장비·계급장 글자는 읽히지 않게 작게. 큰 로고, 알록달록한 색, 촌스러운 조합은 금지.';
+function makeChaegyeolOutfit(scene){
+  const sc=scene||'';
+  if(/출동|화재|불길|불이 나|화재 현장|진압|연기|구조 현장|재난 현장|사고 현장|붕괴|매몰|수난|급류|인명 구조/.test(sc)){
+    if(/구조|매몰|붕괴|수난|급류|교통사고|추락/.test(sc)&&!/화재|불길|진압|연기/.test(sc)&&Math.random()<0.6)
+      return '구조 출동 복장 — 주황색 119 구조대 구조복 상하의, 구조용 헬멧, 구조 장갑, 안전화';
+    return '화재 출동 복장 — 노란 반사띠가 들어간 방화복 상하의, 소방 헬멧, 방화 장갑, 방화 장화';
+  }
+  if(/소방서|구조대|대기실|차고|소방차|훈련|근무|당직|야간 근무|교대|센터/.test(sc)){
+    return rnd(['근무 복장 — 몸에 붙는 네이비 반팔 티셔츠, 노란 반사띠 방화복 바지, 멜빵은 허리 옆으로 내림','근무 복장 — 몸에 붙는 네이비 반팔 티셔츠, 노란 반사띠 방화복 바지, 방화복 상의를 허리에 묶음','근무 복장 — 네이비 소방 활동복 상하의(소매 걷음)']);
+  }
+  if(/집에서|집 안|집안|거실|침실|침대|소파|부엌|자취방/.test(sc)&&!/외출|나가|약속|데이트/.test(sc))
+    return `집 편한 차림 — ${rnd(CHAEGYEOL_HOME.top)}, ${rnd(CHAEGYEOL_HOME.bottom)}`;
+  const winter=/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|연말|입김/.test(sc),summer=!winter&&/여름|더운|더워|폭염|바다|해변|반팔|장마/.test(sc);
+  let top=rnd(CHAEGYEOL_OFF.top),outer=rnd(CHAEGYEOL_OFF.outer);
+  if(summer){top=rnd(['몸에 붙는 블랙 반팔 티셔츠','몸에 붙는 화이트 반팔 티셔츠','리얼맥코이 블랙 헨리넥 티셔츠']);outer='없음';}
+  else if(winter&&(outer==='없음'||/블레이저/.test(outer)))outer=rnd(['블랙 울 오버코트','벨스타프 블랙 V 레이서 가죽 재킷','벨스타프 트라이얼마스터 블랙 왁스 재킷']);
+  const parts=[top,rnd(CHAEGYEOL_OFF.bottom)];if(outer!=='없음')parts.push(outer);parts.push(rnd(CHAEGYEOL_OFF.shoes));
+  const acc=rnd(CHAEGYEOL_OFF.acc);if(acc!=='없음')parts.push(acc);
+  return `사복 — ${parts.join(', ')}`;
+}
 // 담윤 방에서 임무·센터 장면이면 여주(백호 센티넬)도 전투복
 const F_SENTINEL_UNIFORM=[
   '흰색 하이넥 전투 슈트(몸에 맞게 떨어지는 매끈한 소재), 허리 전술 벨트, 검정 전술 장갑, 컴뱃 부츠',
@@ -1156,8 +1204,9 @@ window.fetch=function(input,init){
             console.log('[Chat2Img-Codex] 여주 임무복:',fu);
           }else{
             const formal=FORMAL_RE.test(sceneText);
-            const outfit=formal?pickGown(sceneText):pickOutfit();
-            add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+outfit+(formal?GOWN_RULE:OUTFIT_RULE);
+            const anchor=!formal&&p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('아나운서')&&ANCHOR_RE.test(sceneText);
+            const outfit=formal?pickGown(sceneText):anchor?makeAnchorOutfit():pickOutfit();
+            add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+outfit+(formal?GOWN_RULE:anchor?ANCHOR_RULE:OUTFIT_RULE);
             console.log('[Chat2Img-Codex] 여주 의상:',outfit);
           }
           // 승재 방: 집에서 쉬는 장면이면 랄프로렌·트레이닝 집옷, 사복 장면이면 벨스타프·랄프로렌 사복, 그 외는 수트 랜덤 (환자복·잠옷 등은 건너뜀)
@@ -1221,6 +1270,12 @@ window.fetch=function(input,init){
             const yo=pickYuniOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n윤이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+yo+YUNI_RULE;
             console.log('[Chat2Img-Codex] 윤이 의상:',yo);
+          }
+          // 우채결: 근무·출동·사복·집 장면별
+          if(characterText.includes('우채결')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const cg=makeChaegyeolOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n우채결 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+cg+CHAEGYEOL_RULE;
+            console.log('[Chat2Img-Codex] 우채결 의상:',cg);
           }
           // 권이현: 올블랙 미니멀 건축가 룩 + 퍼플라벨·폴로·벨스타프
           if(characterText.includes('권이현')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){

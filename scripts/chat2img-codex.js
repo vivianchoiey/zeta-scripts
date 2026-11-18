@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.21.4
+// @version      1.22.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -69,6 +69,20 @@ function makeSuit(){
   const acc=rnd(st.acc);if(acc!=='없음')parts.push(acc);
   return `${name} 수트 — ${parts.join(', ')}`;
 }
+// ===== 권승재 벨스타프 (사복 장면 전용 풀 + 겨울·야외 수트 위 왁스 재킷) =====
+const SJ_BELSTAFF_OUTER=['벨스타프 트라이얼마스터 블랙 왁스 재킷','벨스타프 트라이얼마스터 네이비 왁스 재킷','벨스타프 로드마스터 블랙 왁스 재킷','벨스타프 블랙 V 레이서 가죽 재킷','벨스타프 블랙 퀼팅 재킷','벨스타프 블랙 스웨이드 레이서 재킷'];
+const SJ_CASUAL={
+  top:['블랙 캐시미어 터틀넥 니트','차콜 캐시미어 크루넥 니트','벨스타프 블랙 하프집업 니트','벨스타프 네이비 크루넥 니트','흰 셔츠 위 차콜 캐시미어 니트','블랙 실크 혼방 셔츠','블랙 헨리넥 니트'],
+  bottom:['블랙 울 슬랙스','차콜 울 슬랙스','다크 네이비 울 팬츠','블랙 스트레이트 팬츠'],
+  shoes:['블랙 가죽 첼시 부츠','벨스타프 블랙 가죽 부츠','블랙 로퍼','블랙 스웨이드 첼시 부츠'],
+  acc:['실버 메탈 시계','블랙 가죽 장갑','없음','없음'],
+};
+function makeSjCasual(){
+  const parts=[rnd(SJ_CASUAL.top),rnd(SJ_CASUAL.bottom),rnd(SJ_BELSTAFF_OUTER),rnd(SJ_CASUAL.shoes)];
+  const acc=rnd(SJ_CASUAL.acc);if(acc!=='없음')parts.push(acc);
+  return `벨스타프 사복 — ${parts.join(', ')}`;
+}
+const SJ_CASUAL_RULE='. 38세 재벌답게 어둡고 비싸 보이는 미니멀 사복. 벨스타프 로고는 소매의 작은 패치만 허용. 베이지·브라운·밝은 색 조합, 큰 로고, 후드티·트레이닝복·데님 재킷은 금지.';
 // ===== 구달 수트 랜덤 (고정 프롬프트에 '구달'이 있을 때만 작동) =====
 // 승재보다 거친 결. 블랙 셔츠·노타이·소매 걷기(문신 노출) 비중 높음. 베이지·브라운 없음
 const GUDAL_STYLES={
@@ -947,9 +961,15 @@ window.fetch=function(input,init){
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+outfit+OUTFIT_RULE;
             console.log('[Chat2Img-Codex] 여주 의상:',outfit);
           }
-          // 승재 방: 수트 장면이면 수트 스타일도 랜덤 (대화에 사복·환자복·잠옷 언급 있으면 건너뜀)
-          if(p.includes('권승재')&&!/사복|캐주얼|니트|후드|티셔츠|잠옷|환자복|수영복|맨몸|상의 탈의/.test(sceneText)){
-            const suit=pickSuit();
+          // 승재 방: 사복 장면이면 벨스타프 사복, 그 외 수트 장면이면 수트 랜덤 (환자복·잠옷 등은 건너뜀)
+          const sjSkip=/잠옷|환자복|수영복|맨몸|상의 탈의|파자마|목욕|샤워/.test(sceneText);
+          if(p.includes('권승재')&&!sjSkip&&/사복|캐주얼|니트|주말|휴일|쉬는 날|드라이브|산책|여행|캠핑|바이크|오토바이/.test(sceneText)&&!/후드|티셔츠/.test(sceneText)){
+            const sc=makeSjCasual();
+            add+='\n\n권승재 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+sc+SJ_CASUAL_RULE+' 보조 스틱은 기존 규칙대로 유지.';
+            console.log('[Chat2Img-Codex] 승재 사복:',sc);
+          }else if(p.includes('권승재')&&!sjSkip&&!/사복|캐주얼|니트|후드|티셔츠/.test(sceneText)){
+            let suit=pickSuit();
+            if(/겨울|눈 오|눈이|추워|추운|영하|비 오|비가|빗속|야외|밖에서|산책|정원/.test(sceneText)&&Math.random()<0.5)suit+=', 수트 위에 '+rnd(SJ_BELSTAFF_OUTER.slice(0,3))+'을 걸침';
             add+='\n\n권승재 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+suit+SUIT_RULE+' 보조 스틱은 기존 규칙대로 유지.';
             console.log('[Chat2Img-Codex] 승재 수트:',suit);
           }

@@ -34,7 +34,13 @@
    +'html,html *{scrollbar-color:var(--zc-border,#EAD5BE) transparent}';
   (D.head||D.documentElement).appendChild(css);
   setInterval(()=>{if(!css.isConnected)(D.head||D.documentElement).appendChild(css)},1500);
-  const rgb=c=>{const m=String(c).match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/);return m?{l:(+m[1]+ +m[2]+ +m[3])/3,a:m[4]===undefined?1:+m[4]}:null};
+  // rgb()·lab()·oklab()·oklch()·color(srgb) 모두 밝기(0~255)와 투명도로 바꿈
+  const rgb=c=>{c=String(c);let m=c.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/);if(m)return{l:(+m[1]+ +m[2]+ +m[3])/3,a:m[4]===undefined?1:+m[4]};
+    const al=(x)=>{const q=x.match(/\/\s*([\d.]+)(%?)/);return q?(q[2]?q[1]/100:+q[1]):1};
+    m=c.match(/^(?:lab|lch)\(\s*([\d.]+)%?/);if(m)return{l:Math.min(255,m[1]*2.55),a:al(c)};
+    m=c.match(/^(?:oklab|oklch)\(\s*([\d.]+)(%?)/);if(m)return{l:Math.min(255,m[2]?m[1]*2.55:m[1]*255),a:al(c)};
+    m=c.match(/^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/);if(m)return{l:(+m[1]+ +m[2]+ +m[3])/3*255,a:al(c)};
+    return null};
   // 글씨 뒤에 실제로 깔린 배경이 밝은지 확인 (사진 위·진한 버튼 위 흰 글씨는 그대로 둠)
   const bgUnder=e=>{for(let x=e,n=0;x&&n<14;x=x.parentElement,n++){const cs=getComputedStyle(x);if(cs.backgroundImage&&cs.backgroundImage!=='none')return 'img';const b=rgb(cs.backgroundColor);if(b&&b.a>.35)return b.l;if(/^(IMG|VIDEO|CANVAS)$/.test(x.tagName))return 'img';}return IN_FRAME?'img':255};
   const scan=all=>{

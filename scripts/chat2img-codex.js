@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.24.0
+// @version      1.25.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -18,6 +18,7 @@ const MOBILE_URL='https://node.tail6a1536.ts.net/chat2img-codex';   // 아이폰
 // ===== 여주 의상 랜덤 조합 재료 (자유롭게 추가·삭제) =====
 // 색은 뉴트럴 + 데님 + 포인트 몇 개. 파스텔 없음
 const COLORS=['화이트','아이보리','크림','베이지','카멜','브라운','그레이','차콜','블랙','네이비','버건디','올리브','코발트 블루','버터 옐로'];
+const BRAND_RE=/벨스타프|랄프로렌|폴로 랄프|르메르|오라리|아워레가시|바버/;
 const STYLES={
   // 크리스탈 — 데님 베이스, 톰보이 섞인 프렌치
   데님시크:{
@@ -192,7 +193,8 @@ const MUGYEOM_COLORS={
   denim:['진청','중청'],
 };
 function mugyeomColor(item,slot,topColor){
-  if(/진청|중청/.test(item))return item;
+  if(BRAND_RE.test(item))return {color:'블랙',text:item};
+  if(/진청|중청/.test(item))return {color:'블랙',text:item};
   let colors=/데님/.test(item)?MUGYEOM_COLORS.denim:MUGYEOM_COLORS[slot];
   if(slot==='outer'&&!MUGYEOM_NEUTRALS.includes(topColor)){
     colors=colors.filter(c=>MUGYEOM_NEUTRALS.includes(c));
@@ -308,6 +310,7 @@ const SEOLGI_COLORS={
 };
 const SEOLGI_NEUTRALS=['화이트','오프화이트','크림','라이트 그레이','차콜','블랙','네이비','그레이'];
 function seolgiColor(item,slot,topColor){
+  if(BRAND_RE.test(item))return {color:'fixed',text:item};
   // 이미 색이 특정된 옷에는 색을 다시 붙이지 않음.
   if(/화이트|오프화이트|아이보리|크림색|베이지|브라운|블랙|검정|흰색|그레이|차콜|네이비|올리브|버건디|코발트|세이지|연청|중청|진청|흑청|인디고|실버/.test(item))return {color:'fixed',text:item};
   let colors=/데님/.test(item)?SEOLGI_COLORS.denim:SEOLGI_COLORS[slot];
@@ -549,7 +552,7 @@ function pickStyle(){
   return name;
 }
 const OUTER_COLORS=['블랙','차콜','그레이','네이비','베이지','카멜','아이보리','브라운'];
-function withColor(color,item){return hasOwnColor(item)?item:`${color} ${item}`;}
+function withColor(color,item){return hasOwnColor(item)||BRAND_RE.test(item)?item:`${color} ${item}`;}
 function makeOutfit(){
   const styleName=pickStyle();
   const st=STYLES[styleName];
@@ -610,7 +613,7 @@ function yuniSeason(scene){
   if(/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|연말|입김/.test(scene))return'winter';
   return'mid';
 }
-function yuniWithColor(c,item){return /데님|청|생지|샴브레이|체크|스트라이프|보더|아가일|카키|네이비|베이지|그레이|화이트|레드윙|클락스|뉴발란스|코듀로이|덕 캔버스|M-65/.test(item)?item:`${c} ${item}`;}
+function yuniWithColor(c,item){if(BRAND_RE.test(item))return item;return /데님|청|생지|샴브레이|체크|스트라이프|보더|아가일|카키|네이비|베이지|그레이|화이트|레드윙|클락스|뉴발란스|코듀로이|덕 캔버스|M-65/.test(item)?item:`${c} ${item}`;}
 function makeYuniOutfit(scene){
   const season=yuniSeason(scene||'');
   const name=rnd(Object.keys(YUNI_STYLES));const st=YUNI_STYLES[name];
@@ -720,7 +723,7 @@ const JISU_HOME={
   extra:['흰 양말','실내 슬리퍼','맨발','없음','없음'],
 };
 const JISU_RULE='. 이지수는 20살 대학생, 키 188cm. 밖에서는 단정하고 깔끔한 모범생처럼 보이게 입고, 집에서는 헐렁하고 편한 차림이다. 깔끔하고 귀여운 분위기, 과하게 꾸미지 않은 담백한 조합. 수트, 정장, 넥타이, 가죽 라이더 재킷, 체인, 큰 로고, 알록달록한 조잡한 조합, 근육이 드러나는 딱 붙는 옷은 금지.';
-function jisuWithColor(c,item){return /데님|청|체크|스트라이프|카키|네이비|베이지|그레이|화이트|코듀로이|파자마|흰|그래픽|뉴발란스|럭비|크리켓/.test(item)?item:`${c} ${item}`;}
+function jisuWithColor(c,item){if(BRAND_RE.test(item))return item;return /데님|청|체크|스트라이프|카키|네이비|베이지|그레이|화이트|코듀로이|파자마|흰|그래픽|뉴발란스|럭비|크리켓/.test(item)?item:`${c} ${item}`;}
 function makeJisuOutfit(scene){
   const sc=scene||'';
   const c1=rnd(JISU_COLORS);let c2=rnd(JISU_COLORS);let g=0;while(c2===c1&&g++<5)c2=rnd(JISU_COLORS);
@@ -784,7 +787,7 @@ const DAMYOON_HOME={
 const DAMYOON_RULE='. 서담윤은 190cm가 넘는 장신에 넓은 어깨와 단단한 체격이다. 사복은 입히지 않고 항상 센터 전투복을 입힌다. 머리 위 담비 귀와 길고 풍성한 갈색 꼬리는 항상 보이게 그리고, 꼬리는 옷 밖으로 나온다. 큰 로고, 알록달록한 조잡한 조합, 귀여운 캐릭터 프린트는 금지.';
 const D_SLEEP_RULE='. 190cm가 넘는 장신, 넓은 어깨. 담비 귀와 꼬리는 원래대로 유지하고 꼬리는 옷 밖으로 나온다.';
 const D_SWIM_RULE='. 190cm가 넘는 장신, 넓은 어깨와 단단한 체격. 담비 귀와 꼬리는 원래대로 유지하고 꼬리는 수영복 밖으로 나온다.';
-function damyoonWithColor(c,item){return /데님|청|레더|무톤/.test(item)?item:`${c} ${item}`;}
+function damyoonWithColor(c,item){if(BRAND_RE.test(item))return item;return /데님|청|레더|무톤/.test(item)?item:`${c} ${item}`;}
 function makeDamyoonOutfit(scene){
   const sc=scene||'';
   return `센터 전투복 — ${rnd(DAMYOON_UNIFORM)}`; // 사복 없음: 항상 전투복
@@ -834,7 +837,7 @@ const WOOHYUN_HOME={
 const WOOHYUN_RULE='. 선우현은 26살 미술 강사, 181cm에 다소 마른 체형. 부드럽고 차분한 분위기의 담백한 옷. 항상 전동휠체어에 앉아 있으므로 앉은 자세에서 자연스럽게 떨어지는 여유 있는 핏으로 그린다. 수트, 넥타이, 가죽 라이더 재킷, 체인, 큰 로고, 알록달록한 조잡한 조합, 운동복 차림은 금지.';
 const W_SLEEP_RULE='. 181cm에 다소 마른 체형. 하반신마비라 다리에 힘이 없는 자세로 자연스럽게 그린다.';
 const W_SWIM_RULE='. 181cm에 다소 마른 체형. 하반신마비라 서 있지 않는다. 물가나 휠체어에 앉은 자세로 그린다.';
-function woohyunWithColor(c,item){return /데님|흰/.test(item)?item:`${c} ${item}`;}
+function woohyunWithColor(c,item){if(BRAND_RE.test(item))return item;return /데님|흰/.test(item)?item:`${c} ${item}`;}
 function makeWoohyunOutfit(scene){
   const sc=scene||'';
   const c1=rnd(WOOHYUN_COLORS);let c2=rnd(WOOHYUN_COLORS);let g=0;while(c2===c1&&g++<5)c2=rnd(WOOHYUN_COLORS);
@@ -905,7 +908,7 @@ function makeDohyungOutfit(scene){
     const acc=rnd(DOHYUNG_SUIT.acc);if(acc!=='없음')parts.push(acc);
     return `정장 — ${parts.join(', ')}`;
   }
-  const summer=/여름|더운|더워|폭염|바다|해변|반팔|장마/.test(sc),winter=/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|연말|입김/.test(sc);
+  const winter=/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|연말|입김/.test(sc),summer=!winter&&/여름|더운|더워|폭염|바다|해변|반팔|장마/.test(sc);
   let top=rnd(DOHYUNG_OFF.top),outer=rnd(DOHYUNG_OFF.outer);
   if(summer){top=rnd(['폴로 랄프로렌 흰색 피케 폴로셔츠','폴로 랄프로렌 네이비 피케 폴로셔츠','폴로 랄프로렌 흰색 옥스퍼드 버튼다운 셔츠(소매 걷음)','폴로 랄프로렌 하늘색 린넨 셔츠']);outer='없음';}
   else if(winter&&(outer==='없음'||/카디건|블레이저/.test(outer)))outer=rnd(['네이비 발마칸 코트','카멜 폴로 코트','폴로 랄프로렌 헤링본 트위드 재킷 위 네이비 울 코트','벨스타프 트라이얼마스터 블랙 왁스 재킷','벨스타프 블랙 퀼팅 재킷']);
@@ -921,6 +924,74 @@ function pickDohyungOutfit(scene){
   let last='';try{last=localStorage.getItem(LAST_DOHYUNG_KEY)||'';}catch(e){}
   let pick=makeDohyungOutfit(scene);let g=0;while(pick===last&&g++<5)pick=makeDohyungOutfit(scene);
   try{localStorage.setItem(LAST_DOHYUNG_KEY,pick);}catch(e){}
+  return pick;
+}
+// ===== 모든 남자 의상 풀에 벨스타프·폴로 랄프로렌 추가 =====
+const BEL_WAX=['벨스타프 트라이얼마스터 블랙 왁스 재킷','벨스타프 트라이얼마스터 올리브 왁스 재킷','벨스타프 로드마스터 블랙 왁스 재킷','벨스타프 블랙 퀼팅 재킷'];
+const BEL_LEATHER=['벨스타프 블랙 V 레이서 가죽 재킷'];
+const BEL_TOP=['벨스타프 네이비 하프집업 니트','벨스타프 차콜 크루넥 니트'];
+const RL_OUT=['폴로 랄프로렌 네이비 블레이저(금장 단추)','폴로 랄프로렌 헤링본 트위드 재킷','폴로 랄프로렌 네이비 케이블 카디건'];
+const RL_TOP=['폴로 랄프로렌 흰색 옥스퍼드 버튼다운 셔츠(작은 포니 자수)','폴로 랄프로렌 하늘색 옥스퍼드 버튼다운 셔츠(작은 포니 자수)','폴로 랄프로렌 네이비 케이블 니트','폴로 랄프로렌 크림 케이블 니트','폴로 랄프로렌 네이비 피케 폴로셔츠'];
+const RL_BOTTOM=['폴로 랄프로렌 베이지 치노 팬츠','폴로 랄프로렌 네이비 치노 팬츠'];
+const RL_HOME_TOP=['폴로 랄프로렌 그레이 맨투맨(작은 포니 자수)','폴로 랄프로렌 네이비 후드 집업','폴로 랄프로렌 흰색 반팔 티셔츠'];
+const RL_HOME_BOTTOM=['폴로 랄프로렌 그레이 스웻 팬츠','폴로 랄프로렌 네이비 스웻 팬츠'];
+(function addBrands(){
+  const add=(arr,items)=>{if(Array.isArray(arr))items.forEach(i=>{if(!arr.includes(i))arr.push(i)})};
+  // 서무겸 (목공방): 작업복엔 왁스 재킷, 평소·외출엔 벨스타프·폴로 둘 다, 집옷은 폴로
+  add(MUGYEOM_STYLES.work.outer,BEL_WAX);
+  ['daily','outing'].forEach(k=>{add(MUGYEOM_STYLES[k].outer,[...BEL_WAX,...BEL_LEATHER,...RL_OUT]);add(MUGYEOM_STYLES[k].top,[...RL_TOP,...BEL_TOP]);add(MUGYEOM_STYLES[k].bottom,RL_BOTTOM);});
+  add(MUGYEOM_STYLES.home.top,RL_HOME_TOP);add(MUGYEOM_STYLES.home.bottom,RL_HOME_BOTTOM);
+  // 설기
+  ['minimal','date','winter','street'].forEach(k=>{add(SEOLGI_STYLES[k].outer,[...BEL_WAX,...BEL_LEATHER]);add(SEOLGI_STYLES[k].top,BEL_TOP);});
+  ['preppy','minimal','date'].forEach(k=>{add(SEOLGI_STYLES[k].outer,RL_OUT);add(SEOLGI_STYLES[k].top,RL_TOP);add(SEOLGI_STYLES[k].bottom,RL_BOTTOM);});
+  add(SEOLGI_STYLES.home.top,RL_HOME_TOP);add(SEOLGI_STYLES.home.bottom,RL_HOME_BOTTOM);
+  // 윤이
+  add(YUNI_STYLES['아메카지'].outer,BEL_WAX);add(YUNI_STYLES['아메카지'].top,BEL_TOP);
+  add(YUNI_STYLES['프레피'].outer,RL_OUT);add(YUNI_STYLES['프레피'].top,RL_TOP);add(YUNI_STYLES['프레피'].bottom,RL_BOTTOM);
+  add(YUNI_STYLES['캐주얼'].outer,[...BEL_WAX,...BEL_LEATHER]);add(YUNI_STYLES['캐주얼'].top,RL_TOP);
+  // 이지수
+  add(JISU_STYLES['프레피'].outer,RL_OUT);add(JISU_STYLES['프레피'].top,RL_TOP);add(JISU_STYLES['프레피'].bottom,RL_BOTTOM);
+  add(JISU_STYLES['캐주얼'].outer,[...BEL_WAX,...BEL_LEATHER]);add(JISU_STYLES['캐주얼'].top,BEL_TOP);
+  add(JISU_HOME.top,RL_HOME_TOP);add(JISU_HOME.bottom,RL_HOME_BOTTOM);
+  // 선우현 (가죽 라이더 금지 규칙 유지 → 왁스·퀼팅만)
+  add(WOOHYUN_OUT.outer,[...BEL_WAX,'폴로 랄프로렌 네이비 케이블 카디건','폴로 랄프로렌 헤링본 트위드 재킷']);add(WOOHYUN_OUT.top,[...RL_TOP,...BEL_TOP]);add(WOOHYUN_OUT.bottom,RL_BOTTOM);
+  add(WOOHYUN_HOME.top,RL_HOME_TOP);add(WOOHYUN_HOME.bottom,RL_HOME_BOTTOM);
+})();
+// ===== 서정우 전용 풀 (고정 프롬프트에 '서정우'가 있을 때만 작동) =====
+// 31살 SF 소설가, 집에서 작업. 공유 같은 부드러운 꾸안꾸(르메르·오라리·아워레가시) + 벨스타프 + 폴로 랄프로렌.
+const JEONGWOO_OFF={
+  top:['르메르 오트밀 울 크루넥 니트','르메르 크림 오버핏 셔츠','오라리 아이보리 캐시미어 니트','오라리 하늘색 코튼 셔츠','아워레가시 차콜 모크넥 니트','흰 셔츠 위 오라리 오트밀 니트','르메르 네이비 트위스트 셔츠','폴로 랄프로렌 하늘색 옥스퍼드 버튼다운 셔츠(작은 포니 자수)','폴로 랄프로렌 크림 케이블 니트','폴로 랄프로렌 네이비 케이블 니트','벨스타프 네이비 하프집업 니트','벨스타프 차콜 크루넥 니트'],
+  bottom:['르메르 베이지 트위스트 팬츠','르메르 차콜 울 와이드 팬츠','오라리 크림 와이드 팬츠','아워레가시 네이비 와이드 팬츠','진청 와이드 데님','폴로 랄프로렌 베이지 치노 팬츠'],
+  outer:['르메르 카멜 울 오버코트','르메르 크림 니트 카디건','오라리 오트밀 캐시미어 카디건','아워레가시 차콜 울 코트','폴로 랄프로렌 헤링본 트위드 재킷','폴로 랄프로렌 네이비 케이블 카디건','벨스타프 트라이얼마스터 올리브 왁스 재킷','벨스타프 트라이얼마스터 블랙 왁스 재킷','벨스타프 블랙 퀼팅 재킷','없음','없음'],
+  shoes:['르메르 브라운 가죽 로퍼','블랙 페니 로퍼','오프화이트 가죽 스니커즈','다크 브라운 스웨이드 첼시 부츠'],
+  acc:['실버 메탈 시계','실버 메탈 시계','얇은 금속테 안경','없음'],
+};
+const JEONGWOO_HOME={
+  top:['오라리 오트밀 니트','르메르 크림 오버핏 셔츠(단추 몇 개 풀림)','폴로 랄프로렌 그레이 맨투맨(작은 포니 자수)','폴로 랄프로렌 흰색 반팔 티셔츠','폴로 랄프로렌 네이비 후드 집업','부드러운 아이보리 긴팔 티셔츠'],
+  bottom:['폴로 랄프로렌 그레이 스웻 팬츠','오라리 크림 이지 팬츠','차콜 니트 조거 팬츠'],
+  extra:['얇은 금속테 안경','어깨에 걸친 크림 니트 카디건','없음','없음'],
+};
+const JEONGWOO_RULE='. 서정우는 31살 SF 소설가. 공유처럼 부드럽고 여유로운 꾸안꾸 느낌으로 넉넉하게 떨어지는 핏. 로고는 폴로의 작은 포니 자수, 벨스타프 소매의 작은 패치만 허용. 정장·넥타이, 큰 로고, 알록달록한 색, 꽉 끼는 핏은 금지.';
+function makeJeongwooOutfit(scene){
+  const sc=scene||'';
+  if(/집에서|집 안|집안|거실|침실|침대|소파|부엌|주방|작업실|서재|책상|마감|원고/.test(sc)&&!/외출|나가|산책|바다|드라이브|카페|식당|데이트|약속/.test(sc)){
+    const parts=[rnd(JEONGWOO_HOME.top),rnd(JEONGWOO_HOME.bottom)];const e=rnd(JEONGWOO_HOME.extra);if(e!=='없음')parts.push(e);
+    return `집 편한 차림 — ${parts.join(', ')}`;
+  }
+  const winter=/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|연말|입김/.test(sc),summer=!winter&&/여름|더운|더워|폭염|바다|해변|반팔|장마/.test(sc);
+  let top=rnd(JEONGWOO_OFF.top),outer=rnd(JEONGWOO_OFF.outer);
+  if(summer){top=rnd(['오라리 하늘색 코튼 셔츠','르메르 크림 오버핏 셔츠','폴로 랄프로렌 하늘색 옥스퍼드 버튼다운 셔츠(작은 포니 자수)','오라리 화이트 반팔 니트']);outer='없음';}
+  else if(winter&&(outer==='없음'||/카디건|트위드/.test(outer)))outer=rnd(['르메르 카멜 울 오버코트','아워레가시 차콜 울 코트','벨스타프 트라이얼마스터 블랙 왁스 재킷']);
+  if(/카디건/.test(outer)&&/니트/.test(top))top=rnd(['오라리 하늘색 코튼 셔츠','르메르 크림 오버핏 셔츠']);
+  const parts=[top,rnd(JEONGWOO_OFF.bottom)];if(outer!=='없음')parts.push(outer);parts.push(rnd(JEONGWOO_OFF.shoes));
+  const acc=rnd(JEONGWOO_OFF.acc);if(acc!=='없음')parts.push(acc);
+  return `부드러운 꾸안꾸 — ${parts.join(', ')}`;
+}
+const LAST_JEONGWOO_KEY='chat2img_codex_last_jeongwoo';
+function pickJeongwooOutfit(scene){
+  let last='';try{last=localStorage.getItem(LAST_JEONGWOO_KEY)||'';}catch(e){}
+  let pick=makeJeongwooOutfit(scene);let g=0;while(pick===last&&g++<5)pick=makeJeongwooOutfit(scene);
+  try{localStorage.setItem(LAST_JEONGWOO_KEY,pick);}catch(e){}
   return pick;
 }
 // 담윤 방에서 임무·센터 장면이면 여주(백호 센티넬)도 전투복
@@ -1016,7 +1087,7 @@ window.fetch=function(input,init){
           }
           // 구달 방: 수트 장면이면 수트 스타일 랜덤
           if(p.includes('구달')&&!/사복|캐주얼|후드|티셔츠|스웻|잠옷|환자복|수영복|맨몸|상의 탈의|메이드복/.test(sceneText)){
-            const gs=pickGudalSuit();
+            let gs=pickGudalSuit();if(/겨울|눈 오|눈이|추워|추운|영하|비 오|비가|빗속|야외|밖에서/.test(sceneText)&&Math.random()<0.5)gs+=', 수트 위에 '+rnd(['벨스타프 블랙 V 레이서 가죽 재킷','벨스타프 트라이얼마스터 블랙 왁스 재킷','폴로 랄프로렌 블랙 캐시미어 오버코트'])+'를 걸침';
             add+='\n\n구달 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+gs+GUDAL_RULE+' 문신 규칙은 기존대로 유지.';
             console.log('[Chat2Img-Codex] 구달 수트:',gs);
           }
@@ -1057,6 +1128,12 @@ window.fetch=function(input,init){
             const yo=pickYuniOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n윤이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+yo+YUNI_RULE;
             console.log('[Chat2Img-Codex] 윤이 의상:',yo);
+          }
+          // 서정우: 공유풍 꾸안꾸 + 벨스타프·폴로 랄프로렌, 집에서는 편한 차림
+          if(characterText.includes('서정우')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const jw=pickJeongwooOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n서정우 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jw+JEONGWOO_RULE;
+            console.log('[Chat2Img-Codex] 서정우 의상:',jw);
           }
           // 권도형: 정장 위주, 쉬는 날엔 폴로 랄프로렌풍 프레피, 집에서는 편한 차림
           if(characterText.includes('권도형')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){

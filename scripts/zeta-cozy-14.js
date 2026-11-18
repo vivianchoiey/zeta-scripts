@@ -65,6 +65,20 @@
     }
   };
   let tick=0;setInterval(()=>{try{scan(++tick%6===0)}catch(_){}},700);
+  // 채팅 글씨 1px 키우기 (대사·지문·내레이션·이름 전부). 원래 크기를 한 번 재서 +1px로 고정
+  if(IN_FRAME){
+    const grow=()=>{
+      const log=D.querySelector('[role="log"]');if(!log)return;
+      log.querySelectorAll('*:not([data-zfs])').forEach(e=>{
+        if(/^(IMG|SVG|PATH|VIDEO|CANVAS|BUTTON)$/i.test(e.tagName))return;
+        let has=false;for(const n of e.childNodes)if(n.nodeType===3&&n.nodeValue.trim()){has=true;break}
+        if(!has)return;
+        const fs=parseFloat(getComputedStyle(e).fontSize);if(!fs)return;
+        e.setAttribute('data-zfs',fs);e.style.setProperty('font-size',(fs+1)+'px','important');
+      });
+    };
+    setInterval(()=>{try{grow()}catch(_){}},800);
+  }
 })();
 
 

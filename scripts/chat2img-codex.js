@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.33.0
+// @version      1.34.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -89,6 +89,54 @@ function pickFHair(scene,formal,anchor){
   else if(/운동|헬스|러닝|요가|필라테스|등산|조깅/.test(sc))pool=['높게 묶은 포니테일','높게 올린 똥머리','낮게 묶은 포니테일'];
   else if(/수영|바다|해변|비가|바람/.test(sc))pool=F_HAIR.daily.concat(['낮게 묶은 포니테일','집게핀으로 올린 머리']);
   return rnd(pool);
+}
+// ===== 권지우·최카야 방 (고등학생, 고정 프롬프트에 '권지우'가 있을 때만 작동) =====
+// 학교 장면은 교복이 기본. 주말·방과 후 외출은 권이림처럼 멋 부린 스트릿·아메카지(고등학생 버전), 축구 장면은 축구복.
+const HS_RE=/학교|교실|복도|운동장|매점|급식|수업|쉬는 시간|점심시간|등교|하교|조회|종례|야자|야간 자율|보충|자습|시험|교무실|담임|선생님|체육관|옥상|동아리|학원|도서관|교문|하굣길|등굣길|교복/;
+const HS_OFF_RE=/주말|토요일|일요일|방학|놀러|데이트|영화관|카페에서|쇼핑|시내|놀이공원|여행|사복|외출복|축제 구경/;
+const HS_SOCCER_RE=/축구|경기장|시합|결승|골대|슈팅|하프타임|전반전|후반전|훈련|연습 경기/;
+const JIWOO={
+  uniform:{
+    winter:['네이비 교복 블레이저, 흰 셔츠, 네이비 스트라이프 넥타이 살짝 느슨하게, 차콜 그레이 교복 슬랙스, 블랙 가죽 로퍼','네이비 교복 블레이저 안에 그레이 브이넥 니트 조끼, 흰 셔츠, 넥타이 느슨하게, 차콜 교복 슬랙스, 블랙 로퍼','교복(흰 셔츠·넥타이·차콜 슬랙스) 위에 블랙 롱패딩, 블랙 나이키 에어포스','교복(흰 셔츠·차콜 슬랙스) 위에 네이비 교복 카디건, 블랙 로퍼'],
+    summer:['하복 — 흰 반팔 교복 셔츠(단추 하나 풀림), 차콜 그레이 교복 슬랙스, 흰 나이키 에어포스','하복 — 흰 반팔 교복 셔츠, 네이비 넥타이 느슨하게, 차콜 교복 슬랙스, 블랙 로퍼'],
+    mid:['네이비 교복 블레이저, 흰 셔츠, 넥타이 느슨하게, 차콜 교복 슬랙스, 블랙 로퍼','흰 교복 셔츠 소매를 걷어 올림, 넥타이 느슨하게, 차콜 교복 슬랙스, 블랙 로퍼(블레이저는 어깨에 걸침)','교복 셔츠 위에 네이비 교복 니트 카디건, 차콜 교복 슬랙스, 흰 나이키 에어포스'],
+  },
+  soccer:['학교 축구부 네이비 유니폼(반팔 상의·축구 쇼츠·네이비 축구 양말), 나이키 머큐리얼 축구화','흰 축구 훈련복 상의, 블랙 축구 쇼츠, 블랙 축구 양말, 나이키 축구화','네이비 축구부 트레이닝 재킷(지퍼 반쯤 올림), 블랙 트레이닝 팬츠, 나이키 운동화'],
+  top:['더블탭스 블랙 롱슬리브 티셔츠','리얼맥코이 블랙 헨리넥 티셔츠','리얼맥코이 그레이 헤비 스웻셔츠','블랙 크루넥 니트','네이비 케이블 니트','더블탭스 올리브 정글 셔츠(블랙 티셔츠 위에 걸침)','흰 옥스퍼드 셔츠'],
+  bottom:['리얼맥코이 진청 스트레이트 데님','블랙 스트레이트 데님','더블탭스 블랙 카고 팬츠','리얼맥코이 올리브 퍼티그 팬츠','블랙 와이드 슬랙스','니들스 블랙 나비 트랙 팬츠(퍼플 사이드라인)'],
+  outer:['리얼맥코이 MA-1 블랙 봄버 재킷','리얼맥코이 MA-1 세이지 그린 봄버 재킷','블랙 가죽 라이더 재킷','더블탭스 올리브 M-65 필드 재킷','네이비 울 피코트','블랙 울 오버코트','벨스타프 블랙 왁스 재킷','없음'],
+  shoes:['나이키 에어포스 1 화이트','닥터마틴 1461 블랙','반스 올드스쿨 블랙','뉴발란스 993 그레이','닥터마틴 1460 블랙 부츠'],
+};
+const JIWOO_RULE='. 권지우는 고등학생, 185cm에 어깨가 넓고 운동으로 다져진 체격. 귀티 나는 얼굴. 교복은 단정하게 입되 넥타이나 소매를 살짝 흐트러뜨린 정도로 멋을 낸다. 사복은 무심하게 걸쳐도 멋 부린 티가 나는 스트릿·아메카지. 정장, 수트, 시계, 반지, 큰 로고, 볼캡·버킷햇은 금지.';
+function makeJiwooOutfit(scene){
+  const sc=scene||'';
+  const winter=/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|입김|찬바람/.test(sc),summer=!winter&&/여름|더운|더워|폭염|장마|하복|반팔/.test(sc);
+  if(HS_SOCCER_RE.test(sc))return `축구복 — ${rnd(JIWOO.soccer)}`;
+  if(HS_OFF_RE.test(sc)&&!HS_RE.test(sc)){
+    let top=rnd(JIWOO.top),outer=rnd(JIWOO.outer);
+    if(summer){outer='없음';top=rnd(['리얼맥코이 블랙 포켓 티셔츠','흰 크루넥 티셔츠','더블탭스 올리브 정글 셔츠(블랙 티셔츠 위에 걸침)']);}
+    else if(winter&&outer==='없음')outer=rnd(['블랙 울 오버코트','네이비 울 피코트','리얼맥코이 MA-1 블랙 봄버 재킷']);
+    const parts=[top,rnd(JIWOO.bottom)];if(outer!=='없음')parts.push(outer);parts.push(rnd(JIWOO.shoes));
+    return `사복 — ${parts.join(', ')}`;
+  }
+  return `교복 — ${rnd(winter?JIWOO.uniform.winter:summer?JIWOO.uniform.summer:JIWOO.uniform.mid)}`;
+}
+const KAYA_HS={
+  uniform:{
+    winter:['네이비 교복 블레이저, 흰 블라우스, 네이비 리본 타이, 무릎 길이 차콜 그레이 플리츠 교복 치마, 블랙 스타킹, 블랙 가죽 로퍼','네이비 교복 블레이저 안에 아이보리 브이넥 니트 조끼, 흰 블라우스, 무릎 길이 교복 치마, 블랙 스타킹, 블랙 로퍼','교복 위에 블랙 롱패딩, 목도리, 블랙 스타킹, 블랙 로퍼','교복(흰 블라우스·무릎 길이 교복 치마) 위에 네이비 교복 카디건, 블랙 스타킹, 블랙 로퍼'],
+    summer:['하복 — 흰 반팔 교복 블라우스, 네이비 리본 타이, 무릎 길이 그레이 플리츠 교복 치마, 흰 양말, 블랙 로퍼','하복 — 흰 반팔 교복 블라우스, 무릎 길이 교복 치마, 흰 양말, 흰 스니커즈'],
+    mid:['네이비 교복 블레이저, 흰 블라우스, 네이비 리본 타이, 무릎 길이 차콜 그레이 플리츠 교복 치마, 네이비 양말, 블랙 로퍼','흰 블라우스 위에 아이보리 교복 니트 카디건, 무릎 길이 교복 치마, 네이비 양말, 블랙 로퍼','네이비 교복 블레이저, 흰 블라우스, 교복 슬랙스, 블랙 로퍼'],
+  },
+  casual:['블랙 크루넥 니트, 진청 스트레이트 데님, 카멜 울 코트, 블랙 로퍼','흰 셔츠, 네이비 니트 카디건, 블랙 슬랙스, 흰 스니커즈','그레이 후드 없는 스웻셔츠, 블랙 와이드 팬츠, 흰 스니커즈','아이보리 케이블 니트, 무릎 길이 블랙 스커트, 블랙 스타킹, 블랙 로퍼','네이비 더플코트, 흰 터틀넥, 진청 데님, 블랙 로퍼','블랙 가죽 재킷, 흰 티셔츠, 블랙 슬랙스, 블랙 로퍼'],
+  hair:['턱선 길이 흑발 단발을 자연스럽게 내림','흑발 단발 한쪽을 귀 뒤로 넘김','흑발 단발에 작은 검정 실핀을 한쪽에 꽂음','흑발 단발 윗부분만 작게 반묶음','흑발 단발 앞머리 없이 가르마를 탄 머리','흑발 단발을 짧게 뒤로 묶은 작은 꽁지머리'],
+};
+const KAYA_HS_RULE='. 최카야는 고등학생, 162cm, 팔다리가 길고 목선이 가늘다. 흑발 단발 유지. 교복은 단정하게, 치마는 무릎 길이. 화장은 아주 옅게. 성인처럼 꾸민 차림, 짧은 치마, 몸매를 드러내는 옷, 하이힐, 명품 가방, 큰 귀걸이는 금지.';
+function makeKayaHSOutfit(scene){
+  const sc=scene||'';
+  const winter=/겨울|눈 오|눈이|추워|추운|영하|패딩|크리스마스|입김|찬바람/.test(sc),summer=!winter&&/여름|더운|더워|폭염|장마|하복|반팔/.test(sc);
+  const off=HS_OFF_RE.test(sc)&&!HS_RE.test(sc);
+  const outfit=off?`사복 — ${rnd(KAYA_HS.casual)}`:`교복 — ${rnd(winter?KAYA_HS.uniform.winter:summer?KAYA_HS.uniform.summer:KAYA_HS.uniform.mid)}`;
+  return `${outfit} / 헤어 — ${rnd(KAYA_HS.hair)}`;
 }
 // ===== 권승재 수트 랜덤 (고정 프롬프트에 '권승재'가 있을 때만 작동) =====
 // 어두운 고급 수트만. 베이지·브라운·회색빛 밝은 수트 없음
@@ -1207,7 +1255,7 @@ window.fetch=function(input,init){
             add+='\n\n윤이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+yo+(kind==='sleep'?Y_SLEEP_RULE:Y_SWIM_RULE);
             console.log('[Chat2Img-Codex] 윤이 '+kind+':',yo);
           }
-          body.prompt=p+add+(p.includes('권이림')?NO_BUCKET_IRIM:NO_BUCKET);
+          body.prompt=p+add+(/권이림|권지우/.test(p)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복 제외)'):NO_BUCKET);
           init={...init,body:JSON.stringify(body)};
         }else if(!off&&!skip&&!specialScene(sceneText)){
           let add='';
@@ -1219,6 +1267,10 @@ window.fetch=function(input,init){
             const fu=rnd(F_SENTINEL_UNIFORM);
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): 임무복 — '+fu+F_SENTINEL_RULE;
             console.log('[Chat2Img-Codex] 여주 임무복:',fu);
+          }else if(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('권지우')){
+            const kh=makeKayaHSOutfit(sceneText);
+            add='\n\n최카야 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+kh+KAYA_HS_RULE;
+            console.log('[Chat2Img-Codex] 카야(고등학생) 의상:',kh);
           }else{
             const formal=FORMAL_RE.test(sceneText);
             const anchor=!formal&&p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('아나운서')&&ANCHOR_RE.test(sceneText);
@@ -1302,6 +1354,12 @@ window.fetch=function(input,init){
             add+='\n\n권이현 의상 (이 인물이 지금 장면에 등장할 때만 적용한다. 장면에 없는 인물은 그리지 않는다. 대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+ih+IHYUN_RULE;
             console.log('[Chat2Img-Codex] 권이현 의상:',ih);
           }
+          // 권지우: 교복 기본, 주말엔 사복, 축구 장면엔 축구복
+          if(characterText.includes('권지우')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const jo=makeJiwooOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n권지우 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jo+JIWOO_RULE;
+            console.log('[Chat2Img-Codex] 권지우 의상:',jo);
+          }
           // 권이림: 더블탭스·캐피탈·니들스·팔라스·아크테릭스·리얼맥코이·히스테릭 글래머·몽벨
           if(characterText.includes('권이림')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
             const ir=pickIrimOutfit(sceneIdx>=0?sceneText:'');
@@ -1320,11 +1378,11 @@ window.fetch=function(input,init){
             add+='\n\n권도형 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+dh+DOHYUNG_RULE;
             console.log('[Chat2Img-Codex] 권도형 의상:',dh);
           }
-          body.prompt=p+add+(p.includes('권이림')?NO_BUCKET_IRIM:NO_BUCKET);
+          body.prompt=p+add+(/권이림|권지우/.test(p)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복 제외)'):NO_BUCKET);
           init={...init,body:JSON.stringify(body)};
         }
         // 옷 랜덤이 꺼진 장면(#옷고정, 메이드복 등)에도 버킷햇 금지는 항상 붙임
-        const nbX=body.prompt.includes('권이림')?NO_BUCKET_IRIM:NO_BUCKET;
+        const nbX=/권이림|권지우/.test(body.prompt)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복 제외)'):NO_BUCKET;
         if(!daisukeRoom&&!body.prompt.includes(nbX)){
           body.prompt+=nbX;
           init={...init,body:JSON.stringify(body)};

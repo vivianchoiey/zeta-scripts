@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.31.0
+// @version      1.32.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -71,6 +71,24 @@ function pickGown(scene){
   const j=rnd(GOWN.jewel);if(j!=='없음')parts.push(j);
   if(/겨울|추워|추운|눈 오|눈이|영하|밤바람|쌀쌀/.test(sc))parts.push(rnd(GOWN.outer));
   return `드레스 — ${parts.join(', ')}`;
+}
+// ===== 여주 헤어 랜덤 (참고 사진처럼 늘 풀고만 있지 않게) =====
+const F_HAIR={
+  daily:['긴 머리를 자연스럽게 풀어 내림','긴 머리를 한쪽 어깨로 넘김','낮게 묶은 포니테일','높게 묶은 매끈한 포니테일','느슨한 로우 번','정수리 쪽 하프업(반묶음)','뒷머리를 집게핀으로 느슨하게 올림','느슨하게 한 갈래로 땋아 어깨에 늘어뜨림','양쪽 옆머리만 귀 뒤로 넘기고 뒤는 풀어 둠','머리를 귀 뒤로 넘기고 가는 머리띠'],
+  formal:['매끈한 로우 시뇽(목덜미 위로 낮게 올린 머리)','부드러운 웨이브로 한쪽 어깨에 넘긴 머리','느슨한 업스타일(얼굴 옆으로 잔머리 몇 가닥)','매끈하게 뒤로 넘긴 로우 포니테일','굵은 웨이브로 풀어 내린 머리'],
+  home:['집게핀으로 대충 틀어 올린 머리','느슨한 똥머리','낮게 대충 묶은 머리','풀어 내린 머리(살짝 흐트러짐)','헤어밴드로 앞머리를 넘긴 머리'],
+  anchor:['단정한 굵은 웨이브로 풀어 내린 머리','매끈한 로우 포니테일','단정한 하프업','한쪽 옆머리만 귀 뒤로 넘긴 매끈한 생머리'],
+};
+const F_HAIR_RULE=' (머리 길이와 머리색은 참고 사진 그대로 두고, 묶는 방식만 바꾼다. 참고 사진 속 머리 모양을 그대로 따라 하지 않는다. 대화에 머리 모양이 나와 있으면 대화를 따른다.)';
+function pickFHair(scene,formal,anchor){
+  const sc=scene||'';
+  let pool=F_HAIR.daily;
+  if(formal)pool=F_HAIR.formal;
+  else if(anchor)pool=F_HAIR.anchor;
+  else if(/침실|침대|잠옷|파자마|씻고|샤워|목욕|소파|거실|집에서|늦잠|아침에 일어|요리|부엌|설거지|청소/.test(sc))pool=F_HAIR.home;
+  else if(/운동|헬스|러닝|요가|필라테스|등산|조깅/.test(sc))pool=['높게 묶은 포니테일','높게 올린 똥머리','낮게 묶은 포니테일'];
+  else if(/수영|바다|해변|비가|바람/.test(sc))pool=F_HAIR.daily.concat(['낮게 묶은 포니테일','집게핀으로 올린 머리']);
+  return rnd(pool);
 }
 // ===== 권승재 수트 랜덤 (고정 프롬프트에 '권승재'가 있을 때만 작동) =====
 // 어두운 고급 수트만. 베이지·브라운·회색빛 밝은 수트 없음
@@ -1207,7 +1225,9 @@ window.fetch=function(input,init){
             const anchor=!formal&&p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('아나운서')&&ANCHOR_RE.test(sceneText);
             const outfit=formal?pickGown(sceneText):anchor?makeAnchorOutfit():pickOutfit();
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+outfit+(formal?GOWN_RULE:anchor?ANCHOR_RULE:OUTFIT_RULE);
-            console.log('[Chat2Img-Codex] 여주 의상:',outfit);
+            const fh=pickFHair(sceneText,formal,anchor);
+            add+='\n유저(여주) 헤어: '+fh+F_HAIR_RULE;
+            console.log('[Chat2Img-Codex] 여주 의상:',outfit,'/ 헤어:',fh);
           }
           // 승재 방: 집에서 쉬는 장면이면 랄프로렌·트레이닝 집옷, 사복 장면이면 벨스타프·랄프로렌 사복, 그 외는 수트 랜덤 (환자복·잠옷 등은 건너뜀)
           const sjSkip=/잠옷|환자복|수영복|맨몸|상의 탈의|파자마|목욕|샤워/.test(sceneText);

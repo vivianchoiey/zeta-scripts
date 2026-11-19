@@ -131,6 +131,14 @@
       "default": true
     },
     {
+      "id": "plot-move",
+      "name": "플롯 이사 (비캐 복제·내보내기·가져오기)",
+      "file": "scripts/plot-move.js",
+      "runAt": "start",
+      "group": "",
+      "default": true
+    },
+    {
       "id": "private-plot-explorer",
       "name": "비캐 검색·정리기 (Private Plot Explorer) 버튼",
       "file": "scripts/private-plot-explorer.js",

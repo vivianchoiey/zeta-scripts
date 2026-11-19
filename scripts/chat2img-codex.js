@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.30.0
+// @version      1.31.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1762,9 +1762,27 @@ const coreBoot=(async()=>{
       for(const selector of selectors){if(image)break;let elements=[];try{elements=[...document.querySelectorAll(selector)];}catch(_){}for(const element of elements){image=imageFromElement(element);if(image)break;}}
       return image||'';
     }
+    // 2026-11: 채팅이 frame.pingpong.ai 프레임 안으로 들어가서 바깥 화면엔 프로필 사진이 없음 → 제타 API로 방 정보를 받아 채움
+    const ROOM_PROF={room:'',char:'',persona:'',busy:false};
+    function roomIdNow(){return (location.pathname.match(/\/rooms\/([0-9a-f-]{20,})/i)||[])[1]||'';}
+    function zetaToken(){try{for(let i=0;i<localStorage.length;i++){const m=String(localStorage.getItem(localStorage.key(i))||'').match(/eyJ[\w-]+\.[\w-]+\.[\w-]+/);if(m)return m[0];}}catch(_){}return '';}
+    async function prefetchRoomProfiles(){
+      const room=roomIdNow(); if(!room||ROOM_PROF.busy||ROOM_PROF.room===room)return;
+      ROOM_PROF.busy=true;
+      try{
+        const tok=zetaToken(); const r=await fetch('https://api.zeta-ai.io/v1/rooms/'+room,{headers:tok?{authorization:'Bearer '+tok}:{},credentials:'include'});
+        if(r.ok){const j=await r.json();const plot=j&&j.plot||{};
+          ROOM_PROF.char=cleanHighResolutionImageUrl((plot.characters||[]).map(c=>c&&c.imageUrl).find(Boolean)||plot.imageUrl||'');
+          ROOM_PROF.persona=cleanHighResolutionImageUrl((plot.chatProfiles||[]).map(c=>c&&c.imageUrl).find(Boolean)||'');
+          ROOM_PROF.room=room;}
+      }catch(_){}
+      ROOM_PROF.busy=false;
+    }
+    setInterval(prefetchRoomProfiles,1000); prefetchRoomProfiles();
     function detectProfileImageUrls(){
-      const persona=selectedUserProfileImage();
-      const char=characterProfileImage();
+      const rp=ROOM_PROF.room&&ROOM_PROF.room===roomIdNow()?ROOM_PROF:{};
+      const persona=selectedUserProfileImage()||rp.persona||'';
+      const char=characterProfileImage()||rp.char||'';
       return {char:char&&char!==persona?char:'',persona};
     }
     function applyRefUrl(slot,value,name='URL'){

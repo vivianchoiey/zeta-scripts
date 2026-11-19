@@ -129,6 +129,14 @@
       "runAt": "idle",
       "group": "",
       "default": true
+    },
+    {
+      "id": "private-plot-explorer",
+      "name": "비캐 검색·정리기 (Private Plot Explorer) 버튼",
+      "file": "scripts/private-plot-explorer.js",
+      "runAt": "idle",
+      "group": "",
+      "default": true
     }
   ]
 }

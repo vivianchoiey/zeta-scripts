@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.34.2
+// @version      1.35.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1210,9 +1210,16 @@ const F_SENTINEL_RULE='. S급 센티넬다운 세련되고 날렵한 전투복. 
 // =====================================================
 
 const _fetch=window.fetch;
+// 제타 화면이 api.zeta-ai.io에 보내는 로그인 헤더를 기억 (아이폰처럼 저장소에서 토큰을 못 찾는 경우용)
+const _grabAuth=(h)=>{try{if(!h)return;const get=k=>typeof h.get==='function'?h.get(k):(Array.isArray(h)?(h.find(x=>String(x[0]).toLowerCase()===k)||[])[1]:(h[k]||h[k.replace(/^./,c=>c.toUpperCase())]));const v=get('authorization');if(v)window.__ZETA_AUTH__=String(v);}catch(_){}};
+try{const XO=XMLHttpRequest.prototype.open,XS=XMLHttpRequest.prototype.setRequestHeader;
+  XMLHttpRequest.prototype.open=function(m,u){this.__c2iu=String(u);return XO.apply(this,arguments);};
+  XMLHttpRequest.prototype.setRequestHeader=function(k,v){try{if(/api\.zeta-ai\.io/.test(this.__c2iu||'')&&String(k).toLowerCase()==='authorization')window.__ZETA_AUTH__=String(v);}catch(_){}return XS.apply(this,arguments);};
+}catch(_){}
 window.fetch=function(input,init){
   try{
     const url=typeof input==='string'?input:(input&&input.url)||'';
+    if(/api\.zeta-ai\.io/.test(url)){_grabAuth(init&&init.headers);if(input&&typeof input==='object')_grabAuth(input.headers);}
     if(/\/generate(\?|$)/.test(url)&&init&&init.body&&typeof init.body==='string'){
       const body=JSON.parse(init.body);
       if(body&&typeof body.prompt==='string'){
@@ -1842,16 +1849,25 @@ const coreBoot=(async()=>{
     // 2026-11: 채팅이 frame.pingpong.ai 프레임 안으로 들어가서 바깥 화면엔 프로필 사진이 없음 → 제타 API로 방 정보를 받아 채움
     const ROOM_PROF={room:'',char:'',persona:'',busy:false};
     function roomIdNow(){return (location.pathname.match(/\/rooms\/([0-9a-f-]{20,})/i)||[])[1]||'';}
-    function zetaToken(){try{for(let i=0;i<localStorage.length;i++){const m=String(localStorage.getItem(localStorage.key(i))||'').match(/eyJ[\w-]+\.[\w-]+\.[\w-]+/);if(m)return m[0];}}catch(_){}return '';}
+    function zetaTokens(){const out=[];const add=v=>{const m=String(v||'').match(/eyJ[\w-]+\.[\w-]+\.[\w-]+/g);if(m)m.forEach(t=>{if(!out.includes(t))out.push(t);});};
+      try{for(let i=0;i<localStorage.length;i++)add(localStorage.getItem(localStorage.key(i)));}catch(_){}
+      try{for(let i=0;i<sessionStorage.length;i++)add(sessionStorage.getItem(sessionStorage.key(i)));}catch(_){}
+      try{add(decodeURIComponent(document.cookie));}catch(_){}
+      return out;}
     async function prefetchRoomProfiles(){
       const room=roomIdNow(); if(!room||ROOM_PROF.busy||ROOM_PROF.room===room)return;
       ROOM_PROF.busy=true;
       try{
-        const tok=zetaToken(); const r=await fetch('https://api.zeta-ai.io/v1/rooms/'+room,{headers:tok?{authorization:'Bearer '+tok}:{},credentials:'include'});
-        if(r.ok){const j=await r.json();const plot=j&&j.plot||{};
+        const auths=[];if(window.__ZETA_AUTH__)auths.push(window.__ZETA_AUTH__);zetaTokens().forEach(t=>auths.push('Bearer '+t));auths.push('');
+        let r=null;
+        for(const a of auths.slice(0,5)){try{r=await fetch('https://api.zeta-ai.io/v1/rooms/'+room,{headers:a?{authorization:a}:{},credentials:'include'});}catch(_){r=null;}if(r&&r.ok)break;}
+        if(r&&r.ok){const j=await r.json();const plot=j&&j.plot||{};
           ROOM_PROF.char=cleanHighResolutionImageUrl((plot.characters||[]).map(c=>c&&c.imageUrl).find(Boolean)||plot.imageUrl||'');
           ROOM_PROF.persona=cleanHighResolutionImageUrl((plot.chatProfiles||[]).map(c=>c&&c.imageUrl).find(Boolean)||'');
-          ROOM_PROF.room=room;}
+          ROOM_PROF.room=room;
+          // 방별 동기화가 시도를 끝낸 뒤에 받아졌으면 비어 있는 칸만 채움
+          setTimeout(()=>{try{if(roomIdNow()===room&&!state.refs.char&&!state.refs.persona)loadProfileRefs(false);}catch(_){}},400);}
+        else console.log('[Chat2Img-Codex] 방 정보 불러오기 실패',r&&r.status);
       }catch(_){}
       ROOM_PROF.busy=false;
     }

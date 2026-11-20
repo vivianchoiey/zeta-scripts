@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.38.1
+// @version      1.38.2
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -2135,7 +2135,7 @@ ${scene}`].filter(Boolean).join('\n\n');}
     shadow.querySelectorAll('[data-pick]').forEach(btn=>btn.addEventListener('click',()=>pickFile(btn.dataset.pick).catch(e=>alert(e?.message||String(e)))));shadow.querySelectorAll('[data-clipboard]').forEach(btn=>btn.addEventListener('click',()=>readClipboardImage(btn.dataset.clipboard).catch(e=>alert(e?.message||String(e)))));shadow.querySelectorAll('[data-clear]').forEach(btn=>btn.addEventListener('click',()=>snapshotRef(btn.dataset.clear,null)));
     shadow.querySelectorAll('[data-url-apply]').forEach(btn=>btn.addEventListener('click',()=>{const slot=btn.dataset.urlApply;const input=slot==='char'?els.charUrl:els.personaUrl;try{applyRefUrl(slot,input.value,slot==='char'?'캐릭터 URL':'유저 URL');}catch(e){alert(e?.message||String(e));}}));
     [['char',els.charUse],['persona',els.personaUse],['style',els.styleUse]].forEach(([slot,input])=>input.addEventListener('change',()=>{if(state.refs[slot])state.refs[slot].enabled=input.checked;}));
-    els.loadProfiles.addEventListener('click',async()=>{ROOM_PROF.room='';for(let i=0;i<20&&ROOM_PROF.busy;i++)await new Promise(r=>setTimeout(r,150));await prefetchRoomProfiles();loadProfileRefs(true);});
+    els.loadProfiles.addEventListener('click',async(ev)=>{if(!ev.isTrusted){loadProfileRefs(true);return;}ROOM_PROF.room='';for(let i=0;i<20&&ROOM_PROF.busy;i++)await new Promise(r=>setTimeout(r,150));await prefetchRoomProfiles();loadProfileRefs(true);});
     loadProfileRefs(false);
 
     // Do not block UI while checking the bridge.

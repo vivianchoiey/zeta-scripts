@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.36.0
+// @version      1.37.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -653,6 +653,23 @@ function pickOutfit(){
   try{localStorage.setItem(LAST_KEY,pick);}catch(e){}
   return pick;
 }
+// ===== 사혁 방 카야: 미우미우식 분홍 룩 (반쯤 확률로 섞임) =====
+const PINK={
+  top:['미우미우 베이비 핑크 캐시미어 크루넥 니트','미우미우 파스텔 핑크 케이블 카디건(단추 잠금)','미우미우 핑크 포플린 셔츠','미우미우 더스티 핑크 브이넥 니트','미우미우 화이트 포플린 셔츠 위에 베이비 핑크 니트 베스트','미우미우 핑크 크롭 니트 폴로'],
+  bottom:['미우미우 베이비 핑크 울 미니 스커트','미우미우 그레이 울 미니 스커트','미우미우 아이보리 울 슬랙스','미우미우 핑크 트위드 미니 스커트','미우미우 화이트 플리츠 미니 스커트','프라다 블랙 슬림 슬랙스'],
+  outer:['미우미우 파스텔 핑크 울 크롭 코트','샤넬 라이트 핑크 트위드 재킷','미우미우 베이비 핑크 가죽 재킷','미우미우 아이보리 울 크롭 코트','막스마라 핑크 캐시미어 코트','없음','없음'],
+  shoes:['미우미우 핑크 새틴 발레 플랫','미우미우 화이트 가죽 발레 플랫','미우미우 핑크 가죽 메리제인 힐','미우미우 블랙 가죽 발레 플랫','미우미우 아이보리 로퍼'],
+  acc:['미우미우 핑크 마테라세 숄더백','미우미우 완더 핑크 호보백','프라다 핑크 리나일론 미니백','작은 진주 귀걸이','없음'],
+};
+const PINK_RULE='. 미우미우 특유의 사랑스럽지만 고급스러운 파스텔 핑크 룩. 베이비 핑크·더스티 핑크를 화이트·아이보리·그레이와 섞어 세련되게. 형광 핑크·바비 핑크·핑크 범벅 상하의 세트, 프릴·큰 리본·레이스, 캐릭터 소품, 유치하거나 어려 보이는 차림은 금지.';
+function makePinkOutfit(scene){
+  const sc=scene||'';const parts=[rnd(PINK.top),rnd(PINK.bottom)];
+  let outer=rnd(PINK.outer);
+  if(/여름|더운|더워|폭염/.test(sc))outer='없음';else if(/겨울|추워|추운|영하|눈 오|눈이/.test(sc)&&outer==='없음')outer=rnd(PINK.outer.filter(o=>o!=='없음'));
+  if(outer!=='없음')parts.push(outer);parts.push(rnd(PINK.shoes));
+  const a=rnd(PINK.acc);if(a!=='없음')parts.push(a);
+  return `미우미우 핑크 룩 — ${parts.join(', ')}`;
+}
 // ===== 윤이 전용 풀 (고정 프롬프트에 '윤이'가 있을 때만 작동) =====
 // 토끼 수인, 190cm 슬렌더. 수트 없음. 아메카지 + 프레피, 캐주얼하고 귀엽게. 과하지 않게
 const YUNI_COLORS=['아이보리','오프화이트','크림','오트밀','베이지','카키','올리브','네이비','차콜','연회색','브라운','머스타드','버건디','스카이블루','세이지'];
@@ -1281,8 +1298,9 @@ window.fetch=function(input,init){
           }else{
             const formal=FORMAL_RE.test(sceneText);
             const anchor=!formal&&p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('아나운서')&&ANCHOR_RE.test(sceneText);
-            const outfit=formal?pickGown(sceneText):anchor?makeAnchorOutfit():pickOutfit();
-            add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+outfit+(formal?GOWN_RULE:anchor?ANCHOR_RULE:OUTFIT_RULE);
+            const pinkOn=!formal&&!anchor&&p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('권사혁')&&Math.random()<0.5;
+            const outfit=formal?pickGown(sceneText):anchor?makeAnchorOutfit():pinkOn?makePinkOutfit(sceneText):pickOutfit();
+            add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+outfit+(formal?GOWN_RULE:anchor?ANCHOR_RULE:pinkOn?PINK_RULE:OUTFIT_RULE);
             const fh=pickFHair(sceneText,formal,anchor);
             add+='\n유저(여주) 헤어: '+fh+F_HAIR_RULE;
             console.log('[Chat2Img-Codex] 여주 의상:',outfit,'/ 헤어:',fh);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.39.0
+// @version      1.40.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1902,10 +1902,19 @@ const coreBoot=(async()=>{
       ROOM_PROF.busy=false;
     }
     setInterval(prefetchRoomProfiles,1000); prefetchRoomProfiles();
+    // 채팅 프레임 안에서 실제로 보이는 프사 (frame-profile-bridge가 보내줌) — 방에서 고른 휄소까지 정확
+    const FRAME_PROF={room:'',char:'',persona:'',t:0};
+    window.addEventListener('message',e=>{try{if(e.origin!=='https://frame.pingpong.ai')return;const d=e.data;if(!d||d.type!=='c2i-frame-profiles')return;
+      const room=roomIdNow();const changed=FRAME_PROF.room!==room;
+      FRAME_PROF.room=room;FRAME_PROF.t=Date.now();
+      if(d.char)FRAME_PROF.char=cleanHighResolutionImageUrl(d.char);else if(changed)FRAME_PROF.char='';
+      if(d.persona)FRAME_PROF.persona=cleanHighResolutionImageUrl(d.persona);else if(changed)FRAME_PROF.persona='';
+    }catch(_){}});
     function detectProfileImageUrls(){
       const rp=ROOM_PROF.room&&ROOM_PROF.room===roomIdNow()?ROOM_PROF:{};
-      const persona=selectedUserProfileImage()||rp.persona||'';
-      const char=characterProfileImage()||rp.char||'';
+      const fp=FRAME_PROF.room&&FRAME_PROF.room===roomIdNow()&&Date.now()-FRAME_PROF.t<20000?FRAME_PROF:{};
+      const persona=fp.persona||selectedUserProfileImage()||rp.persona||'';
+      const char=fp.char||characterProfileImage()||rp.char||'';
       return {char:char&&char!==persona?char:'',persona};
     }
     function applyRefUrl(slot,value,name='URL'){

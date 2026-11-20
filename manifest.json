@@ -26,6 +26,14 @@
       "default": true
     },
     {
+      "id": "frame-profile-bridge",
+      "name": "코냅샷 프로필 다리 (채팅방 실제 프사 → 코냅샷, 끄지 마세요)",
+      "file": "scripts/frame-profile-bridge.js",
+      "runAt": "idle",
+      "group": "",
+      "default": true
+    },
+    {
       "id": "kakao-theme-pc",
       "name": "카톡테마 (PC)",
       "file": "scripts/kakao-theme-pc.js",

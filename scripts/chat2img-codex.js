@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.40.0
+// @version      1.40.1
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1291,6 +1291,8 @@ window.fetch=function(input,init){
             const fu=rnd(F_SENTINEL_UNIFORM);
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): 임무복 — '+fu+F_SENTINEL_RULE;
             console.log('[Chat2Img-Codex] 여주 임무복:',fu);
+          }else if(/반드시 군복|사복을 입지 않는다|사복은 절대 금지/.test(p.slice(0,sceneIdx>=0?sceneIdx:p.length))){
+            console.log('[Chat2Img-Codex] 군복 고정 방: 여주 사복 랜덤 건너뜀');
           }else if(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('권지우')){
             const kh=makeKayaHSOutfit(sceneText);
             add='\n\n최카야 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+kh+KAYA_HS_RULE;

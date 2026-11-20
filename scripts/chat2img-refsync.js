@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img 참조사진·설정 방별 동기화
 // @namespace    zeta-local
-// @version      1.3.0
+// @version      1.4.0
 // @description  방 들어올 때 프로필 사진 자동 불러오기 + Chat2Img-Codex 참조사진(캐릭터·유저·스타일)과 생성 설정을 방마다 Supabase에 저장해 폰·윈도우·맥 어디서든 자동으로 채움 + 아이폰 사진 넣기 오류 보정
 // @match        https://zeta-ai.io/*
 // @match        https://www.zeta-ai.io/*
@@ -150,7 +150,7 @@
       const input = this;
       const handler = input.onchange;
       if (pending) {                       // 자동 채우기: 선택창 없이 바로 넣기
-        const { file } = pending; pending = null;
+        const { file } = pending; pending = null; input.__c2iAuto = true;
         try { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; } catch (e) { return; }
         handler && handler.call(input, new Event('change'));
         return;
@@ -163,12 +163,22 @@
         if (f) {
           const small = await shrink(f);
           try { const dt = new DataTransfer(); dt.items.add(small); input.files = dt.files; } catch (e) {}
-          if (slot) upload(roomId(), slot, small);
+          // 업로드는 코냅샷이 보내는 'c2i-ref-user-set' 신호로 처리 (파일·클립보드 둘 다)
         }
         try { handler && await handler.call(input, ev); } finally { input.remove(); keep.delete(input); }
       };
       return origClick.apply(this, arguments);
     };
+
+    // 사용자가 사진을 넣으면(파일 선택·클립보드 붙여넣기) 그 방에 저장
+    window.addEventListener('c2i-ref-user-set', async (e) => {
+      try {
+        const d = e.detail || {}; if (!d.slot || !d.file || !SLOTS.includes(d.slot)) return;
+        const room = roomId(); if (!room) { toast('방 주소를 못 찾아서 저장 못 함', true); return; }
+        const small = await shrink(d.file);
+        upload(room, d.slot, small);
+      } catch (err) { log('저장 오류', err); }
+    });
 
     // 패널 버튼 감시 (사진 넣기 / 지우기)
     const hooked = new WeakSet();
@@ -225,7 +235,7 @@
     const tick = () => { hookPanel(); fillRoom(); };
     setInterval(tick, 1500);
     tick();
-    window.__C2I_REFSYNC__ = { version: '1.3.0', cloud: cloudOn, refill: () => { lastRoom = null; tick(); } };
+    window.__C2I_REFSYNC__ = { version: '1.4.0', cloud: cloudOn, refill: () => { lastRoom = null; tick(); } };
     log(cloudOn ? '켜짐 (클라우드 동기화)' : '켜짐 (Supabase 설정 없음: 아이폰 보정만 작동)'); setTimeout(() => toast(cloudOn ? '켜짐' : '켜짐 (클라우드 설정 없음)'), 1500);
   })();
 })();

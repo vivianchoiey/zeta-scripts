@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.38.2
+// @version      1.39.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1754,13 +1754,13 @@ const coreBoot=(async()=>{
     function fileToDataUrl(file){ return new Promise((resolve,reject)=>{const r=new FileReader();r.onerror=()=>reject(new Error('파일 읽기 실패'));r.onload=()=>resolve(String(r.result||''));r.readAsDataURL(file);}); }
     async function pickFile(slot){
       const input=document.createElement('input'); input.type='file'; input.accept='image/png,image/jpeg,image/webp';
-      input.onchange=async()=>{const f=input.files?.[0];if(!f)return;snapshotRef(slot,{name:f.name,dataUrl:await fileToDataUrl(f),enabled:true});}; input.click();
+      input.onchange=async()=>{const f=input.files?.[0];if(!f)return;const du=await fileToDataUrl(f);snapshotRef(slot,{name:f.name,dataUrl:du,enabled:true});if(!input.__c2iAuto)try{window.dispatchEvent(new CustomEvent('c2i-ref-user-set',{detail:{slot,file:f}}));}catch(_){}}; input.click();
     }
     async function readClipboardImage(slot){
       if(!navigator.clipboard?.read) throw new Error('이 브라우저에서는 클립보드 이미지 읽기를 사용할 수 없습니다.');
       for(const item of await navigator.clipboard.read()){
         const type=item.types.find(t=>/^image\/(png|jpeg|webp)$/i.test(t)); if(!type) continue;
-        const blob=await item.getType(type); const file=new File([blob],`${slot}.${type.split('/')[1]}`,{type}); snapshotRef(slot,{name:file.name,dataUrl:await fileToDataUrl(file),enabled:true}); return;
+        const blob=await item.getType(type); const file=new File([blob],`${slot}.${type.split('/')[1]}`,{type}); snapshotRef(slot,{name:file.name,dataUrl:await fileToDataUrl(file),enabled:true}); try{window.dispatchEvent(new CustomEvent('c2i-ref-user-set',{detail:{slot,file}}));}catch(_){} return;
       }
       throw new Error('클립보드에 이미지가 없습니다.');
     }

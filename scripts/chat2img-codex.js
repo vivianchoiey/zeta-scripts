@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.35.1
+// @version      1.36.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1304,6 +1304,18 @@ window.fetch=function(input,init){
             if(FORMAL_RE.test(sceneText))suit+=', '+rnd(POCKET_SQ);
             add+='\n\n권승재 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+suit+SUIT_RULE+' 보조 스틱은 기존 규칙대로 유지.';
             console.log('[Chat2Img-Codex] 승재 수트:',suit);
+          }
+          // 권사혁 방: 승재랑 같은 수트·사복·집옷 풀 (보조 스틱 없음, 목덜미 용 문신은 프롬프트 규칙대로)
+          if(characterText.includes('권사혁')&&!sjSkip){
+            const SH_LBL='\n\n권사혁 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): ';
+            if(sjHome){const sh=makeSjHome();add+=SH_LBL+sh+SJ_HOME_RULE.replace('38세 재벌','37세 그룹 회장');console.log('[Chat2Img-Codex] 사혁 집옷:',sh);}
+            else if(/사복|캐주얼|니트|주말|휴일|쉬는 날|드라이브|산책|여행|캠핑|바이크|오토바이/.test(sceneText)){const sc=makeSjCasual();add+=SH_LBL+sc+SJ_CASUAL_RULE.replace('38세 재벌','37세 그룹 회장');console.log('[Chat2Img-Codex] 사혁 사복:',sc);}
+            else if(!/사복|캐주얼|니트|후드|티셔츠/.test(sceneText)){
+              let suit=pickSuit();
+              if(/겨울|눈 오|눈이|추워|추운|영하|비 오|비가|빗속|야외|밖에서|산책|정원/.test(sceneText)&&Math.random()<0.5)suit+=', 수트 위에 '+rnd(SJ_BELSTAFF_OUTER.slice(0,3))+'을 걸침';
+              if(FORMAL_RE.test(sceneText))suit+=', '+rnd(POCKET_SQ);
+              add+=SH_LBL+suit+SUIT_RULE.replace('38세 재벌','37세 그룹 회장');console.log('[Chat2Img-Codex] 사혁 수트:',suit);
+            }
           }
           // 구달 방: 수트 장면이면 수트 스타일 랜덤
           if(p.includes('구달')&&!/사복|캐주얼|후드|티셔츠|스웻|잠옷|환자복|수영복|맨몸|상의 탈의|메이드복/.test(sceneText)){

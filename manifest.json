@@ -87,8 +87,7 @@
       "file": "scripts/clean-cozy.js",
       "runAt": "idle",
       "group": "",
-      "default": false,
-      "frameRemote": "https://clean-theme-js.netlify.app/clean-cozy.js"
+      "default": false
     },
     {
       "id": "pastel-cat-player",

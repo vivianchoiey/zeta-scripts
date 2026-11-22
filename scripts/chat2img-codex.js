@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.40.1
+// @version      1.41.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -137,6 +137,41 @@ function makeKayaHSOutfit(scene){
   const off=HS_OFF_RE.test(sc)&&!HS_RE.test(sc);
   const outfit=off?`사복 — ${rnd(KAYA_HS.casual)}`:`교복 — ${rnd(winter?KAYA_HS.uniform.winter:summer?KAYA_HS.uniform.summer:KAYA_HS.uniform.mid)}`;
   return `${outfit} / 헤어 — ${rnd(KAYA_HS.hair)}`;
+}
+// ===== 백준희 (EPL 킹스브리지 로열 FC 7번, 고정 프롬프트에 '백준희'가 있을 때만) =====
+// 평소엔 비싼 기본템 블랙 애슬레저, 외출·데이트엔 럭셔리 미니멀, 행사·화보엔 블랙 수트, 경기·훈련엔 구단 유니폼
+const JUNHEE={
+  casual:{
+    top:['아워레가시 블랙 크루넥 티셔츠','더 로우 화이트 코튼 티셔츠','르메르 블랙 롱슬리브 티셔츠','아크네 스튜디오 그레이 크루넥 스웻셔츠','나이키 테크 플리스 블랙 풀집 후디'],
+    bottom:['나이키 테크 플리스 블랙 조거 팬츠','르메르 블랙 트랙 팬츠','아워레가시 블랙 와이드 스웻팬츠','아크네 스튜디오 블랙 스트레이트 데님'],
+    outer:['아크네 스튜디오 블랙 후드 집업','몽클레르 블랙 경량 패딩','르메르 블랙 코치 재킷','없음','없음'],
+    shoes:['나이키 에어포스 1 화이트','뉴발란스 993 그레이','아디다스 삼바 블랙','나이키 에어포스 1 블랙'],
+    acc:['블랙 비니','블랙 마스크','블랙 비니와 블랙 마스크','없음','없음'],
+  },
+  out:{
+    top:['생로랑 블랙 메리노 크루넥 니트','더 로우 화이트 오버핏 티셔츠','르메르 아이보리 트위스트 셔츠','보테가 베네타 그레이 캐시미어 니트','프라다 블랙 실크 셔츠(단추 하나 풀림)','아크네 스튜디오 블랙 터틀넥 니트'],
+    bottom:['셀린느 블랙 슬림 슬랙스','아미리 블랙 스트레이트 데님','르메르 차콜 울 와이드 트라우저','더 로우 블랙 울 트라우저','아크네 스튜디오 진청 스트레이트 데님'],
+    outer:['보테가 베네타 블랙 가죽 재킷','프라다 블랙 리나일론 재킷','르메르 다크 브라운 울 코트','더 로우 차콜 캐시미어 롱 코트','생로랑 블랙 가죽 라이더 재킷','아크네 스튜디오 블랙 울 블레이저'],
+    shoes:['보테가 베네타 블랙 첼시 부츠','프라다 블랙 브러시드 레더 로퍼','생로랑 블랙 가죽 부츠','더 로우 블랙 가죽 로퍼'],
+    acc:['얇은 실버 체인 목걸이','까르띠에 탱크 시계','블랙 선글라스','없음'],
+  },
+  formal:['생로랑 블랙 슬림 수트, 블랙 셔츠 단추 하나 풀림, 넥타이 없음, 블랙 첼시 부츠','디올 옴므 블랙 턱시도, 블랙 터틀넥 니트, 블랙 가죽 더비 슈즈','프라다 차콜 싱글 수트, 화이트 셔츠 단추 하나 풀림, 넥타이 없음, 블랙 로퍼','보테가 베네타 다크 브라운 수트, 블랙 터틀넥, 블랙 가죽 부츠','생로랑 블랙 턱시도, 화이트 셔츠, 얇은 블랙 보타이, 블랙 에나멜 더비'],
+  kit:['킹스브리지 로열 FC 홈 유니폼 — 버건디 반팔 상의(골드 포인트, 등번호 7), 버건디 쇼츠, 버건디 축구 양말, 축구화','킹스브리지 로열 FC 훈련복 — 버건디 훈련 상의, 블랙 트레이닝 팬츠, 운동화','킹스브리지 로열 FC 버건디 트레이닝 재킷(지퍼 반쯤 올림), 블랙 트레이닝 팬츠, 운동화'],
+};
+const JUNHEE_RULE='. 백준희는 191cm 근육질의 EPL 스타 축구선수. 패션지를 섭렵한 옷 센스 좋은 남자답게 블랙·화이트·그레이·차콜·브라운 위주로 군더더기 없이 세련되게 입는다. 큰 로고·로고 도배, 형광색, 볼캡·버킷햇, 체인 여러 겹, 과한 액세서리, 촌스러운 운동복 세트는 금지.';
+function makeJunheeOutfit(scene){
+  const sc=scene||'';
+  const winter=/겨울|눈 오|눈이|추워|추운|영하|패딩|입김/.test(sc),summer=!winter&&/여름|더운|더워|폭염|반팔/.test(sc);
+  if(/경기장|경기 중|시합|훈련장|훈련 중|그라운드|하프타임|골을|골 세리머니|킥오프|라커룸|드레싱룸|전반전|후반전/.test(sc))return `구단 유니폼 — ${/훈련/.test(sc)?rnd(JUNHEE.kit.slice(1)):JUNHEE.kit[0]}`;
+  if(FORMAL_RE.test(sc)||/시상식|화보|촬영장|브랜드 행사|패션쇼|발롱도르/.test(sc))return `행사 수트 — ${rnd(JUNHEE.formal)}`;
+  const P=/데이트|약속|외출|레스토랑|식당|바에서|와인|파티|클럽|전시|미술관|공항|출국|입국/.test(sc)?JUNHEE.out:JUNHEE.casual;
+  let top=rnd(P.top),outer=rnd(P.outer);
+  if(summer){outer='없음';if(/니트|스웻|후디|터틀넥/.test(top))top=P===JUNHEE.out?'더 로우 화이트 오버핏 티셔츠':'아워레가시 블랙 크루넥 티셔츠';}
+  else if(winter&&outer==='없음')outer=P===JUNHEE.out?'더 로우 차콜 캐시미어 롱 코트':'몽클레르 블랙 경량 패딩';
+  if(/후디|후드 집업/.test(top)&&/후드 집업/.test(outer))outer='없음';
+  const parts=[top,rnd(P.bottom)];if(outer!=='없음')parts.push(outer);parts.push(rnd(P.shoes));
+  let accs=P.acc.filter(x=>!(summer&&/비니/.test(x))&&!(/밤|저녁|야경|새벽|실내|집/.test(sc)&&/선글라스/.test(x)));const a=rnd(accs.length?accs:['없음']);if(a!=='없음')parts.push(a);
+  return `${P===JUNHEE.out?'외출':'평소'} — ${parts.join(', ')}`;
 }
 // ===== 권승재 수트 랜덤 (고정 프롬프트에 '권승재'가 있을 때만 작동) =====
 // 어두운 고급 수트만. 베이지·브라운·회색빛 밝은 수트 없음
@@ -1279,7 +1314,7 @@ window.fetch=function(input,init){
             add+='\n\n윤이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+yo+(kind==='sleep'?Y_SLEEP_RULE:Y_SWIM_RULE);
             console.log('[Chat2Img-Codex] 윤이 '+kind+':',yo);
           }
-          body.prompt=p+add+(/권이림|권지우/.test(p)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복 제외)'):NO_BUCKET);
+          body.prompt=p+add+(/권이림|권지우|백준희/.test(p)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복 제외)'):NO_BUCKET);
           init={...init,body:JSON.stringify(body)};
         }else if(!off&&!skip&&!specialScene(sceneText)){
           let add='';
@@ -1393,6 +1428,12 @@ window.fetch=function(input,init){
             add+='\n\n권이현 의상 (이 인물이 지금 장면에 등장할 때만 적용한다. 장면에 없는 인물은 그리지 않는다. 대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+ih+IHYUN_RULE;
             console.log('[Chat2Img-Codex] 권이현 의상:',ih);
           }
+          // 백준희: 평소·외출·행사·유니폼
+          if(characterText.includes('백준희')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const jh=makeJunheeOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n백준희 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jh+JUNHEE_RULE;
+            console.log('[Chat2Img-Codex] 백준희 의상:',jh);
+          }
           // 권지우: 교복 기본, 주말엔 사복, 축구 장면엔 축구복
           if(characterText.includes('권지우')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
             const jo=makeJiwooOutfit(sceneIdx>=0?sceneText:'');
@@ -1421,7 +1462,7 @@ window.fetch=function(input,init){
           init={...init,body:JSON.stringify(body)};
         }
         // 옷 랜덤이 꺼진 장면(#옷고정, 메이드복 등)에도 버킷햇 금지는 항상 붙임
-        const nbX=/권이림|권지우/.test(body.prompt)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복 제외)'):NO_BUCKET;
+        const nbX=/권이림|권지우|백준희/.test(body.prompt)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복 제외)'):NO_BUCKET;
         if(!daisukeRoom&&!body.prompt.includes(nbX)){
           body.prompt+=nbX;
           init={...init,body:JSON.stringify(body)};

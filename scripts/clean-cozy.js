@@ -19,8 +19,20 @@
   // 보정 (Vivian 요청): Clean Cozy가 숨기는 제타 원래 버튼(마지막 답변 아래 스냅샷·마법봉·새 답변·신고 줄, 추천답변 버튼)을 다시 보이게
   if(location.hostname==='frame.pingpong.ai'){
     var fix=document.createElement('style');fix.id='cc-show-native-buttons';
-    fix.textContent='html.cc-tools-ready body [data-sentry-component="LastMessageControlBar"][data-sentry-component]{position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;opacity:1!important;pointer-events:auto!important;user-select:auto!important;z-index:auto!important}'
-      +'html.cc-tools-ready body [data-sentry-component="QuickReplyButton"][data-sentry-component]{display:flex!important}';
+    var B=':not(#zs-a):not(#zs-b):not(#zs-c)';
+    fix.textContent='html body [data-sentry-component="LastMessageControlBar"]'+B+'{position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;opacity:1!important;pointer-events:auto!important;user-select:auto!important;z-index:auto!important;transform:none!important;visibility:visible!important}'
+      +'html body [data-sentry-component="LastMessageControlBar"]'+B+' button{pointer-events:auto!important}'
+      +'html body [data-sentry-component="QuickReplyButton"]'+B+'{display:flex!important}'
+      +'html body [data-sentry-component="QuickReplyButton"]'+B+' button[aria-label="Suggested replies"]{display:flex!important}';
+    // Clean Cozy가 요소에 직접 박는 숨김 스타일도 걷어냄
+    var PROPS=['position','left','right','top','bottom','inset','opacity','pointer-events','user-select','z-index','transform','visibility','display'];
+    var unhide=function(){
+      document.querySelectorAll('[data-sentry-component="LastMessageControlBar"],[data-sentry-component="LastMessageControlBar"] button,[data-sentry-component="QuickReplyButton"],[data-sentry-component="QuickReplyButton"] button').forEach(function(el){
+        if(!el.getAttribute('style'))return;
+        PROPS.forEach(function(p){ if(el.style.getPropertyValue(p)&&(p!=='display'||el.style.getPropertyValue(p)==='none'))el.style.removeProperty(p); });
+      });
+    };
+    setInterval(unhide,700);
     var put=function(){var h=document.head||document.documentElement;if(!fix.isConnected||fix!==h.lastElementChild)h.appendChild(fix);};
     put();setInterval(put,1500);
   }

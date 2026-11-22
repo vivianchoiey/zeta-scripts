@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         코냅샷 프로필 다리 (채팅 프레임 → 바깥)
 // @namespace    vivianchoiey-frame-profile-bridge
-// @version      1.0.0
+// @version      1.1.0
 // @description  채팅이 frame.pingpong.ai 프레임 안에 있어서 코냅샷이 실제 말풍선 프사를 못 봄 → 프레임 안에서 지금 방에 보이는 캐릭터·유저 프사를 찾아 바깥 화면(코냅샷)에 알려줌
 // @match        https://frame.pingpong.ai/*
 // @run-at       document-idle
@@ -35,4 +35,11 @@
     try{window.parent.postMessage({type:'c2i-frame-profiles',char,persona},'https://zeta-ai.io');}catch(e){}
   };
   setInterval(scan,2000);setTimeout(scan,800);
+  // 점검용: 바깥 제타 화면이 선택자를 물어보면 프레임 안 요소 상태를 알려줌 (읽기만 함)
+  window.addEventListener('message',e=>{try{
+    if(e.origin!=='https://zeta-ai.io'||!e.data||e.data.type!=='zs-frame-diag')return;
+    const out={html:document.documentElement.className.slice(0,200),styles:[...document.querySelectorAll('style[id]')].map(x=>x.id).slice(-30),q:{}};
+    (e.data.selectors||[]).slice(0,10).forEach(sel=>{const els=[...document.querySelectorAll(sel)].slice(0,3);out.q[sel]=els.map(el=>{const c=getComputedStyle(el),r=el.getBoundingClientRect();return {display:c.display,opacity:c.opacity,position:c.position,z:c.zIndex,vis:c.visibility,pe:c.pointerEvents,rect:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],h:el.outerHTML.length};});});
+    e.source.postMessage({type:'zs-frame-diag-result',id:e.data.id,out},'https://zeta-ai.io');
+  }catch(_){}});
 })();

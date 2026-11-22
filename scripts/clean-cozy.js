@@ -23,7 +23,8 @@
     fix.textContent='html body [data-sentry-component="LastMessageControlBar"]'+B+'{position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;opacity:1!important;pointer-events:auto!important;user-select:auto!important;z-index:auto!important;transform:none!important;visibility:visible!important}'
       +'html body [data-sentry-component="LastMessageControlBar"]'+B+' button{pointer-events:auto!important}'
       +'html body [data-sentry-component="QuickReplyButton"]'+B+'{display:flex!important}'
-      +'html body [data-sentry-component="QuickReplyButton"]'+B+' button[aria-label="Suggested replies"]{display:flex!important}';
+      +'html body [data-sentry-component="QuickReplyButton"]'+B+' button[aria-label="Suggested replies"]{display:flex!important}'
+      +'html body :is([data-sentry-component="ChatComposer"],[data-testid="composer-input-box"]) button:is([aria-label="Suggested replies"],[aria-label="Get suggestions"],[aria-label="추천 답변"])'+B+'{display:flex!important}';
     // Clean Cozy가 요소에 직접 박는 숨김 스타일도 걷어냄
     var PROPS=['position','left','right','top','bottom','inset','opacity','pointer-events','user-select','z-index','transform','visibility','display'];
     var unhide=function(){

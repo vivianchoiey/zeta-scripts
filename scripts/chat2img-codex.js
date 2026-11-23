@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.42.2
+// @version      1.43.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -201,6 +201,31 @@ function makeKayaFairyOutfit(scene){
   let outer=rnd(KAYA_FAIRY.outer);if(winter&&outer==='없음')outer='흰 울 케이프';
   const parts=[rnd(KAYA_FAIRY.dress)];if(outer!=='없음')parts.push(outer);parts.push(rnd(KAYA_FAIRY.shoes));const a=rnd(KAYA_FAIRY.acc);if(a!=='없음')parts.push(a);
   return `${parts.join(', ')} / 헤어 — ${rnd(KAYA_FAIRY.hair)}`;
+}
+// ===== 이정원 (한국항공 국제선 부기장, 고정 프롬프트에 '이정원'과 '부기장'이 있을 때만) =====
+const PILOT_WATCH=['롤렉스 GMT마스터 II 시계','브라이틀링 내비타이머 시계','IWC 빅 파일럿 시계','오메가 스피드마스터 시계','롤렉스 서브마리너 블랙 시계'];
+const JW={
+  duty:['짙은 네이비 항공사 제복 재킷(소매에 금색 줄 3개), 흰 셔츠, 네이비 넥타이, 네이비 제복 바지, 블랙 옥스퍼드 구두','흰 조종사 셔츠(어깨에 금색 줄 3개 견장), 네이비 넥타이, 네이비 제복 바지, 블랙 옥스퍼드 구두(재킷은 벗음)','짙은 네이비 항공사 제복 재킷, 흰 셔츠, 네이비 넥타이, 네이비 제복 바지, 네이비 롱 울 코트, 블랙 옥스퍼드 구두','짙은 네이비 항공사 제복 재킷, 흰 셔츠, 네이비 넥타이, 네이비 제복 바지, 금색 휘장이 달린 조종사 제모, 블랙 옥스퍼드 구두, 검은 비행 캐리어'],
+  top:['르메르 크림 트위스트 셔츠','드레익스 화이트 옥스퍼드 셔츠(단추 하나 풀림)','존 스메들리 네이비 메리노 크루넥 니트','아워레가시 블랙 크루넥 니트','폴로 랄프로렌 네이비 케이블 니트','더 로우 화이트 티셔츠','아크네 스튜디오 그레이 터틀넥 니트'],
+  bottom:['르메르 차콜 울 트라우저','아워레가시 블랙 와이드 슬랙스','폴로 랄프로렌 베이지 치노','A.P.C. 진청 스트레이트 데님','드레익스 그레이 플란넬 트라우저'],
+  outer:['맥 차콜 고무 맥코트','르메르 다크 브라운 울 코트','벨스타프 트라이얼마스터 블랙 왁스 재킷','드레익스 네이비 울 블레이저','토템 카멜 울 코트','아크네 스튜디오 다크 브라운 스웨이드 재킷','없음'],
+  shoes:['존 롭 다크 브라운 페니 로퍼','처치스 블랙 첼시 부츠','드레익스 브라운 스웨이드 로퍼','커먼 프로젝트 화이트 스니커즈'],
+  home:['흰 셔츠 단추를 두어 개 푼 채 소매를 걷은 차림, 네이비 슬랙스','아워레가시 그레이 스웻셔츠, 블랙 스웻팬츠','폴로 랄프로렌 네이비 니트, 그레이 스웻팬츠','흰 티셔츠, 블랙 이지 팬츠','호텔 흰 가운'],
+};
+const JW_RULE='. 이정원은 34살 국제선 부기장, 188cm의 단단하고 반듯한 체격. 흑발을 단정하게 넘긴 머리. 제복은 각 잡히고 깔끔하게, 사복은 고급 기본템으로 군더더기 없이 세련되게 입는다. 손목에는 늘 고급 시계를 찬다. 항공사 로고·명찰 글자·숫자는 읽히지 않게 작게 그린다. 큰 로고, 볼캡, 운동복 세트, 촌스러운 패턴은 금지.';
+function makeJeongwonOutfit(scene){
+  const sc=scene||'';const w=rnd(PILOT_WATCH);
+  if(/공항|비행|조종석|콕핏|운항|브리핑|쇼업|게이트|활주로|기내|크루|승무원|출근|이륙|착륙|탑승|제복/.test(sc)){
+    let d=rnd(JW.duty);if(/조종석|콕핏|기내|이륙|착륙/.test(sc))d=JW.duty[1];
+    return `근무 제복 — ${d}, ${w}`;
+  }
+  if(/집에서|집 안|거실|침실|침대|소파|부엌|호텔 방|호텔방|객실|샤워 후|씻고/.test(sc)&&!/외출|나가|식당|레스토랑|카페|바에서/.test(sc))return `편한 차림 — ${rnd(JW.home)}, ${w}`;
+  const summer=/여름|더운|더워|폭염|반팔/.test(sc),winter=/겨울|눈 오|눈이|추워|추운|영하|입김/.test(sc);
+  let top=rnd(JW.top),outer=rnd(JW.outer);
+  if(summer){outer='없음';if(/니트/.test(top))top=rnd(['드레익스 화이트 옥스퍼드 셔츠(단추 하나 풀림)','더 로우 화이트 티셔츠','르메르 크림 트위스트 셔츠']);}
+  else if(winter&&outer==='없음')outer='르메르 다크 브라운 울 코트';
+  const parts=[top,rnd(JW.bottom)];if(outer!=='없음')parts.push(outer);parts.push(rnd(JW.shoes));parts.push(w);
+  return `사복 — ${parts.join(', ')}`;
 }
 // ===== 권승재 수트 랜덤 (고정 프롬프트에 '권승재'가 있을 때만 작동) =====
 // 어두운 고급 수트만. 베이지·브라운·회색빛 밝은 수트 없음
@@ -1462,6 +1487,12 @@ window.fetch=function(input,init){
             const ih=pickIhyunOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n권이현 의상 (이 인물이 지금 장면에 등장할 때만 적용한다. 장면에 없는 인물은 그리지 않는다. 대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+ih+IHYUN_RULE;
             console.log('[Chat2Img-Codex] 권이현 의상:',ih);
+          }
+          // 이정원(부기장): 근무 제복·레이오버 사복·편한 차림, 고급 시계
+          if(characterText.includes('이정원')&&characterText.includes('부기장')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워 중|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const jw=makeJeongwonOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n이정원 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jw+JW_RULE;
+            console.log('[Chat2Img-Codex] 이정원 의상:',jw);
           }
           // 비타: 동화풍 늑대 소년 차림
           if(characterText.includes('비타')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복|늑대로 변|늑대 모습|늑대가 되|새끼 늑대|아기 늑대|작은 늑대|동물 모습|본모습|본체/.test(sceneText)){

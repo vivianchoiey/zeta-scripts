@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.43.1
+// @version      1.43.2
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1333,6 +1333,7 @@ window.fetch=function(input,init){
         // 대화 부분(Scene description 이후)에서만 건너뛰기 단어를 찾음 — 고정 프롬프트에 있는 단어는 무시
         const sceneIdx=p.indexOf('Scene description:');
         const sceneText=sceneIdx>=0?p.slice(sceneIdx):p;
+        const characterText=sceneIdx>=0?p.slice(0,sceneIdx):p;
         const off=p.includes(OFF_WORD)||p.includes('#옷지정');
         const skip=SKIP_WORDS.some(w=>sceneText.includes(w))||SKIP_GENRES.some(w=>p.includes(w));
         // 다이스케 방에서는 일반 현대 의상 풀 대신 1980년 전용 분기를 사용.
@@ -1439,7 +1440,6 @@ window.fetch=function(input,init){
             console.log('[Chat2Img-Codex] 구달 수트:',gs);
           }
           // 서무겸: 정장이 아닌 전용 워크웨어·캐주얼. 명시된 특수 의상과 옷 고정은 우선.
-          const characterText=sceneIdx>=0?p.slice(0,sceneIdx):p;
           if(characterText.includes('서무겸')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워/.test(sceneText)){
             const mg=pickMugyeomOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n서무겸 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+mg+MUGYEOM_RULE;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.43.2
+// @version      1.44.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -226,6 +226,48 @@ function makeJeongwonOutfit(scene){
   else if(winter&&outer==='없음')outer='르메르 다크 브라운 울 코트';
   const parts=[top,rnd(JW.bottom)];if(outer!=='없음')parts.push(outer);parts.push(rnd(JW.shoes));parts.push(w);
   return `사복 — ${parts.join(', ')}`;
+}
+// ===== 정재이·최카야 페르녹스 방 (고정 프롬프트에 '정재이'와 '페르녹스'가 있을 때만) =====
+// 근무·주둔지는 군복 랜덤, 휴가·지구·비번·데이트는 사복
+const JAEI_OFF_RE=/휴가|비번|쉬는 날|레이오버|지구에|지구로|지구에서|서울|시내|데이트|술집|바에서|카페|식당|레스토랑|호텔|여행|외출|사복|쇼핑|영화/;
+const JAEI_MIL={
+  top:['몸에 붙는 검정 반팔 티셔츠','검정 민소매 티셔츠','카모 컴뱃셔츠(소매를 팔꿈치까지 걷음)','국방색 긴팔 티셔츠','카모 컴뱃셔츠'],
+  outer:['국방색 전술 조끼','소매를 걷은 카모 필드 재킷','국방색 플리스 재킷','없음','없음'],
+  bottom:['카모 전투복 바지','국방색 전투복 바지'],
+  extra:['검정 전술 장갑','허리에 찬 권총집','어깨에 멘 소총','검정 전술 선글라스','없음','없음'],
+};
+const JAEI_CIV={
+  top:['검정 크루넥 티셔츠','화이트 헨리넥 티셔츠','차콜 와플 니트 티셔츠','폴로 랄프로렌 네이비 케이블 니트','올리브 워크 셔츠(단추 몇 개 풀림)','아워레가시 블랙 크루넥 니트'],
+  bottom:['리얼맥코이 진청 스트레이트 데님','블랙 스트레이트 데님','올리브 퍼티그 팬츠','차콜 울 슬랙스'],
+  outer:['벨스타프 트라이얼마스터 블랙 왁스 재킷','블랙 가죽 라이더 재킷','브라운 스웨이드 재킷','네이비 울 피코트','차콜 울 오버코트','없음'],
+  shoes:['블랙 가죽 부츠','레드윙 아이리시 세터 브라운 부츠','블랙 첼시 부츠','화이트 스니커즈'],
+};
+const JAEI_MIL_RULE='. 정재이는 페르녹스 606부대 수색팀 팀장, 193cm의 크고 두꺼운 군인 체격. 현실 군복을 바탕으로 한 단정한 근미래 전투복. 목에는 은색 군번줄 1개. 계급장·패치의 글자와 숫자는 읽히지 않게 작게. 과한 SF 갑옷·네온 장비 금지.';
+const JAEI_CIV_RULE='. 정재이는 193cm의 크고 두꺼운 군인 체격. 비번·휴가 사복은 꾸미지 않은 듯 거칠고 남자다운 차림. 목에는 은색 군번줄 1개를 그대로 건다. 큰 로고, 볼캡, 운동복 세트, 촌스러운 패턴은 금지.';
+const KAYA_PILOT={
+  suit:['국방색 원피스형 조종사 비행복을 지퍼 끝까지 올려 입음','국방색 원피스형 조종사 비행복 상의를 허리에 묶고 국방색 반팔 티셔츠','국방색 원피스형 조종사 비행복(소매를 걷음)','국방색 원피스형 조종사 비행복 위에 국방색 비행 재킷'],
+  extra:['비행 장갑','목에 건 헤드셋','손에 든 비행 헬멧','없음','없음'],
+  hair:['긴 흑발 생머리를 풀어 내림','긴 흑발을 낮게 하나로 묶음','긴 흑발 반묶음','긴 흑발을 한쪽 어깨로 넘김','긴 흑발을 단정하게 올려 묶음'],
+};
+const KAYA_PILOT_RULE='. 최카야는 페르녹스 수송선 수석 조종사(대위), 170cm 성인 여성. 근무 중 군복은 단정한 근미래 조종사 비행복. 계급장 글자는 읽히지 않게 작게.';
+function makeJaeiOutfit(scene){
+  const sc=scene||'';
+  if(JAEI_OFF_RE.test(sc)){
+    const winter=/겨울|눈 오|눈이|추워|추운|영하/.test(sc),summer=!winter&&/여름|더운|더워|폭염/.test(sc);
+    let outer=rnd(JAEI_CIV.outer);if(summer)outer='없음';else if(winter&&outer==='없음')outer='차콜 울 오버코트';
+    const parts=[rnd(JAEI_CIV.top),rnd(JAEI_CIV.bottom)];if(outer!=='없음')parts.push(outer);parts.push(rnd(JAEI_CIV.shoes));parts.push('목에 건 은색 군번줄');
+    return {text:`비번 사복 — ${parts.join(', ')}`,rule:JAEI_CIV_RULE};
+  }
+  let top=rnd(JAEI_MIL.top),outer=rnd(JAEI_MIL.outer);
+  if(/막사|쉬는|휴식|식사|침대|야전 침대/.test(sc)&&outer==='국방색 전술 조끼')outer='없음';
+  if(/작전|수색|출동|전투|교전|정찰/.test(sc))outer='국방색 전술 조끼';
+  const parts=[top,rnd(JAEI_MIL.bottom)];if(outer!=='없음')parts.push(outer);parts.push('검정 전투화','목에 건 은색 군번줄');const e=rnd(JAEI_MIL.extra);if(e!=='없음')parts.push(e);
+  return {text:`군복 — ${parts.join(', ')}`,rule:JAEI_MIL_RULE};
+}
+function makeKayaPilotOutfit(scene){
+  const sc=scene||'';let suit=rnd(KAYA_PILOT.suit);if(/조종석|비행 중|운항|이륙|착륙/.test(sc))suit=KAYA_PILOT.suit[0];
+  const parts=[suit,'검정 군화'];const e=/조종석|비행 중|이륙|착륙/.test(sc)?'비행 장갑':rnd(KAYA_PILOT.extra);if(e!=='없음')parts.push(e);
+  return `군복 — ${parts.join(', ')} / 헤어 — ${rnd(KAYA_PILOT.hair)}`;
 }
 // ===== 권승재 수트 랜덤 (고정 프롬프트에 '권승재'가 있을 때만 작동) =====
 // 어두운 고급 수트만. 베이지·브라운·회색빛 밝은 수트 없음
@@ -1381,13 +1423,17 @@ window.fetch=function(input,init){
             const fu=rnd(F_SENTINEL_UNIFORM);
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): 임무복 — '+fu+F_SENTINEL_RULE;
             console.log('[Chat2Img-Codex] 여주 임무복:',fu);
+          }else if(characterText.includes('정재이')&&characterText.includes('페르녹스')&&!JAEI_OFF_RE.test(sceneText)){
+            const kp=makeKayaPilotOutfit(sceneText);
+            add='\n\n최카야 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+kp+KAYA_PILOT_RULE;
+            console.log('[Chat2Img-Codex] 카야(조종사) 군복:',kp);
           }else if(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('비타')){
             if(/토끼로 변|토끼 모습|토끼가 되|아기 토끼|작은 토끼|동물 모습|본모습|본체/.test(sceneText)){console.log('[Chat2Img-Codex] 카야 토끼 모습: 옷 랜덤 건너뜀');}else{
             const kf=makeKayaFairyOutfit(sceneText);
             add='\n\n최카야 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+kf+KAYA_FAIRY_RULE;
             console.log('[Chat2Img-Codex] 카야(토끼) 의상:',kf);
             }
-          }else if(/반드시 군복|사복을 입지 않는다|사복은 절대 금지/.test(p.slice(0,sceneIdx>=0?sceneIdx:p.length))){
+          }else if(!(characterText.includes('정재이')&&characterText.includes('페르녹스'))&&/반드시 군복|사복을 입지 않는다|사복은 절대 금지/.test(p.slice(0,sceneIdx>=0?sceneIdx:p.length))){
             console.log('[Chat2Img-Codex] 군복 고정 방: 여주 사복 랜덤 건너뜀');
           }else if(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('권지우')){
             const kh=makeKayaHSOutfit(sceneText);
@@ -1487,6 +1533,12 @@ window.fetch=function(input,init){
             const ih=pickIhyunOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n권이현 의상 (이 인물이 지금 장면에 등장할 때만 적용한다. 장면에 없는 인물은 그리지 않는다. 대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+ih+IHYUN_RULE;
             console.log('[Chat2Img-Codex] 권이현 의상:',ih);
+          }
+          // 정재이(페르녹스): 근무는 군복 랜덤, 비번·휴가는 사복
+          if(characterText.includes('정재이')&&characterText.includes('페르녹스')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const jo=makeJaeiOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n정재이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jo.text+jo.rule;
+            console.log('[Chat2Img-Codex] 정재이 의상:',jo.text);
           }
           // 이정원(부기장): 근무 제복·레이오버 사복·편한 차림, 고급 시계
           if(characterText.includes('이정원')&&characterText.includes('부기장')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워 중|속옷만|잠옷|파자마|수영복/.test(sceneText)){

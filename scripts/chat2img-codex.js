@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.44.5
+// @version      1.44.6
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -749,8 +749,12 @@ function twoColors(){
 }
 function pickStyle(){
   let last='';try{last=localStorage.getItem(LAST_STYLE_KEY)||'';}catch(e){}
+  // 매니시·프렌치 시크가 기본, 미우미우는 가끔 (40:40:20), 같은 결 연속 금지
+  const W={매니시시크:4,프렌치시크:4,미우미우:2};
   const names=Object.keys(STYLES).filter(n=>n!==last);
-  const name=rnd(names.length?names:Object.keys(STYLES));
+  const pool=names.length?names:Object.keys(STYLES);
+  let tot=pool.reduce((a,n)=>a+(W[n]||1),0),r=Math.random()*tot,name=pool[0];
+  for(const n of pool){r-=(W[n]||1);if(r<0){name=n;break;}}
   try{localStorage.setItem(LAST_STYLE_KEY,name);}catch(e){}
   return name;
 }
@@ -793,7 +797,7 @@ function pickOutfit(){
   try{localStorage.setItem(LAST_KEY,pick);}catch(e){}
   return pick;
 }
-// ===== 카야 미우미우식 분홍 룩 (모든 방: 35% 확률, 사혁 방: 50%) =====
+// ===== 카야 미우미우식 분홍 룩 (모든 방: 12% 확률, 사혁 방: 25%, 두 번 연속 금지) =====
 const PINK={
   pinkTop:['미우미우 베이비 핑크 캐시미어 크루넥 니트','미우미우 더스티 핑크 브이넥 니트','미우미우 핑크 캐시미어 터틀넥 니트','미우미우 파스텔 핑크 케이블 카디건(단추 잠금)'],
   plainTop:['미우미우 화이트 포플린 셔츠','더 로우 아이보리 캐시미어 니트','토템 크림 케이블 니트','셀린느 화이트 코튼 티셔츠'],
@@ -1459,7 +1463,9 @@ window.fetch=function(input,init){
           }else{
             const formal=FORMAL_RE.test(sceneText);
             const anchor=!formal&&p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('아나운서')&&ANCHOR_RE.test(sceneText);
-            const pinkOn=!formal&&!anchor&&Math.random()<(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('권사혁')?0.5:0.35);
+            let lastPink='';try{lastPink=localStorage.getItem('c2i_last_pink')||'';}catch(e){}
+            const pinkOn=!formal&&!anchor&&lastPink!=='1'&&Math.random()<(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('권사혁')?0.25:0.12);
+            try{localStorage.setItem('c2i_last_pink',pinkOn?'1':'0');}catch(e){}
             const outfit=formal?pickGown(sceneText):anchor?makeAnchorOutfit():pinkOn?makePinkOutfit(sceneText):pickOutfit();
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+outfit+(formal?GOWN_RULE:anchor?ANCHOR_RULE:pinkOn?PINK_RULE:OUTFIT_RULE);
             const fh=pickFHair(sceneText,formal,anchor);

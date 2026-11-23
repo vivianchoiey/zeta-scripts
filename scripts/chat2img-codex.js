@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.44.4
+// @version      1.44.5
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -756,6 +756,15 @@ function pickStyle(){
 }
 const OUTER_COLORS=['블랙','차콜','그레이','네이비','베이지','카멜','아이보리','브라운'];
 function withColor(color,item){return hasOwnColor(item)||BRAND_RE.test(item)?item:`${color} ${item}`;}
+// 발레 플랫은 어울리는 조합(스커트·원피스, 블레이저·코트 같은 무거운 겉옷 없이)에서만, 그것도 가끔만
+const FLAT_RE=/발레 플랫|메리제인(?! 힐)/;
+function fitShoes(shoes,list,bottom,outer){
+  if(!FLAT_RE.test(shoes))return shoes;
+  const ok=/스커트|원피스/.test(bottom||'')&&!/블레이저|라이더|가죽 재킷|롱 코트|오버코트|왁스 재킷/.test(outer||'')&&Math.random()<0.35;
+  if(ok)return shoes;
+  const alt=list.filter(x=>!FLAT_RE.test(x));
+  return alt.length?rnd(alt):shoes;
+}
 function makeOutfit(){
   const styleName=pickStyle();
   const st=STYLES[styleName];
@@ -763,7 +772,7 @@ function makeOutfit(){
   const bottom=rnd(st.bottom);
   const isDress=/원피스/.test(bottom);
   const outer=rnd(st.outer);
-  const shoes=rnd(st.shoes);
+  const shoes=fitShoes(rnd(st.shoes),st.shoes,bottom,outer);
   let parts=[];
   if(isDress){parts.push(withColor(c1,bottom));}
   else{parts.push(withColor(c1,rnd(st.top)),withColor(c2,bottom));}
@@ -805,7 +814,7 @@ function makePinkOutfit(scene){
   if(winter&&outer==='없음')outer=pinkOnTop?rnd(PINK.plainOuter):rnd(PINK.pinkOuter);
   const pinkCount=(pinkOnTop?1:0)+(PINK.pinkOuter.includes(outer)?1:0);
   const bag=pinkCount<2&&Math.random()<0.4?rnd(PINK.pinkBag):rnd(PINK.plainBag);
-  const parts=[top,rnd(PINK.bottom)];if(outer!=='없음')parts.push(outer);parts.push(rnd(PINK.shoes));if(bag!=='없음')parts.push(bag);
+  const bottom=rnd(PINK.bottom);const parts=[top,bottom];if(outer!=='없음')parts.push(outer);parts.push(fitShoes(rnd(PINK.shoes),PINK.shoes,bottom,outer));if(bag!=='없음')parts.push(bag);
   return `미우미우 핑크 포인트 룩 — ${parts.join(', ')}`;
 }
 // ===== 윤이 전용 풀 (고정 프롬프트에 '윤이'가 있을 때만 작동) =====

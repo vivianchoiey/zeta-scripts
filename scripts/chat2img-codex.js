@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.43.0
+// @version      1.43.1
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1541,7 +1541,7 @@ window.fetch=function(input,init){
         }
       }
     }
-  }catch(e){}
+  }catch(e){console.warn('[Chat2Img-Codex] 의상 주입 오류:',e&&e.message,e&&e.stack&&e.stack.split('\n').slice(0,3).join(' | '));}
   return _fetch.call(this,input,init);
 };
 // =====================================================

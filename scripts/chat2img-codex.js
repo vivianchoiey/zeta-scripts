@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.41.0
+// @version      1.42.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -172,6 +172,35 @@ function makeJunheeOutfit(scene){
   const parts=[top,rnd(P.bottom)];if(outer!=='없음')parts.push(outer);parts.push(rnd(P.shoes));
   let accs=P.acc.filter(x=>!(summer&&/비니/.test(x))&&!(/밤|저녁|야경|새벽|실내|집/.test(sc)&&/선글라스/.test(x)));const a=rnd(accs.length?accs:['없음']);if(a!=='없음')parts.push(a);
   return `${P===JUNHEE.out?'외출':'평소'} — ${parts.join(', ')}`;
+}
+// ===== 비타(늑대 수인)·최카야(토끼 수인) 동화 방 (고정 프롬프트에 '비타'가 있을 때만) =====
+const VITA={
+  top:['흰 퍼프 소매 코튼 셔츠','크림 리넨 셔츠(소매를 걷음)','아이보리 반팔 셔츠','옅은 하늘색 체크 코튼 셔츠','크림 케이블 니트 조끼를 겹친 흰 셔츠'],
+  bottom:['올리브 반바지에 갈색 멜빵','갈색 코듀로이 반바지','네이비 반바지에 가죽 멜빵','카키 무릎 기장 니커보커','갈색 체크 반바지'],
+  outer:['빨간 후드 망토','빨간 후드 망토','빨간 후드 망토','갈색 울 후드 케이프','초록 사냥꾼 조끼','없음'],
+  shoes:['흰 니삭스와 갈색 가죽 로퍼','흰 니삭스와 갈색 가죽 앵클부츠','회색 니삭스와 갈색 가죽 로퍼'],
+  acc:['허리에 찬 작은 가죽 주머니','목에 두른 빨간 스카프','없음','없음'],
+};
+const VITA_RULE='. 비타는 금발에 늑대 귀와 꼬리가 있는 늑대 수인. 동화 속 숲 마을 소년 같은 귀엽고 활기찬 차림. 늑대 귀와 꼬리는 옷 밖으로 자연스럽게 나온다. 현대 사복(후드티, 청바지, 운동화, 패딩), 갑옷, 과한 판타지 장식은 금지.';
+const KAYA_FAIRY={
+  dress:['블랙 프릴 슬리브리스 원피스','크림 퍼프 소매 블라우스에 블랙 코르셋 조끼와 롱 플레어 스커트','라벤더 코튼 원피스에 흰 레이스 앞치마','블랙 벨벳 롱 원피스에 흰 레이스 칼라','아이보리 리넨 원피스에 연분홍 리본 벨트','연회색 퍼프 소매 원피스에 블랙 코르셋 벨트','더스티 핑크 코튼 원피스에 흰 앞치마'],
+  outer:['흰 울 케이프','블랙 벨벳 숏 케이프','연분홍 니트 숄','없음','없음','없음'],
+  shoes:['흰 프릴 양말과 블랙 메리제인 구두','블랙 레이스업 앵클부츠','아이보리 발레 플랫'],
+  hair:['낮게 묶은 양갈래에 블랙 리본','낮게 묶은 양갈래에 연분홍 리본','긴 웨이브 머리를 풀어 내림','옆으로 느슨하게 땋아 내린 머리에 블랙 리본','반묶음에 블랙 리본'],
+  acc:['작은 꽃바구니를 든 손','진주 머리핀','없음','없음'],
+};
+const KAYA_FAIRY_RULE='. 최카야는 은발 웨이브 긴 머리에 토끼 귀가 있는 토끼 수인. 동화 속 숲 오두막에 사는 누나 같은 귀엽고 사랑스러운 차림. 토끼 귀는 머리 위로 자연스럽게 나온다. 머리 길이와 은발은 그대로 유지한다. 현대 사복, 운동복, 과한 노출, 화려한 드레스는 금지.';
+function makeVitaOutfit(scene){
+  const sc=scene||'';const summer=/여름|더운|더워|햇볕/.test(sc),winter=/겨울|눈 오|눈이|추워|추운|영하/.test(sc);
+  let outer=rnd(VITA.outer);if(summer&&/케이프|망토/.test(outer)&&Math.random()<0.6)outer='없음';if(winter&&outer==='없음')outer='빨간 후드 망토';
+  const parts=[rnd(VITA.top),rnd(VITA.bottom)];if(outer!=='없음')parts.push(outer);parts.push(rnd(VITA.shoes));const a=rnd(VITA.acc);if(a!=='없음')parts.push(a);
+  return parts.join(', ');
+}
+function makeKayaFairyOutfit(scene){
+  const sc=scene||'';const winter=/겨울|눈 오|눈이|추워|추운|영하/.test(sc);
+  let outer=rnd(KAYA_FAIRY.outer);if(winter&&outer==='없음')outer='흰 울 케이프';
+  const parts=[rnd(KAYA_FAIRY.dress)];if(outer!=='없음')parts.push(outer);parts.push(rnd(KAYA_FAIRY.shoes));const a=rnd(KAYA_FAIRY.acc);if(a!=='없음')parts.push(a);
+  return `${parts.join(', ')} / 헤어 — ${rnd(KAYA_FAIRY.hair)}`;
 }
 // ===== 권승재 수트 랜덤 (고정 프롬프트에 '권승재'가 있을 때만 작동) =====
 // 어두운 고급 수트만. 베이지·브라운·회색빛 밝은 수트 없음
@@ -1314,7 +1343,7 @@ window.fetch=function(input,init){
             add+='\n\n윤이 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+yo+(kind==='sleep'?Y_SLEEP_RULE:Y_SWIM_RULE);
             console.log('[Chat2Img-Codex] 윤이 '+kind+':',yo);
           }
-          body.prompt=p+add+(/권이림|권지우|백준희/.test(p)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복 제외)'):NO_BUCKET);
+          body.prompt=p+add+(/권이림|권지우|백준희|비타/.test(p)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복·동화풍 반바지 제외)'):NO_BUCKET);
           init={...init,body:JSON.stringify(body)};
         }else if(!off&&!skip&&!specialScene(sceneText)){
           let add='';
@@ -1326,6 +1355,10 @@ window.fetch=function(input,init){
             const fu=rnd(F_SENTINEL_UNIFORM);
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): 임무복 — '+fu+F_SENTINEL_RULE;
             console.log('[Chat2Img-Codex] 여주 임무복:',fu);
+          }else if(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('비타')){
+            const kf=makeKayaFairyOutfit(sceneText);
+            add='\n\n최카야 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+kf+KAYA_FAIRY_RULE;
+            console.log('[Chat2Img-Codex] 카야(토끼) 의상:',kf);
           }else if(/반드시 군복|사복을 입지 않는다|사복은 절대 금지/.test(p.slice(0,sceneIdx>=0?sceneIdx:p.length))){
             console.log('[Chat2Img-Codex] 군복 고정 방: 여주 사복 랜덤 건너뜀');
           }else if(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('권지우')){
@@ -1428,6 +1461,12 @@ window.fetch=function(input,init){
             add+='\n\n권이현 의상 (이 인물이 지금 장면에 등장할 때만 적용한다. 장면에 없는 인물은 그리지 않는다. 대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+ih+IHYUN_RULE;
             console.log('[Chat2Img-Codex] 권이현 의상:',ih);
           }
+          // 비타: 동화풍 늑대 소년 차림
+          if(characterText.includes('비타')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
+            const vo=makeVitaOutfit(sceneIdx>=0?sceneText:'');
+            add+='\n\n비타 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+vo+VITA_RULE;
+            console.log('[Chat2Img-Codex] 비타 의상:',vo);
+          }
           // 백준희: 평소·외출·행사·유니폼
           if(characterText.includes('백준희')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
             const jh=makeJunheeOutfit(sceneIdx>=0?sceneText:'');
@@ -1458,11 +1497,11 @@ window.fetch=function(input,init){
             add+='\n\n권도형 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+dh+DOHYUNG_RULE;
             console.log('[Chat2Img-Codex] 권도형 의상:',dh);
           }
-          body.prompt=p+add+(/권이림|권지우/.test(p)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복 제외)'):NO_BUCKET);
+          body.prompt=p+add+(/권이림|권지우/.test(p)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복·동화풍 반바지 제외)'):NO_BUCKET);
           init={...init,body:JSON.stringify(body)};
         }
         // 옷 랜덤이 꺼진 장면(#옷고정, 메이드복 등)에도 버킷햇 금지는 항상 붙임
-        const nbX=/권이림|권지우|백준희/.test(body.prompt)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복 제외)'):NO_BUCKET;
+        const nbX=/권이림|권지우|백준희|비타/.test(body.prompt)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복·동화풍 반바지 제외)'):NO_BUCKET;
         if(!daisukeRoom&&!body.prompt.includes(nbX)){
           body.prompt+=nbX;
           init={...init,body:JSON.stringify(body)};

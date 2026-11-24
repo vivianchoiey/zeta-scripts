@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.2
+// @version      1.45.3
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1506,7 +1506,7 @@ window.fetch=function(input,init){
           // 승재 방: 집에서 쉬는 장면이면 랄프로렌·트레이닝 집옷, 사복 장면이면 벨스타프·랄프로렌 사복, 그 외는 수트 랜덤 (환자복·잠옷 등은 건너뜀)
           const sjScene=stripRuleLines(sceneText);
           const sjSkip=/잠옷|환자복|수영복|맨몸|상의 탈의|파자마|목욕|샤워/.test(sjScene);
-          const sjHome=/거실에서 쉬|집에서 쉬|편한 옷|편하게 입|편한 차림|씻고 나|샤워하고 나|늦잠|뒹굴|운동|헬스|러닝|조깅|웨이트|체육관/.test(sjScene)&&!/출근|회사|회의|외출|파티|행사|미팅|정장|수트/.test(sjScene);
+          const sjHome=/거실에서 쉬|집에서 쉬|편한 옷|편하게 입|편한 차림|씻고 나|샤워하고 나|늦잠|뒹굴|운동|헬스|러닝|조깅|웨이트|체육관/.test(sjScene)&&!/출근|회사|회의|외출|파티|행사|미팅/.test(sjScene);
           if(p.includes('권승재')&&!sjSkip&&sjHome){
             const sh=makeSjHome(sjScene);
             add+='\n\n권승재 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+sh+SJ_HOME_RULE+' 보조 스틱은 기존 규칙대로 유지.';

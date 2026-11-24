@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.1
+// @version      1.45.2
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -312,10 +312,11 @@ const SJ_CASUAL={
   acc:['실버 메탈 시계','블랙 가죽 장갑','없음','없음'],
 };
 const SJ_HOME={
-  top:['폴로 랄프로렌 그레이 맨투맨(작은 포니 자수)','폴로 랄프로렌 네이비 맨투맨','폴로 랄프로렌 네이비 후드 집업','블랙 캐시미어 후드티','폴로 랄프로렌 흰색 반팔 티셔츠','폴로 랄프로렌 네이비 피케 폴로셔츠','벨스타프 블랙 반팔 티셔츠','블랙 캐시미어 니트'],
-  bottom:['폴로 랄프로렌 그레이 스웻 팬츠','폴로 랄프로렌 네이비 스웻 팬츠','블랙 캐시미어 조거 팬츠','폴로 랄프로렌 블랙 트랙 팬츠'],
-  set:['폴로 랄프로렌 네이비 트랙 재킷과 트랙 팬츠 세트(트레이닝복)','폴로 랄프로렌 블랙 트랙 재킷과 트랙 팬츠 세트(트레이닝복)','블랙 캐시미어 트레이닝 세트'],
+  top:['랄프로렌 퍼플라벨 블랙 캐시미어 크루넥 니트','로로피아나 차콜 캐시미어 니트','브루넬로 쿠치넬리 네이비 캐시미어 터틀넥','폴로 랄프로렌 흰색 옥스퍼드 셔츠(소매를 걷음)','더 로우 블랙 코튼 롱슬리브 티셔츠','폴로 랄프로렌 네이비 케이블 니트','제임스 퍼스 흰색 크루넥 티셔츠','폴로 랄프로렌 그레이 캐시미어 브이넥 니트'],
+  bottom:['로로피아나 차콜 캐시미어 드로스트링 팬츠','블랙 울 와이드 팬츠','차콜 플란넬 이지 팬츠','브루넬로 쿠치넬리 그레이 니트 팬츠','네이비 울 스트레이트 팬츠'],
+  outer:['로로피아나 다크 그레이 캐시미어 카디건','폴로 랄프로렌 네이비 숄칼라 카디건','블랙 캐시미어 로브','없음','없음','없음'],
 };
+const SJ_GYM=['블랙 기능성 롱슬리브, 차콜 테이퍼드 트레이닝 팬츠','흰 기능성 반팔 티셔츠, 블랙 테이퍼드 트레이닝 팬츠'];
 function makeSjCasual(){
   const outer=Math.random()<0.6?rnd(SJ_BELSTAFF_OUTER):rnd(SJ_RL_OUTER);
   let top=rnd(SJ_CASUAL.top);if(/카디건/.test(outer)&&/니트/.test(top))top='폴로 랄프로렌 흰색 옥스퍼드 버튼다운 셔츠(작은 포니 자수)';
@@ -323,12 +324,13 @@ function makeSjCasual(){
   const acc=rnd(SJ_CASUAL.acc);if(acc!=='없음')parts.push(acc);
   return `벨스타프·랄프로렌 사복 — ${parts.join(', ')}`;
 }
-function makeSjHome(){
-  if(Math.random()<0.3)return `집 편한 차림 — ${rnd(SJ_HOME.set)}`;
-  return `집 편한 차림 — ${rnd(SJ_HOME.top)}, ${rnd(SJ_HOME.bottom)}`;
+function makeSjHome(scene){
+  if(/운동|헬스|러닝|조깅|웨이트|체육관|재활 운동/.test(scene||''))return `운동복 — ${rnd(SJ_GYM)}`;
+  const parts=[rnd(SJ_HOME.top),rnd(SJ_HOME.bottom)];const o=rnd(SJ_HOME.outer);if(o!=='없음')parts.push(o);
+  return `집 편한 차림 — ${parts.join(', ')}`;
 }
 const SJ_CASUAL_RULE='. 38세 재벌답게 어둡고 비싸 보이는 미니멀 사복. 로고는 벨스타프 소매의 작은 패치, 폴로의 작은 포니 자수만 허용. 베이지·브라운·밝은 색 조합, 큰 로고, 데님 재킷은 금지.';
-const SJ_HOME_RULE='. 집에서 쉬는 편한 차림이지만 38세 재벌답게 질 좋고 깔끔하게. 로고는 작은 포니 자수만 허용하고 큰 로고·알록달록한 색은 금지.';
+const SJ_HOME_RULE='. 집에서 쉬는 편한 차림이지만 38세 재벌답게 캐시미어·울처럼 질 좋은 소재로 깔끔하고 단정하게. 트레이닝복 세트, 츄리닝, 트랙 재킷, 후드티, 맨투맨, 큰 로고, 알록달록한 색은 금지.';
 // ===== 구달 수트 랜덤 (고정 프롬프트에 '구달'이 있을 때만 작동) =====
 // 승재보다 거친 결. 블랙 셔츠·노타이·소매 걷기(문신 노출) 비중 높음. 베이지·브라운 없음
 const GUDAL_STYLES={
@@ -741,6 +743,8 @@ function pickMoaOutfit(){
 
 // 대화에 이 단어가 있으면 의상 랜덤을 건너뜀 (대화 속 옷 우선)
 // '#옷지정'을 추가 지시에 쓰면 그 장면만 내가 정한 옷으로 (예: #옷지정 카야 의상: 버건디 니트 원피스)
+// 고정 프롬프트의 '~은 대화에 나올 때만 그린다' 같은 규칙 줄은 장면 판정에서 뺌
+function stripRuleLines(t){return String(t||'').split('\n').filter(l=>!/대화에 나올 때만|대화에 나오면|대화에 나와 있으면|금지|그리지 않는다/.test(l)).join('\n');}
 const SKIP_WORDS=['메이드복','환자복','병원복','교복'];
 // 코냅샷 장르가 로판·시대물이면 건너뜀 (현대 옷 방지)
 const SKIP_GENRES=['Romance-fantasy setting','Historical period setting'];
@@ -1425,7 +1429,7 @@ window.fetch=function(input,init){
         const sceneText=sceneIdx>=0?p.slice(sceneIdx):p;
         const characterText=sceneIdx>=0?p.slice(0,sceneIdx):p;
         const off=p.includes(OFF_WORD)||p.includes('#옷지정');
-        const skip=SKIP_WORDS.some(w=>sceneText.includes(w))||SKIP_GENRES.some(w=>p.includes(w));
+        const skip=SKIP_WORDS.some(w=>stripRuleLines(sceneText).includes(w))||SKIP_GENRES.some(w=>p.includes(w));
         // 다이스케 방에서는 일반 현대 의상 풀 대신 1980년 전용 분기를 사용.
         const profileText=sceneIdx>=0?p.slice(0,sceneIdx):p;
         const daisukeRoom=/다이스케|\bDaisuke\b/i.test(profileText);
@@ -1500,10 +1504,11 @@ window.fetch=function(input,init){
             console.log('[Chat2Img-Codex] 여주 의상:',outfit,'/ 헤어:',fh);
           }
           // 승재 방: 집에서 쉬는 장면이면 랄프로렌·트레이닝 집옷, 사복 장면이면 벨스타프·랄프로렌 사복, 그 외는 수트 랜덤 (환자복·잠옷 등은 건너뜀)
-          const sjSkip=/잠옷|환자복|수영복|맨몸|상의 탈의|파자마|목욕|샤워/.test(sceneText);
-          const sjHome=/침실|침대|소파|거실에서 쉬|편한 옷|편하게 입|잠들기 전|씻고 나|샤워하고|운동|헬스|러닝|트레이닝|스웻|후드|티셔츠|늦잠|뒹굴/.test(sceneText)&&!/출근|회사|회의|외출|파티|행사|미팅/.test(sceneText);
+          const sjScene=stripRuleLines(sceneText);
+          const sjSkip=/잠옷|환자복|수영복|맨몸|상의 탈의|파자마|목욕|샤워/.test(sjScene);
+          const sjHome=/거실에서 쉬|집에서 쉬|편한 옷|편하게 입|편한 차림|씻고 나|샤워하고 나|늦잠|뒹굴|운동|헬스|러닝|조깅|웨이트|체육관/.test(sjScene)&&!/출근|회사|회의|외출|파티|행사|미팅|정장|수트/.test(sjScene);
           if(p.includes('권승재')&&!sjSkip&&sjHome){
-            const sh=makeSjHome();
+            const sh=makeSjHome(sjScene);
             add+='\n\n권승재 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+sh+SJ_HOME_RULE+' 보조 스틱은 기존 규칙대로 유지.';
             console.log('[Chat2Img-Codex] 승재 집옷:',sh);
           }else if(p.includes('권승재')&&!sjSkip&&/사복|캐주얼|니트|주말|휴일|쉬는 날|드라이브|산책|여행|캠핑|바이크|오토바이/.test(sceneText)){
@@ -1520,7 +1525,7 @@ window.fetch=function(input,init){
           // 권사혁 방: 승재랑 같은 수트·사복·집옷 풀 (보조 스틱 없음, 목덜미 용 문신은 프롬프트 규칙대로)
           if(characterText.includes('권사혁')&&!sjSkip){
             const SH_LBL='\n\n권사혁 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): ';
-            if(sjHome){const sh=makeSjHome();add+=SH_LBL+sh+SJ_HOME_RULE.replace('38세 재벌','37세 그룹 회장');console.log('[Chat2Img-Codex] 사혁 집옷:',sh);}
+            if(sjHome){const sh=makeSjHome(sjScene);add+=SH_LBL+sh+SJ_HOME_RULE.replace('38세 재벌','37세 그룹 회장');console.log('[Chat2Img-Codex] 사혁 집옷:',sh);}
             else if(/사복|캐주얼|니트|주말|휴일|쉬는 날|드라이브|산책|여행|캠핑|바이크|오토바이/.test(sceneText)){const sc=makeSjCasual();add+=SH_LBL+sc+SJ_CASUAL_RULE.replace('38세 재벌','37세 그룹 회장');console.log('[Chat2Img-Codex] 사혁 사복:',sc);}
             else if(!/사복|캐주얼|니트|후드|티셔츠/.test(sceneText)){
               let suit=pickSuit();

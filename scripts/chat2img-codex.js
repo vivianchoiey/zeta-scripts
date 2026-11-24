@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.44.6
+// @version      1.44.7
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -173,6 +173,9 @@ function makeJunheeOutfit(scene){
   let accs=P.acc.filter(x=>!(summer&&/비니/.test(x))&&!(/밤|저녁|야경|새벽|실내|집/.test(sc)&&/선글라스/.test(x)));const a=rnd(accs.length?accs:['없음']);if(a!=='없음')parts.push(a);
   return `${P===JUNHEE.out?'외출':'평소'} — ${parts.join(', ')}`;
 }
+// 실제로 동물로 변한 장면만 잡음 (고정 프롬프트 속 '동물 모습으로 그린다', '아기 토끼' 같은 설명 문구에는 안 걸리게)
+const VITA_ANIMAL_RE=/늑대로 (?:변|돌아)|늑대(?:의)? 모습으로 (?:변|돌아)|늑대가 (?:되|됐|돼)|늑대로 변신/;
+const KAYA_ANIMAL_RE=/토끼로 (?:변|돌아)|토끼(?:의)? 모습으로 (?:변|돌아)|토끼가 (?:되|됐|돼)|토끼로 변신/;
 // ===== 비타(늑대 수인)·최카야(토끼 수인) 동화 방 (고정 프롬프트에 '비타'가 있을 때만) =====
 const VITA={
   top:['흰 퍼프 소매 코튼 셔츠','크림 리넨 셔츠(소매를 걷음)','아이보리 반팔 셔츠','옅은 하늘색 체크 코튼 셔츠','크림 케이블 니트 조끼를 겹친 흰 셔츠'],
@@ -1449,7 +1452,7 @@ window.fetch=function(input,init){
             add='\n\n최카야 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+kp+KAYA_PILOT_RULE;
             console.log('[Chat2Img-Codex] 카야(조종사) 군복:',kp);
           }else if(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('비타')){
-            if(/토끼로 변|토끼 모습|토끼가 되|아기 토끼|작은 토끼|동물 모습|본모습|본체/.test(sceneText)){console.log('[Chat2Img-Codex] 카야 토끼 모습: 옷 랜덤 건너뜀');}else{
+            if(KAYA_ANIMAL_RE.test(sceneText)){console.log('[Chat2Img-Codex] 카야 토끼 모습: 옷 랜덤 건너뜀');}else{
             const kf=makeKayaFairyOutfit(sceneText);
             add='\n\n최카야 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+kf+KAYA_FAIRY_RULE;
             console.log('[Chat2Img-Codex] 카야(토끼) 의상:',kf);
@@ -1570,7 +1573,7 @@ window.fetch=function(input,init){
             console.log('[Chat2Img-Codex] 이정원 의상:',jw);
           }
           // 비타: 동화풍 늑대 소년 차림
-          if(characterText.includes('비타')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복|늑대로 변|늑대 모습|늑대가 되|새끼 늑대|아기 늑대|작은 늑대|동물 모습|본모습|본체/.test(sceneText)){
+          if(characterText.includes('비타')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)&&!VITA_ANIMAL_RE.test(sceneText)){
             const vo=makeVitaOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n비타 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+vo+VITA_RULE;
             console.log('[Chat2Img-Codex] 비타 의상:',vo);

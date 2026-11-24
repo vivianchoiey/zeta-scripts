@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.44.8
+// @version      1.45.0
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -18,7 +18,7 @@ const MOBILE_URL='https://node.tail6a1536.ts.net/chat2img-codex';   // 아이폰
 // ===== 여주 의상 랜덤 조합 재료 (자유롭게 추가·삭제) =====
 // 색은 뉴트럴 + 데님 + 포인트 몇 개. 파스텔 없음
 const COLORS=['화이트','아이보리','크림','베이지','카멜','브라운','그레이','차콜','블랙','네이비','버건디','올리브','코발트 블루','버터 옐로'];
-const BRAND_RE=/띠어리|리바이스|지미추|마놀로|토템|셀린느|생로랑|카이트|막스마라|버버리|프라다|지안비토|아페쎄|아크네|미우미우|르페토|알라이아|에르메스|보테가|질 샌더|더 로우|이세이 미야케|요지 야마모토|꼼데가르송|더블탭스|캐피탈|니들스|팔라스|아크테릭스|리얼맥코이|히스테릭|몽벨|벨스타프|랄프로렌|폴로 랄프|르메르|오라리|아워레가시|바버|드레익스|크로켓앤존스|처치스|알든|존 롭|에드워드 그린/;
+const BRAND_RE=/띠어리|리바이스|지미추|마놀로|토템|셀린느|생로랑|카이트|막스마라|버버리|프라다|지안비토|아페쎄|아크네|미우미우|르페토|알라이아|에르메스|보테가|질 샌더|더 로우|이세이 미야케|요지 야마모토|꼼데가르송|더블탭스|캐피탈|니들스|팔라스|아크테릭스|리얼맥코이|히스테릭|몽벨|벨스타프|랄프로렌|폴로 랄프|르메르|오라리|아워레가시|바버|드레익스|크로켓앤존스|처치스|알든|존 롭|에드워드 그린|네이버후드|그라피페이퍼|엔지니어드 가먼츠|비즈빔|칼하트|나이키|뉴발란스/;
 const STYLES={
   // 크리스탈 결 — 매니시 시크. 오버핏 셔츠·테일러드 팬츠·가죽, 무채색 위주
   매니시시크:{
@@ -510,6 +510,24 @@ const SEOLGI_STYLES={
     acc:['없음','없음','심플한 스포츠 워치','운동용 손목밴드']
   }
 };
+// 설기 일본 워크웨어·스트릿 캐주얼 (더블탭스·네이버후드·니들스·오라리·그라피페이퍼·엔지니어드 가먼츠·비즈빔). 완성 코디 그대로 사용.
+const SEOLGI_JP_OUT=[
+  '오라리 아이보리 케이블 니트, 칼하트 WIP 베이지 카펜터 팬츠',
+  '오트밀색 니트 가디건, 흰 티셔츠, 진청 와이드 데님 팬츠',
+  '더블탭스 블랙 롱슬리브 티셔츠, 더블탭스 올리브 카고 팬츠',
+  '엔지니어드 가먼츠 카키 워크 셔츠(앞을 열고), 흰 티셔츠, 베이지 치노 팬츠',
+  '네이버후드 네이비 스웻셔츠, 그라피페이퍼 그레이 와이드 슬랙스',
+  '니들스 트랙 재킷, 흰 티셔츠, 블랙 와이드 팬츠',
+  '비즈빔 인디고 워크 셔츠, 흰 티셔츠, 진청 스트레이트 데님 팬츠',
+  '비즈빔 카키 워크 재킷, 오라리 크림 크루넥 니트, 그라피페이퍼 블랙 와이드 슬랙스'
+];
+const SEOLGI_JP_HOME=[
+  '흰색 오버핏 반팔 티셔츠, 나이키 그레이 스웻팬츠',
+  '오라리 아이보리 맨투맨, 차콜 트레이닝 와이드 팬츠',
+  '더블탭스 그레이 오버핏 후드티, 블랙 트레이닝 팬츠',
+  '흰 티셔츠, 니들스 블랙 트랙팬츠(옆선 나비 자수)'
+];
+const SEOLGI_JP_SHOES=['화이트 로우탑 스니커즈','뉴발란스 그레이 스니커즈','블랙 레더 스니커즈','다크 브라운 첼시 부츠','비즈빔 브라운 스웨이드 모카신'];
 const SEOLGI_COLORS={
   top:['화이트','오프화이트','크림','라이트 그레이','차콜','블랙','네이비','딥 브라운','올리브','버건디','코발트 블루','세이지 그린'],
   bottom:['블랙','차콜','그레이','네이비','오프화이트','베이지','모카 브라운','다크 올리브'],
@@ -533,8 +551,8 @@ function seolgiStyle(scene){
   if(/집에서|집 안|집안|거실|침실|소파|부엌|주방|자취방/.test(scene))return 'home';
   if(/여름|한여름|무더위|폭염|더운 날|해변|바닷가/.test(scene))return 'summer';
   if(/겨울|한겨울|혹한|눈 오는|눈 내리는|추운 날|영하|눈밭/.test(scene))return 'winter';
-  if(/데이트|레스토랑|기념일|근사한 식당/.test(scene))return rnd(['date','date','preppy','minimal']);
-  return rnd(['minimal','minimal','preppy','preppy','street','street','date']);
+  if(/데이트|레스토랑|기념일|근사한 식당/.test(scene))return rnd(['date','date','jpwork','minimal']);
+  return rnd(['jpwork','jpwork','jpwork','jpwork','minimal','preppy','street','date']);
 }
 function makeSeolgiOutfit(scene){
   const style=seolgiStyle(scene);
@@ -548,6 +566,8 @@ function makeSeolgiOutfit(scene){
     const acc=rnd(['없음','은은한 실버 시계','심플한 실버 커프스']);
     return '격식 있는 테일러링 — '+[`${c} ${fabric} ${cut} (재킷과 팬츠 같은 색·소재)`,shirt,tie,shoes,acc].filter(t=>t!=='없음').join(', ');
   }
+  if(style==='jpwork')return '일본 워크웨어 캐주얼 — '+rnd(SEOLGI_JP_OUT)+', '+rnd(SEOLGI_JP_SHOES);
+  if(style==='home'&&Math.random()<0.6)return '홈웨어 — '+rnd(SEOLGI_JP_HOME)+', 실내 맨발';
   const st=SEOLGI_STYLES[style];
   const top=seolgiColor(rnd(st.top),'top');
   const bottom=seolgiColor(rnd(st.bottom),'bottom');

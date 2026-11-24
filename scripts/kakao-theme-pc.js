@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         카톡테마 로더 PC
 // @namespace    zeta-local
-// @version      1.8.5
+// @version      1.8.6
 // @description  hllim-svg 카톡테마를 자동으로 불러옴 — 원래 이름·원래 프로필 사진 고정, 글자 크기 키움, 입력창 띠 제거
 // @match        https://zeta-ai.io/*
 // @run-at       document-idle
@@ -190,6 +190,27 @@ const installBackspaceFix=()=>{
   tick();setInterval(tick,1500);
 };
 
+// 추천 답변 패널: 제타 화면 구조가 바뀌면서 테마가 패널을 '닫힘'으로 착각해 터치·스크롤을 막음 → 열려 있을 땐 다시 풀어줌
+const installQuickPanelFix=()=>{
+  if(w.__zetaKakaoQuickFix)return;w.__zetaKakaoQuickFix=1;
+  const st=d.createElement('style');st.id='zeta-kakao-quick-scroll-fix';
+  st.textContent=
+    `html body [data-testid="bottom-panel-slot"].zk-quick-open,html body [data-testid="bottom-panel-slot"].zk-quick-open *{pointer-events:auto!important;}`+
+    `html body [data-testid="bottom-panel-slot"].zk-quick-open .swiper-slide{overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;}`;
+  (d.head||d.documentElement).appendChild(st);
+  const run=()=>{
+    if(!st.isConnected)(d.head||d.documentElement).appendChild(st);
+    d.querySelectorAll('[data-testid="bottom-panel-slot"]').forEach(slot=>{
+      const r=slot.getBoundingClientRect();
+      const comp=d.querySelector('textarea[name="message"]');
+      const cr=comp?comp.getBoundingClientRect():null;
+      const open=r.height>40&&r.top<innerHeight-40&&!!slot.querySelector('button')&&(!cr||cr.bottom<=r.top+40);
+      slot.classList.toggle('zk-quick-open',open);
+    });
+  };
+  setInterval(run,400);run();
+};
+
 const load=()=>{
   if(w.__zetaKakaoLoaderPending)return;
   w.__zetaKakaoLoaderPending=1;
@@ -205,5 +226,6 @@ const load=()=>{
 applyFont();
 installBandFix();
 installAutoFix();
+installQuickPanelFix();
 load();
 })();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.0
+// @version      1.45.1
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -177,6 +177,8 @@ function makeJunheeOutfit(scene){
 // 고정 프롬프트가 장면 설명 앞에 붙든 뒤에 붙든 비타 방으로 인식
 const VITA_ROOM=p=>p.includes('비타')&&/늑대 수인/.test(p);
 const VITA_ANIMAL_RE=/늑대로 (?:변|돌아)|늑대(?:의)? 모습으로 (?:변|돌아)|늑대가 (?:되|됐|돼)|늑대로 변신/;
+const SEOLGI_ANIMAL_RE=/설표로 (?:변|돌아)|설표(?:의)? 모습으로 (?:변|돌아)|설표가 (?:되|됐|돼)|설표로 변신|(?:설표|눈표범)(?:의)? 모습(?:이|인|을|으로|일)|(?:설표|눈표범) 형태|눈표범으로 (?:변|돌아)|동물 모습으로 (?:변|돌아)/;
+const SEOLGI_ANIMAL_DESC='\n\n설기 설표 모습: 이번 장면의 설기는 사람이 아니라 동물 설표(눈표범)로 변한 상태다. 사람 얼굴·사람 몸·옷은 그리지 않는다. 덩치는 크지만 무섭지 않고 아주 귀엽게 그린다 — 새하얗고 보송보송한 두꺼운 털에 회색·검은 로제트 무늬, 동글동글하고 통통한 몸, 짧고 굵은 다리와 큼직하고 동그란 앞발, 작고 둥근 귀, 크고 맑은 파란 눈, 분홍빛 코. 몸길이만큼 길고 굵고 풍성한 꼬리. 맹수처럼 이빨을 드러내거나 사납게 그리지 않고, 애교 부리거나 억울해하는 귀여운 표정으로 그린다.';
 const KAYA_ANIMAL_RE=/토끼로 (?:변|돌아)|토끼(?:의)? 모습으로 (?:변|돌아)|토끼가 (?:되|됐|돼)|토끼로 변신/;
 // ===== 비타(늑대 수인)·최카야(토끼 수인) 동화 방 (고정 프롬프트에 '비타'가 있을 때만) =====
 const VITA={
@@ -1541,7 +1543,9 @@ window.fetch=function(input,init){
           }
           // 설기: 상황에 맞춰 여러 스타일의 상·하의·아우터·신발을 각각 랜덤 조합.
           // 고정 외형 유지, 특수 의상/명시적 옷 고정/탈의 장면은 위 조건 또는 아래 조건으로 보호.
-          if(characterText.includes('설기')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|상체 노출/.test(sceneText)){
+          if(characterText.includes('설기')&&SEOLGI_ANIMAL_RE.test(sceneText)){
+            add+=SEOLGI_ANIMAL_DESC;console.log('[Chat2Img-Codex] 설기 설표 모습: 옷 랜덤 건너뜀');
+          }else if(characterText.includes('설기')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|상체 노출/.test(sceneText)){
             const sg=pickSeolgiOutfit(sceneIdx>=0?sceneText:'');
             add+='\n\n설기 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+sg+SEOLGI_RULE;
             console.log('[Chat2Img-Codex] 설기 의상:',sg);

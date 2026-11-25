@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.3
+// @version      1.45.4
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -458,7 +458,7 @@ function pickMugyeomOutfit(scene){
 // 복장만 변경. 은발·푸른 눈·눈표범 귀·꼬리 등 캐릭터 정체성은 절대 바꾸지 않음.
 const SEOLGI_STYLES={
   minimal:{
-    top:['코튼 크루넥 티셔츠','얇은 크루넥 니트','리브 니트','옥스퍼드 셔츠','오픈칼라 셔츠','니트 폴로','모크넥 니트','헨리넥 티셔츠','코튼 롱슬리브','코튼 셔츠'],
+    top:['코튼 크루넥 티셔츠','얇은 크루넥 니트','리브 니트','오버핏 반팔 티셔츠','크루넥 맨투맨','모크넥 니트','헨리넥 티셔츠','코튼 롱슬리브','오버핏 후드티','하프집업 스웨트셔츠'],
     bottom:['진청 스트레이트 데님 팬츠','원턱 울 슬랙스','세미와이드 슬랙스','스트레이트 치노 팬츠','테이퍼드 코튼 팬츠','플리츠 와이드 팬츠','코듀로이 스트레이트 팬츠','울 혼방 팬츠'],
     outer:['없음','없음','없음','스웨이드 재킷','싱글 울 코트','코튼 트러커 재킷','니트 집업','가벼운 가디건'],
     shoes:['깔끔한 화이트 스니커즈','블랙 로퍼','다크 브라운 첼시 부츠','블랙 더비 슈즈','스웨이드 로퍼','미니멀 레더 스니커즈'],
@@ -479,7 +479,7 @@ const SEOLGI_STYLES={
     acc:['없음','없음','실버 체인 팔찌','심플한 실버 반지','크로스백','캔버스 숄더백']
   },
   date:{
-    top:['얇은 니트 폴로','오픈칼라 코튼 셔츠','실크 혼방 오픈칼라 셔츠','리브 크루넥 니트','부드러운 V넥 니트','드레이프가 자연스러운 셔츠','모던 헨리넥 티셔츠','단정한 셔츠와 니트 베스트','탄탄한 크루넥 티셔츠'],
+    top:['오픈칼라 코튼 셔츠','리브 크루넥 니트','부드러운 V넥 니트','모크넥 니트','모던 헨리넥 티셔츠','탄탄한 크루넥 티셔츠','흰 티셔츠 위 얇은 니트 가디건','오버핏 크루넥 니트'],
     bottom:['원턱 울 팬츠','테이퍼드 슬랙스','세미와이드 슬랙스','진청 스트레이트 데님 팬츠','드레이프 있는 와이드 슬랙스','핀턱 치노 팬츠','슬림 스트레이트 코튼 팬츠'],
     outer:['없음','없음','없음','싱글 블레이저','미니멀 숏코트','가벼운 카디건','울 트렌치코트'],
     shoes:['블랙 로퍼','브라운 스웨이드 로퍼','블랙 첼시 부츠','화이트 레더 스니커즈','블랙 더비 슈즈','다크 브라운 레더 슈즈'],
@@ -493,14 +493,14 @@ const SEOLGI_STYLES={
     acc:['없음','없음','없음','얇은 실버 반지']
   },
   summer:{
-    top:['반팔 코튼 셔츠','린넨 오픈칼라 셔츠','시원한 니트 폴로','탄탄한 반팔 티셔츠','슬리브리스 위 얇은 린넨 셔츠','가벼운 피케 폴로','반팔 스트라이프 셔츠','얇은 시어서커 셔츠','반팔 헨리넥'],
+    top:['오버핏 반팔 티셔츠','탄탄한 반팔 티셔츠','포켓 반팔 티셔츠','반팔 헨리넥','라글란 반팔 티셔츠','린넨 오픈칼라 셔츠','반팔 스웨트셔츠'],
     bottom:['가벼운 와이드 코튼 팬츠','린넨 슬랙스','진청 스트레이트 데님 팬츠','테이퍼드 치노 팬츠','린넨 혼방 와이드 팬츠'],
     outer:['없음','없음','없음','없음','얇은 린넨 오버셔츠'],
     shoes:['화이트 스니커즈','브라운 스웨이드 로퍼','가죽 스트랩 샌들','캔버스 로우탑 스니커즈','심플한 블랙 로퍼'],
     acc:['없음','없음','얇은 실버 반지','미니멀 실버 시계','작은 캔버스 토트백']
   },
   winter:{
-    top:['도톰한 케이블 니트','울 크루넥 니트','니트 폴로','얇은 터틀넥 니트','기모 스웨트셔츠','옥스퍼드 셔츠 위 니트 레이어드','하프집업 울 니트','도톰한 리브 니트'],
+    top:['도톰한 케이블 니트','울 크루넥 니트','니트 폴로','얇은 터틀넥 니트','기모 스웨트셔츠','오버핏 후드티','하프집업 울 니트','도톰한 리브 니트'],
     bottom:['울 플란넬 슬랙스','코듀로이 스트레이트 팬츠','두꺼운 치노 팬츠','진청 스트레이트 데님 팬츠','헤비 코튼 와이드 팬츠','플리츠 울 팬츠'],
     outer:['싱글 울 롱코트','더블 브레스티드 울 코트','숏 패딩 재킷','무광 패딩 점퍼','울 더플코트','무광 가죽 재킷과 얇은 머플러'],
     shoes:['다크 브라운 첼시 부츠','블랙 첼시 부츠','블랙 레더 부츠','스웨이드 부츠','블랙 더비 슈즈'],
@@ -522,7 +522,11 @@ const SEOLGI_JP_OUT=[
   '엔지니어드 가먼츠 카키 워크 셔츠(앞을 열고), 흰 티셔츠, 베이지 치노 팬츠',
   '네이버후드 네이비 스웻셔츠, 그라피페이퍼 그레이 와이드 슬랙스',
   '니들스 트랙 재킷, 흰 티셔츠, 블랙 와이드 팬츠',
-  '비즈빔 인디고 워크 셔츠, 흰 티셔츠, 진청 스트레이트 데님 팬츠',
+  '네이버후드 블랙 후드티, 더블탭스 블랙 카고 팬츠',
+  '오라리 그레이 하프집업 스웻셔츠, 그라피페이퍼 차콜 와이드 팬츠',
+  '더블탭스 화이트 오버핏 반팔 티셔츠, 리얼맥코이 진청 와이드 데님 팬츠',
+  '네이버후드 차콜 크루넥 맨투맨, 칼하트 WIP 블랙 더블니 팬츠',
+  '오라리 네이비 오버핏 니트, 흰 티셔츠 레이어드, 더블탭스 올리브 카고 팬츠',
   '비즈빔 카키 워크 재킷, 오라리 크림 크루넥 니트, 그라피페이퍼 블랙 와이드 슬랙스'
 ];
 const SEOLGI_JP_HOME=[
@@ -553,10 +557,10 @@ function seolgiStyle(scene){
   if(/결혼식|시상식|연회|무도회|격식|공식 행사|정장 차림|턱시도|갈라 행사|리셉션/.test(scene))return 'formal';
   if(/헬스장|운동 중|러닝|조깅|트레이닝|체육관|웨이트/.test(scene))return 'active';
   if(/집에서|집 안|집안|거실|침실|소파|부엌|주방|자취방/.test(scene))return 'home';
-  if(/여름|한여름|무더위|폭염|더운 날|해변|바닷가/.test(scene))return 'summer';
+  if(/여름|한여름|무더위|폭염|더운 날|해수욕/.test(scene))return 'summer';
   if(/겨울|한겨울|혹한|눈 오는|눈 내리는|추운 날|영하|눈밭/.test(scene))return 'winter';
-  if(/데이트|레스토랑|기념일|근사한 식당/.test(scene))return rnd(['date','date','jpwork','minimal']);
-  return rnd(['jpwork','jpwork','jpwork','jpwork','minimal','preppy','street','date']);
+  if(/데이트|레스토랑|기념일|근사한 식당/.test(scene))return rnd(['date','jpwork','jpwork','minimal']);
+  return rnd(['jpwork','jpwork','jpwork','jpwork','jpwork','street','street','minimal']);
 }
 function makeSeolgiOutfit(scene){
   const style=seolgiStyle(scene);
@@ -1217,7 +1221,7 @@ const RL_HOME_BOTTOM=['폴로 랄프로렌 그레이 스웻 팬츠','폴로 랄�
   add(MUGYEOM_STYLES.home.top,RL_HOME_TOP);add(MUGYEOM_STYLES.home.bottom,RL_HOME_BOTTOM);
   // 설기
   ['minimal','date','winter','street'].forEach(k=>{add(SEOLGI_STYLES[k].outer,[...BEL_WAX,...BEL_LEATHER]);add(SEOLGI_STYLES[k].top,BEL_TOP);});
-  ['preppy','minimal','date'].forEach(k=>{add(SEOLGI_STYLES[k].outer,RL_OUT);add(SEOLGI_STYLES[k].top,RL_TOP);add(SEOLGI_STYLES[k].bottom,RL_BOTTOM);});
+  ['preppy','minimal','date'].forEach(k=>{add(SEOLGI_STYLES[k].outer,RL_OUT.filter(x=>!/블레이저|트위드/.test(x)));add(SEOLGI_STYLES[k].top,RL_TOP.filter(x=>!/셔츠/.test(x)));});
   add(SEOLGI_STYLES.home.top,RL_HOME_TOP);add(SEOLGI_STYLES.home.bottom,RL_HOME_BOTTOM);
   // 윤이
   add(YUNI_STYLES['아메카지'].outer,BEL_WAX);add(YUNI_STYLES['아메카지'].top,BEL_TOP);

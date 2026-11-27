@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.23
+// @version      1.45.24
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -2667,6 +2667,7 @@ const coreBoot=(async()=>{
     function syncHistoryRoom(){
       const room=historyRoomId(roomIdNow());if(room===state.historyRoom)return false;
       state.historyRoom=room;state.history=loadHistory(room);state.historyCursor=0;state.historyHasMore=false;state.historyTotal=0;state.historyError='';state.serverHistory=false;state.historyLocalOnly=false;state.historyLoading=false;state.historyRoomConfirmed=false;state.historyToken=(state.historyToken||0)+1;
+      state.legacyOpen=false;state.legacyItems=[];state.legacyToken=(state.legacyToken||0)+1;state.legacyLoading=false;state.legacyCursor='';state.legacyHasMore=false;state.legacyStatus='';state.legacyAssigning=false;
       return true;
     }
     function esc(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
@@ -2810,6 +2811,7 @@ const coreBoot=(async()=>{
         <section class="view" data-view="history">
           <div class="row" style="justify-content:space-between;margin-bottom:9px"><span class="mini" id="historyLabel">최근 생성 이미지</span><div class="row" style="gap:4px"><button class="btn ghost" id="refreshHistory">새로고침</button><button class="btn ghost" id="clearHistory">이력 비우기</button></div></div>
           <div id="historyList"></div>
+          <div class="card" style="margin-top:10px"><button class="btn secondary full" id="legacyHistoryToggle">미분류 이력 · 기존 이미지 등록</button><div id="legacyHistoryPanel" class="hidden" style="margin-top:8px"><div class="mini" id="legacyHistoryStatus"></div><div id="legacyHistoryList"></div></div></div>
         </section>
       </div>
     </div>
@@ -3311,8 +3313,63 @@ ${scene}`].filter(Boolean).join('\n\n');}
       }catch(e){if(current()){state.historyError=e?.message||String(e);if(!more){state.serverHistory=false;state.historyHasMore=false;state.historyRoomConfirmed=false;}console.warn('[Chat2Img-Codex] 방별 이력 조회 실패:',state.historyError);}}
       finally{if(current()){state.historyLoading=false;renderHistory();}}
     }
+    function renderLegacyHistory(){
+      const panel=shadow.getElementById('legacyHistoryPanel'),toggle=shadow.getElementById('legacyHistoryToggle'),label=shadow.getElementById('legacyHistoryStatus'),list=shadow.getElementById('legacyHistoryList');
+      if(!panel||!toggle||!label||!list)return;
+      toggle.disabled=!state.historyRoom;toggle.textContent=state.legacyOpen?'미분류 이력 닫기':'미분류 이력 · 기존 이미지 등록';
+      panel.classList.toggle('hidden',!state.legacyOpen);
+      if(!state.legacyOpen){list.replaceChildren();return;}
+      label.textContent=state.legacyStatus||'기존 이미지를 확인하고 현재 채팅방에 등록하세요. 원본 파일은 그대로 보존됩니다.';
+      const items=state.legacyItems||[];
+      list.innerHTML=`<div class="historyGrid">${items.map((item,i)=>`<div class="historyItem"><img class="historyImg" loading="lazy" data-legacy-img="${i}" alt="미분류 이미지"><div class="historyInfo">${esc(new Date(item.createdAt).toLocaleString())}</div><div class="historyActions"><button class="tiny" data-legacy-assign="${i}" ${state.legacyLoading||state.legacyAssigning?'disabled':''}>현재 방에 등록</button></div></div>`).join('')}</div>${!items.length&&!state.legacyLoading?'<div class="emptyHistory">표시할 미분류 이미지가 없습니다.</div>':''}<div class="row" style="justify-content:center;gap:6px;margin-top:8px"><button class="btn ghost" data-legacy-refresh="1" ${state.legacyLoading||state.legacyAssigning?'disabled':''}>새로고침</button>${state.legacyHasMore?`<button class="btn ghost" data-legacy-more="1" ${state.legacyLoading||state.legacyAssigning?'disabled':''}>더 보기</button>`:''}</div>`;
+      list.querySelectorAll('[data-legacy-img]').forEach(img=>{const item=items[Number(img.dataset.legacyImg)];if(item)img.src=historySrc(item);});
+    }
+    async function legacyHistoryRequest(path,options={}){
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+      try{
+        const res=await fetch(bridgeBase()+path,{...options,cache:'no-store',signal:controller.signal});
+        if(res.status===404&&path.startsWith('/history/unassigned'))throw new Error('맥 서버를 v0.3.2로 교체한 뒤 다시 켜주세요.');
+        const data=await res.json().catch(()=>null);
+        if(!res.ok||!data?.ok)throw new Error(data?.error||'HTTP '+res.status);
+        return data;
+      }catch(e){if(e?.name==='AbortError')throw new Error('서버 응답 시간 초과');throw e;}finally{clearTimeout(timer);}
+    }
+    async function fetchLegacyHistory(more=false){
+      syncHistoryRoom();if(!state.historyRoom||!state.legacyOpen||state.legacyLoading||state.legacyAssigning)return;
+      const room=state.historyRoom,token=state.legacyToken=(state.legacyToken||0)+1;
+      const current=()=>state.legacyToken===token&&state.historyRoom===room&&historyRoomId(roomIdNow())===room;
+      state.legacyLoading=true;state.legacyStatus='미분류 이력 불러오는 중…';renderLegacyHistory();
+      try{
+        const data=await legacyHistoryRequest('/history/unassigned?limit=24'+(more&&state.legacyCursor?'&cursor='+encodeURIComponent(state.legacyCursor):''));
+        if(!current())return;
+        if(!Array.isArray(data.items))throw new Error('이력 API 응답 형식 오류');
+        state.legacyItems=mergeRoomHistory(more?(state.legacyItems||[]):[],data.items.filter(x=>x&&/^codex-image-\d+-[a-f0-9]{8}\.png$/i.test(x.filename)&&!historyItemRoom(x)));
+        state.legacyCursor=data.nextCursor||'';state.legacyHasMore=!!data.hasMore&&!!state.legacyCursor;
+        state.legacyStatus='미분류 '+Number(data.total??state.legacyItems.length)+'개 · 현재 방에 등록할 이미지만 선택하세요.';
+      }catch(e){if(current())state.legacyStatus=e?.message||String(e);}
+      finally{if(current()){state.legacyLoading=false;renderLegacyHistory();}}
+    }
+    async function assignLegacyHistory(index){
+      syncHistoryRoom();const room=state.historyRoom,item=state.legacyItems?.[index];
+      if(!room||!state.legacyOpen||!item||state.legacyLoading||state.legacyAssigning)return;
+      if(!confirm('이 이미지를 현재 채팅방에 등록할까요?\n등록하면 같은 방의 모든 기기에서 표시됩니다. 다른 방에는 표시되지 않습니다.'))return;
+      const token=state.legacyToken=(state.legacyToken||0)+1;
+      const current=()=>state.legacyToken===token&&state.historyRoom===room&&historyRoomId(roomIdNow())===room;
+      state.legacyAssigning=true;state.legacyStatus='현재 채팅방에 등록 중…';renderLegacyHistory();
+      try{
+        const data=await legacyHistoryRequest('/history/assign',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roomId:room,filename:item.filename})});
+        if(historyItemRoom(data.item||{})!==room||data.item.filename!==item.filename)throw new Error('서버 등록 응답이 올바르지 않습니다.');
+        const next=mergeRoomHistory([data.item],current()?state.history:loadHistory(room));
+        saveRoomHistory(room,next);
+        if(!current())return;
+        state.history=next;state.legacyItems=(state.legacyItems||[]).filter(x=>x.filename!==item.filename);
+        state.legacyStatus='등록 완료 · 다른 기기에서 이력을 새로고침하세요.';renderHistory();
+        if(!state.historyLoading)fetchServerHistory(false);
+      }catch(e){if(current())state.legacyStatus=e?.message||String(e);}
+      finally{if(current()){state.legacyAssigning=false;renderLegacyHistory();}}
+    }
     function renderHistory(){
-      syncHistoryRoom();
+      syncHistoryRoom();renderLegacyHistory();
       const label=shadow.getElementById('historyLabel'),refresh=shadow.getElementById('refreshHistory');
       if(refresh)refresh.disabled=!!state.historyLoading||!state.historyRoom;
       if(label)label.textContent=!state.historyRoom?'채팅방에 들어가면 이력이 표시됩니다':state.historyLoading?'이 채팅방 이력 불러오는 중…':state.historyError?'서버 이력 조회 실패 · '+state.historyError+' (이 방의 저장 기록 유지)':state.historyRoomConfirmed?'이 채팅방 · 모든 기기 이력 '+state.historyTotal+'개':'이 채팅방 · 이 기기 기록 '+state.history.length+'개 (서버 방별 동기화 미확인)';
@@ -3355,6 +3412,8 @@ ${scene}`].filter(Boolean).join('\n\n');}
     els.clearHistory.addEventListener('click',()=>{syncHistoryRoom();if(!state.history.length||state.historyLoading)return;
       if(!confirm('이 기기에 저장된 현재 채팅방 이력만 비울까요?\n맥 서버의 원본 이미지와 다른 채팅방 이력은 삭제하지 않습니다. 서버 이력은 다시 조회될 수 있습니다.'))return;
       state.history=[];state.historyHasMore=false;state.historyTotal=0;saveHistory();renderHistory();});
+    shadow.getElementById('legacyHistoryToggle').addEventListener('click',()=>{syncHistoryRoom();if(!state.historyRoom)return;if(state.legacyAssigning)return;state.legacyOpen=!state.legacyOpen;if(!state.legacyOpen){state.legacyToken=(state.legacyToken||0)+1;state.legacyLoading=false;renderLegacyHistory();return;}state.legacyItems=[];state.legacyCursor='';state.legacyHasMore=false;fetchLegacyHistory(false);});
+    shadow.getElementById('legacyHistoryList').addEventListener('click',e=>{const assign=e.target.closest?.('[data-legacy-assign]');if(assign){assignLegacyHistory(Number(assign.dataset.legacyAssign));return;}if(e.target.closest?.('[data-legacy-more]')){fetchLegacyHistory(true);return;}if(e.target.closest?.('[data-legacy-refresh]'))fetchLegacyHistory(false);});
     els.historyList.addEventListener('click',e=>{const more=e.target.closest?.('[data-more-history]');if(more){more.disabled=true;more.textContent='불러오는 중…';fetchServerHistory(true);return;}const open=e.target.closest?.('[data-open-history]'),save=e.target.closest?.('[data-save-history]');if(open){showHistoryItem(Number(open.dataset.openHistory));return;}if(save){const item=state.history[Number(save.dataset.saveHistory)];if(item)downloadUrl(historyImageUrl(item),item.filename||'codex-image.png').catch(err=>alert(err?.message||String(err)));}});
     for(const el of [els.baseUrl,els.scene,els.soloTarget,els.genre,els.stylePreset,els.sizeHint,els.qualityHint,els.extraPrompt]){el.addEventListener('change',saveConfig);el.addEventListener('input',saveConfig);}
     shadow.querySelectorAll('[data-pick]').forEach(btn=>btn.addEventListener('click',()=>pickFile(btn.dataset.pick).catch(e=>alert(e?.message||String(e)))));shadow.querySelectorAll('[data-clipboard]').forEach(btn=>btn.addEventListener('click',()=>readClipboardImage(btn.dataset.clipboard).catch(e=>alert(e?.message||String(e)))));shadow.querySelectorAll('[data-clear]').forEach(btn=>btn.addEventListener('click',()=>snapshotRef(btn.dataset.clear,null)));

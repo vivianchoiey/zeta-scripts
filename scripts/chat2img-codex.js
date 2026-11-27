@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.19
+// @version      1.45.20
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -363,12 +363,12 @@ const GUDAL_SNEAKER_CATALOG={
  retro:[
   ['아디다스 삼바 OG',['화이트 블랙','블랙 화이트']],['아디다스 가젤 인도어',['버건디','네이비']],['아디다스 핸드볼 스페지알',['다크 브라운','네이비','블랙']],['아디다스 SL 72 OG',['네이비 크림','화이트 블루']],
   ['푸마 스피드캣 OG',['블랙 화이트','다크 브라운','레드 화이트']],['오니츠카 타이거 멕시코 66',['크림 블랙','화이트 네이비']],['나이키 코르테즈',['화이트 블랙','크림 네이비']],['나이키 데이브레이크',['크림 그레이','네이비 화이트']],['나이키 킬샷 2',['세일 네이비','화이트 그린']],['반스 올드스쿨',['블랙 화이트','네이비 화이트']],['반스 어센틱',['블랙','오프 화이트']],
-  ['푸마 팔레르모',['크림 다크 그린','네이비 화이트']],['오니츠카 타이거 GSM',['화이트 네이비','크림 블랙']],['컨버스 척 70 로우',['블랙','아이보리']],['리복 클럽 C 85',['빈티지 화이트 그린','화이트 네이비']],['아디다스 도쿄',['오프화이트 블랙','블랙 화이트']]
+  ['푸마 팔레르모',['크림 다크 그린','네이비 화이트']],['오니츠카 타이거 GSM',['화이트 네이비','크림 블랙']],['컨버스 척 70 로우',['블랙','아이보리']],['아디다스 도쿄',['오프화이트 블랙','블랙 화이트']]
  ],
  runner:[
   ['뉴발란스 990v3',['그레이','네이비']],['뉴발란스 990v4',['그레이','블랙']],['뉴발란스 990v5',['그레이','블랙']],['뉴발란스 990v6',['그레이','블랙','네이비']],['뉴발란스 991v2',['그레이','네이비']],['뉴발란스 992',['그레이','네이비']],['뉴발란스 993',['그레이','블랙']],['뉴발란스 2002R',['그레이','차콜']],['뉴발란스 1906R',['실버 화이트','실버 블랙']],['뉴발란스 740',['화이트 실버','화이트 네이비']],
   ['나이키 에어 맥스 1',['화이트 그레이','화이트 레드']],['나이키 에어 맥스 97',['실버 불릿','블랙']],['아식스 젤 카야노 14',['크림 블랙','화이트 실버']],['아식스 젤 NYC',['크림 그레이','그레이 블랙']],['아식스 젤 1130',['화이트 실버','크림 블랙']],
-  ['뉴발란스 574',['그레이','네이비']],['뉴발란스 327',['크림 그레이','화이트 블랙']],['나이키 P-6000',['실버 화이트','화이트 블랙']],['나이키 V2K Run',['실버 화이트','크림 그레이']],['써코니 재즈 오리지널',['네이비 크림','그레이 화이트']]
+  ['뉴발란스 574',['그레이','네이비']],['뉴발란스 327',['크림 그레이','화이트 블랙']],['나이키 P-6000',['실버 화이트','화이트 블랙']],['나이키 V2K Run',['실버 화이트','크림 그레이']]
  ],
  court:[['나이키 에어 포스 1 로우',['화이트','블랙']]]
 };
@@ -2284,7 +2284,7 @@ window.fetch=function(input,init){
         const sharedKayaBag=isModernAdultKayaBagRoom(characterText,sceneText,body);
         const sceneKind=specialScene(sceneText);
         const gudalRoom=GUDAL_NAME_RE.test(characterText)||(!baekRoom&&GUDAL_NAME_RE.test(sceneText));
-        const gudalKaya=gudalRoom&&sharedKayaBag&&!(body.mode==='solo'&&body.soloTarget!=='persona');
+        const gudalKaya=GUDAL_NAME_RE.test(characterText)&&sharedKayaBag&&!(body.mode==='solo'&&body.soloTarget!=='persona');
         const gudalMode=gudalRoom?gudalSceneMode(sceneText,sceneKind):null;
         const baekHomeKind=baekKaya&&!off&&!skip&&sharedKayaBag?baekKayaHomeKind(sceneText,sceneKind):null;
         if(daisukeRoom){

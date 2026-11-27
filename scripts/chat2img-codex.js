@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.5
+// @version      1.45.6
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -629,6 +629,103 @@ function seolgiDirection(outfit){
 }
 
 // =====================================================
+
+// 설기·최카야 방 전용 브랜드 홈웨어. 브랜드 미학을 참고한 코디이며 특정 판매 상품을 의미하지 않음.
+const KAYA_SEOLGI_HOME={
+  tops:[
+    ['더 로우','코튼 크루넥 반팔 티셔츠'],['더 로우','부드러운 코튼 긴팔 티셔츠'],['토템','리브 코튼 롱슬리브'],['토템','미니멀 스트라이프 니트'],
+    ['로로피아나','얇은 캐시미어 크루넥 니트'],['로로피아나','실크 캐시미어 니트 폴로'],['랄프로렌','가벼운 케이블 니트'],['폴로 랄프로렌','코튼 크루넥 맨투맨'],
+    ['스킨(Skin)','부드러운 모달 라운지 티셔츠'],['에버제이(Eberjey)','모달 롱슬리브 라운지 티셔츠'],['바를리(Varley)','미니멀 하프집업 스웨트셔츠'],
+    ['룰루레몬','소프트 저지 롱슬리브'],['아워레가시','얇은 코튼 니트'],['막스마라','실크 혼방 라운지 니트'],['한로(HANRO)','코튼 실크 혼방 라운지 상의'],['질 샌더','미니멀 코튼 티셔츠']
+  ],
+  bottoms:[
+    ['더 로우','여유 있는 코튼 와이드 팬츠'],['토템','부드러운 리브 니트 스트레이트 팬츠'],['로로피아나','캐시미어 라운지 팬츠'],
+    ['스킨(Skin)','모달 와이드 라운지 팬츠'],['에버제이(Eberjey)','부드러운 저지 라운지 팬츠'],['바를리(Varley)','스트레이트 스웨트팬츠'],
+    ['룰루레몬','소프트 와이드 스웨트팬츠'],['폴로 랄프로렌','코튼 조거 팬츠'],['한로(HANRO)','모달 스트레이트 라운지 팬츠'],['막스마라','실크 혼방 와이드 라운지 팬츠'],
+    ['더 로우','부드러운 니트 이지 팬츠'],['토템','밴딩 코튼 스트레이트 팬츠']
+  ],
+  outer:[
+    ['로로피아나','얇은 캐시미어 가디건'],['더 로우','부드러운 오픈 프런트 니트 가디건'],['스킨(Skin)','가벼운 모달 로브'],
+    ['토템','미니멀 니트 가디건'],['바를리(Varley)','가벼운 집업 니트'],['한로(HANRO)','부드러운 코튼 로브']
+  ],
+  silkDress:[
+    ['올리비아 본 할레(Olivia von Halle)','실크 바이어스컷 슬립 미디 원피스'],['올리비아 본 할레(Olivia von Halle)','가느다란 스트랩의 실크 새틴 롱 나이트드레스'],
+    ['라펠라(La Perla)','단정한 실크 새틴 슬립 미디 원피스'],['라펠라(La Perla)','미니멀 브이넥 실크 나이트드레스'],
+    ['릴리실크(LILYSILK)','부드럽게 떨어지는 실크 슬립 롱 원피스'],['루냐(Lunya)','간결한 실크 슬립 미디 원피스'],
+    ['한로(HANRO)','실크 혼방 나이트드레스'],['인티미시미(Intimissimi)','미니멀 실크 새틴 나이트드레스'],
+    ['아이디 사리어리(I.D. Sarrieri)','절제된 실크 새틴 슬립 원피스']
+  ],
+  silkSets:[
+    ['올리비아 본 할레(Olivia von Halle)','파이핑 실크 파자마 셔츠와 긴바지 셋업'],['올리비아 본 할레(Olivia von Halle)','오픈칼라 실크 파자마 셔츠와 와이드 실크 팬츠'],
+    ['라펠라(La Perla)','실크 캐미솔과 실크 라운지 긴바지'],['루냐(Lunya)','워셔블 실크 반팔 셔츠와 긴바지 셋업'],
+    ['루냐(Lunya)','실크 롱슬리브 파자마 셔츠와 실크 팬츠'],['릴리실크(LILYSILK)','실크 새틴 긴팔 파자마 셔츠와 긴바지'],
+    ['인티미시미(Intimissimi)','실크 캐미솔과 실크 스트레이트 팬츠'],['슬리퍼(Sleeper)','절제된 파이핑 새틴 파자마 셔츠와 팬츠']
+  ],
+  softSets:[
+    ['에버제이(Eberjey)','모달 파이핑 긴팔 파자마 셔츠와 긴바지'],['에버제이(Eberjey)','부드러운 모달 반팔 파자마 셔츠와 긴바지'],
+    ['한로(HANRO)','코튼 저지 긴팔 라운지 셋업'],['스킨(Skin)','코튼 와플 롱슬리브와 스트레이트 라운지 팬츠'],
+    ['폴로 랄프로렌','잔줄 스트라이프 코튼 파자마 셔츠와 긴바지'],['스킨(Skin)','부드러운 모달 티셔츠와 라운지 긴바지'],
+    ['로로피아나','얇은 캐시미어 니트와 니트 라운지 팬츠'],['에버제이(Eberjey)','부드러운 코튼 라운지 상의와 팬츠']
+  ],
+  shoes:['맨발','맨발','맨발','흰 코튼 양말','오트밀 코튼 양말','크림색 미니멀 실내 슬리퍼','아이보리 부드러운 실내 슬리퍼'],
+  topColors:['화이트','아이보리','크림','오트밀','라이트 그레이','차콜','블랙','네이비','더스티 로즈','버터 옐로','세이지 그린','파우더 블루','모카 브라운'],
+  bottomColors:['오프화이트','크림','오트밀','라이트 그레이','차콜','블랙','네이비','베이지','모카 브라운'],
+  outerColors:['아이보리','오트밀','그레이','차콜','네이비','베이지'],
+  silkColors:['샴페인','아이보리','펄 그레이','블랙','미드나잇 네이비','딥 버건디','더스티 로즈','초콜릿 브라운','모브','세이지 그린','파우더 블루','크림'],
+  softColors:['아이보리','크림','오트밀','라이트 그레이','차콜','네이비','더스티 로즈','파우더 블루','모카 브라운'],
+  robes:[['라펠라(La Perla)','실크 로브'],['올리비아 본 할레(Olivia von Halle)','간결한 실크 로브'],['루냐(Lunya)','실크 로브']]
+};
+const KAYA_SEOLGI_LAST='chat2img_codex_last_kaya_seolgi_home';
+function kayaSeolgiHomeKind(profile,scene,body){
+  if(body.mode==='solo'&&body.soloTarget!=='persona')return null;
+  if(!SEOLGI_NAME_RE.test(profile+' '+scene)||!/카야|\bKaya\b/i.test(profile+' '+scene))return null;
+  if(/다이스케|서담윤|권지우|최모아|페르녹스|반드시 군복|사복을 입지 않는다|사복은 절대 금지/.test(profile)||VITA_ROOM(profile+' '+scene)||KAYA_ANIMAL_RE.test(scene))return null;
+  const sc=stripRuleLines(scene);
+  if(/맨몸|알몸|상의\s*탈의|탈의 중|목욕 중|샤워 중|속옷만|상체 노출/.test(sc))return null;
+  if(specialScene(sc)==='swim')return null;
+  if(/결혼식|시상식|연회|갈라 행사|공식 행사|레드카펫|집(?:에서|을) (?:나와|나서|나갔|나가)|현관을 나서|집 밖에서|외출 중|카페에서|레스토랑에서|식당에서|쇼핑몰에서|공원에서|길거리에서|회사에서|공방에서|직장에서|학교에서|호텔에서|호텔 객실/.test(sc))return null;
+  if(!/집에서|집 안|집안|집에(?:서| 도착| 돌아| 들어| 있| 오| 온| 왔)|(?:설기|카야)(?:의)? 집|우리 집|거실|침실|소파|부엌|주방|자취방|식탁|침대|이불|안방|홈웨어|실내복|집옷/.test(sc))return null;
+  return specialScene(sc)==='sleep'||/잠들|잠을 자|취침|밤에 침대|기상 직후/.test(sc)?'sleep':'home';
+}
+function makeKayaSeolgiHome(kind){
+  const h=KAYA_SEOLGI_HOME;
+  const type=rnd(kind==='sleep'?['dress','dress','dress','silk','silk','silk','soft','soft']:['casual','casual','casual','casual','casual','casual','dress','silk','soft','soft']);
+  const branded=(item,color)=>item[0]+' 스타일의 '+color+' '+item[1];
+  let pieces=[],topKey='',bottomKey='',category='';
+  if(type==='casual'){
+    const top=rnd(h.tops),bottom=rnd(h.bottoms);
+    const t=branded(top,rnd(h.topColors)),b=branded(bottom,rnd(h.bottomColors));
+    pieces=[t,b];topKey=t;bottomKey=b;category='브랜드 라운지웨어';
+    if(Math.random()<0.28)pieces.push(branded(rnd(h.outer),rnd(h.outerColors)));
+  }else{
+    const list=type==='dress'?h.silkDress:type==='silk'?h.silkSets:h.softSets;
+    const item=rnd(list),color=rnd(type==='soft'?h.softColors:h.silkColors);
+    const main=branded(item,color);
+    pieces=[main];topKey=main;bottomKey=main;
+    category=type==='dress'?'실크 슬립 원피스':type==='silk'?'실크 파자마':'프리미엄 라운지 셋업';
+    if(type==='dress'&&Math.random()<0.32)pieces.push(branded(rnd(h.robes),color));
+  }
+  pieces.push(rnd(h.shoes));
+  return {text:category+' — '+pieces.join(', '),topKey,bottomKey,type};
+}
+function pickKayaSeolgiHome(kind){
+  let previous={};try{previous=JSON.parse(localStorage.getItem(KAYA_SEOLGI_LAST)||'{}')||{};}catch(e){}
+  let outfit=makeKayaSeolgiHome(kind);
+  const score=o=>(o.text===previous.text?4:0)+(o.topKey===previous.topKey?1:0)+(o.bottomKey===previous.bottomKey?2:0);
+  let best=score(outfit);
+  for(let i=0;best>0&&i<48;i++){
+    const candidate=makeKayaSeolgiHome(kind),n=score(candidate);
+    if(n<best){outfit=candidate;best=n;}
+  }
+  try{localStorage.setItem(KAYA_SEOLGI_LAST,JSON.stringify(outfit));}catch(e){}
+  return outfit;
+}
+function kayaSeolgiHomeDirection(kind){
+  const outfit=pickKayaSeolgiHome(kind);
+  console.log('[Chat2Img-Codex] 설기 방 최카야 '+(kind==='sleep'?'잠옷':'실내복')+':',outfit.text);
+  return '\n\n[최카야 전용 '+(kind==='sleep'?'잠옷':'실내복')+' — 이번 장면 우선 적용] '+outfit.text+
+    '. 최카야가 설기와 집에서 지내는 장면에 맞는 세련되고 고급스러운 브랜드 홈웨어. 브랜드명은 소재와 핏의 미학 참고용이며 로고나 문자, 가짜 상표를 크게 그리지 않는다. 실크는 자연스러운 은은한 광택과 부드러운 드레이프, 니트와 코튼은 고급스러운 질감으로 표현한다. 과도한 레이스, 프릴, 리본, 유아틱한 캐릭터 무늬, 과한 노출, 번쩍이는 값싼 새틴 느낌은 피한다. 하이힐, 실외 운동화, 구두, 외출용 코트, 가방, 정장, 화려한 장식은 추가하지 않는다. 최카야의 얼굴·머리색·머리 길이·체형·표정·자세·기존 액세서리와 캐릭터 설정은 유지한다. 참조사진은 외형 확인용이며 기존 옷을 그대로 복제하지 않는다. 이번 장면에서 최카야가 실제 입고 있다고 명시한 옷이나 이번 장면용 추가 지시가 있으면 해당 부분만 우선하고 나머지는 위 랜덤 의상을 적용한다. 설기의 의상에는 적용하지 않는다. 최카야가 실제 등장할 때만 그리며 인물 수와 배경은 바꾸지 않는다.';
+}
 
 // ===== 다이스케·비비안: 1980년 일본 가상 세계관 전용 =====
 // 현대 여주/남주 풀과 완전히 분리. 완성 코디가 아닌 아이템·색상을 독립 조합.
@@ -1468,6 +1565,7 @@ window.fetch=function(input,init){
         // 다이스케 방에서는 일반 현대 의상 풀 대신 1980년 전용 분기를 사용.
         const profileText=sceneIdx>=0?p.slice(0,sceneIdx):p;
         const daisukeRoom=/다이스케|\bDaisuke\b/i.test(profileText);
+        const kayaHomeKind=!off&&!skip&&!daisukeRoom?kayaSeolgiHomeKind(characterText,sceneText,body):null;
         if(daisukeRoom){
           body.prompt=buildDV1980Prompt(p,sceneIdx>=0?sceneText:'',off||dv1980KeepSceneClothes(sceneIdx>=0?'':p));
           init={...init,body:JSON.stringify(body)};
@@ -1475,9 +1573,14 @@ window.fetch=function(input,init){
           // 잠옷·수영복 장면: 여주와 윤이만 전용 풀에서 랜덤. 다른 남캐는 대화 그대로
           const kind=specialScene(sceneText);
           const head=sceneIdx>=0?p.slice(0,sceneIdx):p;
-          const fo=makeFemaleSpecial(kind);
-          let add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+fo+(kind==='sleep'?F_SLEEP_RULE:F_SWIM_RULE);
-          console.log('[Chat2Img-Codex] 여주 '+kind+':',fo);
+          let add='';
+          if(kayaHomeKind==='sleep'){
+            add=kayaSeolgiHomeDirection(kayaHomeKind);
+          }else{
+            const fo=makeFemaleSpecial(kind);
+            add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+fo+(kind==='sleep'?F_SLEEP_RULE:F_SWIM_RULE);
+            console.log('[Chat2Img-Codex] 여주 '+kind+':',fo);
+          }
           if(head.includes('이지수')){
             const jo=makeYuniSpecial(kind).replace(/\(토끼 귀가 밖으로 나오게\)/g,'');
             add+='\n\n이지수 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jo+(kind==='sleep'?J_SLEEP_RULE:J_SWIM_RULE);
@@ -1526,6 +1629,10 @@ window.fetch=function(input,init){
             const kh=makeKayaHSOutfit(sceneText);
             add='\n\n최카야 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+kh+KAYA_HS_RULE;
             console.log('[Chat2Img-Codex] 카야(고등학생) 의상:',kh);
+          }else if(kayaHomeKind){
+            add=kayaSeolgiHomeDirection(kayaHomeKind);
+            const fh=pickFHair(sceneText,false,false);
+            add+='\n유저(여주) 헤어: '+fh+F_HAIR_RULE;
           }else{
             const formal=FORMAL_RE.test(sceneText);
             const anchor=!formal&&p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('아나운서')&&ANCHOR_RE.test(sceneText);
@@ -2435,6 +2542,6 @@ Promise.resolve(coreBoot).then(()=>{
   collapsePanel(1);
   bootNotice.remove();
   window.__C2I_CODEX_BUNDLED_BOOTING__=false;
-  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.5 실행 완료');
+  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.6 실행 완료');
 }).catch(reportBootFailure);
 })();

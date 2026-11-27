@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.22
+// @version      1.45.23
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -3213,8 +3213,40 @@ const coreBoot=(async()=>{
 ${scene}`].filter(Boolean).join('\n\n');}
     function gatherRefs(){return['char','persona','style'].map(slot=>{const ref=state.refs[slot];if(!ref||ref.enabled===false)return null;if(ref.dataUrl)return{slot,dataUrl:ref.dataUrl};if(ref.url)return{slot,url:ref.url};return null;}).filter(Boolean);}
 
+    async function bridgeStatusJson(url,timeout){
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),timeout);
+      try{
+        const res=await fetch(url,{cache:'no-store',signal:controller.signal});
+        if(!res.ok)throw new Error('HTTP '+res.status);
+        return await res.json();
+      }catch(e){if(e?.name==='AbortError')throw new Error('응답 시간 초과');throw e;}
+      finally{clearTimeout(timer);}
+    }
     async function checkStatus(force=false){
-      saveConfig();setStatus(els.statusBox,'','확인 중...');try{const res=await fetch(`${bridgeBase()}/status${force?'?refresh=1':''}`);const data=await res.json();const lines=[];lines.push(data.available?'Codex CLI 사용 가능':'Codex CLI 사용 불가');if(data.version)lines.push(data.version);lines.push(data.loggedInWithChatGPT?'ChatGPT 로그인 확인됨':(data.loginStatus||'로그인 확인 필요'));if(data.error)lines.push(data.error);setStatus(els.statusBox,data.available&&data.loggedInWithChatGPT?'ok':'err',lines.join('\n'));}catch(e){setStatus(els.statusBox,'err',e?.message||String(e));}
+      const token=state.statusToken=(state.statusToken||0)+1;
+      const current=()=>state.statusToken===token;
+      saveConfig();const base=bridgeBase();
+      setStatus(els.statusBox,'','맥 서버 연결 확인 중…');
+      let healthy=false;
+      try{
+        const health=await bridgeStatusJson(base+'/health',5000);
+        if(!current())return;
+        if(!health?.ok||health.app!=='chat2img-codex')throw new Error('코냅샷 서버 응답 형식 오류');
+        healthy=true;
+        setStatus(els.statusBox,'','맥 서버 연결 정상'+(health.version?' (v'+health.version+')':'')+'\nCodex 로그인 상태 확인 중…');
+        const data=await bridgeStatusJson(base+'/status'+(force?'?refresh=1':''),22000);
+        if(!current())return;
+        const lines=['맥 서버 연결 정상',data.available?'Codex CLI 사용 가능':'Codex CLI 사용 불가'];
+        if(data.version)lines.push(data.version);
+        lines.push(data.loggedInWithChatGPT?'ChatGPT 로그인 확인됨':(data.loginStatus||'로그인 확인 필요'));
+        if(data.error)lines.push(data.error);
+        setStatus(els.statusBox,data.available&&data.loggedInWithChatGPT?'ok':'err',lines.join('\n'));
+      }catch(e){
+        if(!current())return;
+        const message=e?.message||String(e);
+        setStatus(els.statusBox,'err',healthy?'맥 서버 연결 정상 · Codex 상태 조회 실패: '+message+'\n이미지 생성은 별도로 시도할 수 있습니다.':'맥 서버 연결 확인 실패: '+message+'\n맥 서버 및 Tailscale 연결을 확인하세요.');
+      }
     }
 
     function historyImageUrl(item){

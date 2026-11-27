@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.8
+// @version      1.45.9
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1050,6 +1050,97 @@ function makePinkOutfit(scene){
   const bottom=rnd(PINK.bottom);const parts=[top,bottom];if(outer!=='없음')parts.push(outer);parts.push(fitShoes(rnd(PINK.shoes),PINK.shoes,bottom,outer));if(bag!=='없음')parts.push(bag);
   return `미우미우 핑크 포인트 룩 — ${parts.join(', ')}`;
 }
+// 백수현 방: 기존 승재 수트/사복/집옷 풀을 공유하되 인물 설정과 최근 의상 기록은 독립.
+const BSH_NAME_RE=/백수현|\bBaek\s*Suhyeon\b|\bBaek\s*Su-hyeon\b/i;
+const BSH_LAST_SUIT='chat2img_codex_last_baeksuhyeon_suit';
+function pickBaekSuit(){
+  let last='';try{last=localStorage.getItem(BSH_LAST_SUIT)||'';}catch(e){}
+  let outfit=makeSuit();for(let i=0;outfit===last&&i<12;i++)outfit=makeSuit();
+  try{localStorage.setItem(BSH_LAST_SUIT,outfit);}catch(e){}
+  return outfit;
+}
+function baekOutfitDirection(scene,sjHome){
+  const sc=stripRuleLines(scene);
+  if(/맨몸|알몸|상의\s*탈의|탈의 중|목욕|샤워 중|속옷만|상체 노출|잠옷|파자마|환자복|수영복/.test(sc))return '';
+  // 경호 근무는 정장이 기본. 쉬는 장면과 명시적인 사복 장면만 승재의 해당 풀 사용.
+  const duty=/경호 중|경호 근무|수행 근무|근무 중|출근|경호 업무|회의|공식 행사|행사장|정장 차림|수트 차림/.test(sc);
+  let outfit,rule;
+  if(sjHome&&!duty){
+    outfit=makeSjHome(sc);
+    rule=SJ_HOME_RULE.replace('38세 재벌답게','27세 성인 남성답게');
+    if(/운동복 —/.test(outfit))rule='. 운동 장면에는 해당 운동복을 자연스럽게 입힌다. 큰 로고나 요란한 배색은 피한다.';
+  }else if(!duty&&/사복|캐주얼|주말|휴일|쉬는 날|캠핑|바이크|오토바이/.test(sc)){
+    outfit=makeSjCasual();rule=SJ_CASUAL_RULE.replace('38세 재벌답게','27세 성인 남성답게');
+  }else{
+    outfit=pickBaekSuit();
+    if(/겨울|눈 오|눈이|추워|추운|영하|비 오|비가|빗속|야외|밖에서|산책|정원/.test(sc)&&Math.random()<0.5)outfit+=', 수트 위에 '+rnd(SJ_BELSTAFF_OUTER.slice(0,3))+'를 걸침';
+    if(FORMAL_RE.test(sc))outfit+=', '+rnd(POCKET_SQ);
+    rule=SUIT_RULE.replace('38세 재벌에 맞게','27세 전용 경호원에게 어울리게');
+  }
+  console.log('[Chat2Img-Codex] 백수현 의상:',outfit);
+  return '\n\n[백수현 전용 의상 — 이번 장면 우선 적용] '+outfit+rule+
+    ' 태강 그룹 전용 경호원인 백수현의 단정한 차림. 190cm/88kg의 크고 탄탄한 성인 남성 체형에 어울리게 자연스러운 어깨와 재킷 핏을 유지한다. 수트는 같은 색과 소재의 재킷과 팬츠로 맞춘다. 기존 얼굴·흑발·흑안·표정·자세를 바꾸지 않는다. 참조사진의 평소 옷은 고정하지 않는다. 현재 장면에서 백수현이 실제 입는 옷을 명시했으면 그 부분만 우선한다. 다른 인물의 의상이나 단순 언급은 백수현의 의상 지정이 아니다. 백수현이 실제 등장할 때만 적용하고 인원은 추가하지 않는다.';
+}
+// 백수현 방 최카야: 기존 매니시/프렌치/미우미우 유지, 샤넬과 미우미우 비중을 높인 독립 풀.
+const BSH_KAYA_MIU={
+  top:[...STYLES.미우미우.top,'미우미우 아이보리 캐시미어 크루넥 니트','미우미우 차콜 캐시미어 브이넥 니트','미우미우 더스티 로즈 캐시미어 카디건','미우미우 네이비 울 카디건','미우미우 화이트 코튼 보트넥 티셔츠','미우미우 크림 실크 블라우스','미우미우 차콜 리브 니트 탑','미우미우 블랙 크루넥 메리노 니트'],
+  bottom:[...STYLES.미우미우.bottom,'미우미우 차콜 테일러드 와이드 슬랙스','미우미우 블랙 울 미디 펜슬 스커트','미우미우 네이비 울 스트레이트 트라우저','미우미우 다크 브라운 가죽 미디 스커트','미우미우 진청 스트레이트 데님'],
+  outer:[...STYLES.미우미우.outer,'미우미우 블랙 테일러드 울 코트','미우미우 차콜 싱글 울 재킷','미우미우 아이보리 울 카디건','미우미우 다크 브라운 스웨이드 재킷','미우미우 네이비 테일러드 코트'],
+  shoes:[...STYLES.미우미우.shoes,'미우미우 블랙 스퀘어토 앵클 부츠','미우미우 다크 브라운 라운드토 가죽 부츠'],
+  acc:[...STYLES.미우미우.acc,'미우미우 블랙 마테라세 숄더백','미우미우 코냑 브라운 가죽 토트백','미우미우 다크 브라운 가죽 숄더백']
+};
+const BSH_KAYA_CHANEL={
+  top:['샤넬 블랙 실크 블라우스','샤넬 아이보리 캐시미어 크루넥 니트','샤넬 네이비 캐시미어 카디건','샤넬 화이트 코튼 셔츠','샤넬 블랙 리브 니트 탑','샤넬 크림 보트넥 니트','샤넬 차콜 캐시미어 니트','샤넬 더스티 로즈 캐시미어 카디건','샤넬 블랙 앤 아이보리 스트라이프 니트'],
+  bottom:['샤넬 블랙 울 스트레이트 트라우저','샤넬 차콜 테일러드 와이드 팬츠','샤넬 블랙 미디 펜슬 스커트','샤넬 네이비 울 미디 스커트','샤넬 아이보리 울 스트레이트 팬츠','샤넬 진청 스트레이트 데님','더 로우 블랙 울 와이드 트라우저','토템 차콜 울 슬랙스'],
+  outer:['샤넬 블랙 트위드 재킷(간결한 금장 단추)','샤넬 아이보리 부클레 트위드 재킷','샤넬 네이비 트위드 재킷','샤넬 차콜 테일러드 울 재킷','샤넬 블랙 앤 아이보리 트위드 재킷','샤넬 더스티 로즈 트위드 재킷','샤넬 블랙 울 롱코트','샤넬 블랙 가죽 재킷','없음','없음'],
+  shoes:['샤넬 블랙 가죽 로퍼','샤넬 베이지 앤 블랙 투톤 슬링백','샤넬 블랙 라운드토 가죽 롱부츠','샤넬 블랙 스퀘어토 앵클 부츠','샤넬 블랙 투톤 발레 플랫','샤넬 다크 브라운 가죽 로퍼','샤넬 블랙 라운드토 첼시 부츠'],
+  acc:['샤넬 블랙 클래식 플랩백','샤넬 블랙 2.55 체인백','샤넬 블랙 보이백','샤넬 아이보리 미니 플랩백','샤넬 다크 브라운 가죽 숄더백','작은 진주 귀걸이','작은 골드 이어링','없음']
+};
+const BSH_KAYA_DRESS={
+  dress:['샤넬 블랙 실크 크레이프 칼럼 드레스','샤넬 미드나잇 네이비 실크 새틴 미디 드레스','샤넬 블랙 벨벳 이브닝 드레스','샤넬 딥 버건디 실크 롱 드레스','미우미우 블랙 실크 슬립 미디 드레스','미우미우 딥 네이비 새틴 미디 드레스','미우미우 다크 브라운 실크 바이어스컷 드레스','미우미우 차콜 울 실크 미디 드레스'],
+  shoes:['샤넬 블랙 투톤 슬링백 힐','샤넬 블랙 스트랩 샌들 힐','미우미우 블랙 가죽 메리제인 힐','미우미우 블랙 스트랩 샌들 힐'],
+  bag:['샤넬 블랙 미니 플랩백','샤넬 블랙 새틴 클러치','미우미우 블랙 마테라세 미니백','미우미우 블랙 미니 클러치','없음']
+};
+const BSH_KAYA_LAST='chat2img_codex_last_baek_kaya';
+function makeBaekKayaOutfit(scene,formal){
+  const sc=scene||'';
+  if(formal){
+    if(/신부|웨딩드레스|우리 결혼식|본식|웨딩 촬영|웨딩촬영|스튜디오 촬영/.test(sc)||Math.random()<0.30)return pickGown(sc);
+    const d=BSH_KAYA_DRESS,parts=[rnd(d.dress),rnd(d.shoes)];
+    const bag=rnd(d.bag);if(bag!=='없음')parts.push(bag);
+    const jewel=rnd(GOWN.jewel);if(jewel!=='없음')parts.push(jewel);
+    if(/겨울|추워|추운|눈 오|눈이|영하|밤바람|쌀쌀/.test(sc))parts.push(rnd(GOWN.outer));
+    return '드레스 — '+parts.join(', ');
+  }
+  // 미우미우 35%, 샤넬 35%, 매니시 15%, 프렌치 15%.
+  const r=Math.random(),name=r<0.35?'미우미우':r<0.70?'샤넬':r<0.85?'매니시시크':'프렌치시크';
+  const st=name==='미우미우'?BSH_KAYA_MIU:name==='샤넬'?BSH_KAYA_CHANEL:STYLES[name];
+  // 특정 브랜드 조합은 시즌에 맞게 겉옷만 조절. 기존 풀과 데이터는 변경하지 않음.
+  const top=rnd(st.top),bottom=rnd(st.bottom);
+  let outer=/여름|더운 날|무더위|폭염/.test(sc)?'없음':rnd(st.outer);
+  if(/겨울|추운 날|영하|눈밭/.test(sc)&&outer==='없음')outer=rnd(st.outer.filter(x=>x!=='없음'));
+  const parts=[top,bottom];if(outer!=='없음')parts.push(outer);
+  parts.push(fitShoes(rnd(st.shoes),st.shoes,bottom,outer));
+  const acc=rnd(st.acc);if(acc!=='없음')parts.push(acc);
+  return name+' 룩 — '+parts.join(', ');
+}
+function pickBaekKayaOutfit(scene,formal){
+  let last='';try{last=localStorage.getItem(BSH_KAYA_LAST)||'';}catch(e){}
+  let outfit=makeBaekKayaOutfit(scene,formal);
+  for(let i=0;outfit===last&&i<12;i++)outfit=makeBaekKayaOutfit(scene,formal);
+  try{localStorage.setItem(BSH_KAYA_LAST,outfit);}catch(e){}
+  return outfit;
+}
+function baekKayaDirection(scene){
+  const formal=FORMAL_RE.test(scene);
+  const outfit=pickBaekKayaOutfit(scene,formal);
+  const fh=pickFHair(scene,formal,false);
+  console.log('[Chat2Img-Codex] 백수현 방 최카야 의상:',outfit);
+  return '\n\n[최카야 전용 의상 — 백수현 방] '+outfit+(formal?GOWN_RULE:OUTFIT_RULE)+
+    ' 미우미우·샤넬의 현대적이고 시크한 고급 소재와 핏을 참고한다. 과장된 로고, 유아틱한 차림, 과한 트위드 장식, 촌스러운 올드한 코디는 피한다. 최카야의 기존 외형과 170cm 장신 성인 체형은 유지한다. 현재 장면에 최카야가 실제 입고 있는 의상이 지정된 경우 해당 부분만 우선 적용하고 나머지는 랜덤 조합을 따른다. 참조사진의 기존 옷은 반복하지 않는다. 최카야가 실제 등장하는 경우에만 적용하고 등장인물을 추가하지 않는다.'+
+    '\n유저(여주) 헤어: '+fh+F_HAIR_RULE;
+}
+
 // ===== 윤이 전용 풀 (고정 프롬프트에 '윤이'가 있을 때만 작동) =====
 // 토끼 수인, 190cm 슬렌더. 수트 없음. 아메카지 + 프레피, 캐주얼하고 귀엽게. 과하지 않게
 const YUNI_COLORS=['아이보리','오프화이트','크림','오트밀','베이지','카키','올리브','네이비','차콜','연회색','브라운','머스타드','버건디','스카이블루','세이지'];
@@ -1661,6 +1752,8 @@ window.fetch=function(input,init){
         const profileText=sceneIdx>=0?p.slice(0,sceneIdx):p;
         const daisukeRoom=/다이스케|\bDaisuke\b/i.test(profileText);
         const kayaHomeKind=!off&&!skip&&!daisukeRoom?kayaSeolgiHomeKind(characterText,sceneText,body):null;
+        const baekRoom=BSH_NAME_RE.test(characterText)||BSH_NAME_RE.test(sceneText);
+        const baekKaya=baekRoom&&/카야|\bKaya\b/i.test(p)&&!(body.mode==='solo'&&body.soloTarget!=='persona');
         if(daisukeRoom){
           body.prompt=buildDV1980Prompt(p,sceneIdx>=0?sceneText:'',off||dv1980KeepSceneClothes(sceneIdx>=0?'':p));
           init={...init,body:JSON.stringify(body)};
@@ -1724,6 +1817,8 @@ window.fetch=function(input,init){
             const kh=makeKayaHSOutfit(sceneText);
             add='\n\n최카야 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+kh+KAYA_HS_RULE;
             console.log('[Chat2Img-Codex] 카야(고등학생) 의상:',kh);
+          }else if(baekKaya){
+            add=baekKayaDirection(sceneText);
           }else if(kayaHomeKind){
             add=kayaSeolgiHomeDirection(kayaHomeKind);
             const fh=pickFHair(sceneText,false,false);
@@ -1770,6 +1865,10 @@ window.fetch=function(input,init){
               if(FORMAL_RE.test(sceneText))suit+=', '+rnd(POCKET_SQ);
               add+=SH_LBL+suit+SUIT_RULE.replace('38세 재벌','37세 그룹 회장');console.log('[Chat2Img-Codex] 사혁 수트:',suit);
             }
+          }
+          // 백수현 방: 승재와 동일한 의상 풀, 경호 근무는 수트 기본.
+          if(baekRoom&&!(body.mode==='solo'&&body.soloTarget==='persona')){
+            add+=baekOutfitDirection(sjScene,sjHome);
           }
           // 구달 방: 수트 장면이면 수트 스타일 랜덤
           if(p.includes('구달')&&!/사복|캐주얼|후드|티셔츠|스웻|잠옷|환자복|수영복|맨몸|상의 탈의|메이드복/.test(sceneText)){
@@ -2638,6 +2737,6 @@ Promise.resolve(coreBoot).then(()=>{
   collapsePanel(1);
   bootNotice.remove();
   window.__C2I_CODEX_BUNDLED_BOOTING__=false;
-  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.8 실행 완료');
+  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.9 실행 완료');
 }).catch(reportBootFailure);
 })();

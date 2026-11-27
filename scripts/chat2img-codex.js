@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.9
+// @version      1.45.10
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1053,9 +1053,26 @@ function makePinkOutfit(scene){
 // 백수현 방: 기존 승재 수트/사복/집옷 풀을 공유하되 인물 설정과 최근 의상 기록은 독립.
 const BSH_NAME_RE=/백수현|\bBaek\s*Suhyeon\b|\bBaek\s*Su-hyeon\b/i;
 const BSH_LAST_SUIT='chat2img_codex_last_baeksuhyeon_suit';
+// 승재와 같은 브랜드 취향이지만 경호원에게 맞는 절제된 비즈니스 투피스만 사용.
+const BSH_GUARD_SUITS={
+  '톰포드식':['단정한 노치 라펠 투버튼 싱글 재킷','폭이 과하지 않은 피크 라펠 투버튼 싱글 재킷'],
+  '생로랑식':['슬림 테일러드 노치 라펠 투버튼 싱글 재킷','정돈된 노치 라펠 싱글 재킷'],
+  '브리오니식':['클래식 노치 라펠 투버튼 싱글 재킷','자연스러운 어깨선의 노치 라펠 싱글 재킷'],
+  '프라다식':['미니멀 노치 라펠 투버튼 싱글 재킷','깔끔한 노치 라펠 싱글 재킷'],
+  '퍼플라벨식':['랄프로렌 퍼플라벨 클래식 노치 라펠 투버튼 싱글 재킷','랄프로렌 퍼플라벨 단정한 테일러드 싱글 재킷']
+};
+function makeBaekGuardSuit(){
+  const name=rnd(Object.keys(BSH_GUARD_SUITS));
+  const color=rnd(['블랙','블랙','차콜','미드나잇 네이비']);
+  const fabric=rnd(['무광 고급 울','매트 울 트윌','무광 울 개버딘','광택 없는 솔리드 울']);
+  const cut=rnd(BSH_GUARD_SUITS[name]);
+  const parts=[color+' '+fabric+' '+cut,color+' 동일 소재 스트레이트 테일러드 슬랙스',rnd(['화이트 드레스 셔츠','화이트 포플린 셔츠','화이트 코튼 셔츠','블랙 드레스 셔츠']),rnd(['무광 블랙 타이','무광 블랙 타이','단정한 차콜 타이','짙은 네이비 무지 타이']),rnd(['존 롭 블랙 옥스퍼드','에드워드 그린 블랙 옥스퍼드','랄프로렌 퍼플라벨 블랙 옥스퍼드','블랙 가죽 더비'])];
+  if(Math.random()<0.35)parts.push('장식 없는 심플한 손목시계');
+  return name+' 경호용 수트 — '+parts.join(', ');
+}
 function pickBaekSuit(){
   let last='';try{last=localStorage.getItem(BSH_LAST_SUIT)||'';}catch(e){}
-  let outfit=makeSuit();for(let i=0;outfit===last&&i<12;i++)outfit=makeSuit();
+  let outfit=makeBaekGuardSuit();for(let i=0;outfit===last&&i<12;i++)outfit=makeBaekGuardSuit();
   try{localStorage.setItem(BSH_LAST_SUIT,outfit);}catch(e){}
   return outfit;
 }
@@ -1063,7 +1080,7 @@ function baekOutfitDirection(scene,sjHome){
   const sc=stripRuleLines(scene);
   if(/맨몸|알몸|상의\s*탈의|탈의 중|목욕|샤워 중|속옷만|상체 노출|잠옷|파자마|환자복|수영복/.test(sc))return '';
   // 경호 근무는 정장이 기본. 쉬는 장면과 명시적인 사복 장면만 승재의 해당 풀 사용.
-  const duty=/경호 중|경호 근무|수행 근무|근무 중|출근|경호 업무|회의|공식 행사|행사장|정장 차림|수트 차림/.test(sc);
+  const duty=FORMAL_RE.test(sc)||/경호 중|경호 근무|수행 근무|근무 중|출근|경호 업무|회의|공식 행사|행사장|정장 차림|수트 차림|파티|연회|갈라|리셉션|결혼식|클럽에서 경호/.test(sc);
   let outfit,rule;
   if(sjHome&&!duty){
     outfit=makeSjHome(sc);
@@ -1073,9 +1090,8 @@ function baekOutfitDirection(scene,sjHome){
     outfit=makeSjCasual();rule=SJ_CASUAL_RULE.replace('38세 재벌답게','27세 성인 남성답게');
   }else{
     outfit=pickBaekSuit();
-    if(/겨울|눈 오|눈이|추워|추운|영하|비 오|비가|빗속|야외|밖에서|산책|정원/.test(sc)&&Math.random()<0.5)outfit+=', 수트 위에 '+rnd(SJ_BELSTAFF_OUTER.slice(0,3))+'를 걸침';
-    if(FORMAL_RE.test(sc))outfit+=', '+rnd(POCKET_SQ);
-    rule=SUIT_RULE.replace('38세 재벌에 맞게','27세 전용 경호원에게 어울리게');
+    if(/겨울|눈 오|눈이|추워|추운|영하|비 오|비가|빗속/.test(sc)&&/야외|밖에서|산책|정원|건물 밖|차량 밖|입구에서/.test(sc)&&Math.random()<0.5)outfit+=', 수트 위에 '+rnd(SJ_RL_OUTER.slice(0,2))+'를 걸침';
+    rule='. 고급 테일러드 비즈니스 투피스 수트. 경호원답게 단정하고 절제된 차림으로, 움직임을 방해하지 않는 자연스러운 핏을 유지한다. 파티·갈라·결혼식·연회에서도 주빈이나 신랑처럼 꾸미지 않고 평소의 경호용 수트를 입는다. 무광 다크 컬러 재킷과 동일 소재 슬랙스, 단정한 셔츠와 무지 타이, 검정 가죽 구두가 기본이다. 턱시도, 보타이, 새틴 라펠, 더블 브레스티드 재킷, 쓰리피스 조끼, 행커치프, 장식용 커프스, 화려한 타이, 핀스트라이프, 번쩍이는 원단, 큰 로고는 사용자가 백수현의 의상으로 직접 지정하지 않는 이상 그리지 않는다.';
   }
   console.log('[Chat2Img-Codex] 백수현 의상:',outfit);
   return '\n\n[백수현 전용 의상 — 이번 장면 우선 적용] '+outfit+rule+
@@ -2737,6 +2753,6 @@ Promise.resolve(coreBoot).then(()=>{
   collapsePanel(1);
   bootNotice.remove();
   window.__C2I_CODEX_BUNDLED_BOOTING__=false;
-  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.9 실행 완료');
+  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.10 실행 완료');
 }).catch(reportBootFailure);
 })();

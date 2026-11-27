@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.10
+// @version      1.45.11
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1103,27 +1103,84 @@ const BSH_KAYA_MIU={
   bottom:[...STYLES.미우미우.bottom,'미우미우 차콜 테일러드 와이드 슬랙스','미우미우 블랙 울 미디 펜슬 스커트','미우미우 네이비 울 스트레이트 트라우저','미우미우 다크 브라운 가죽 미디 스커트','미우미우 진청 스트레이트 데님'],
   outer:[...STYLES.미우미우.outer,'미우미우 블랙 테일러드 울 코트','미우미우 차콜 싱글 울 재킷','미우미우 아이보리 울 카디건','미우미우 다크 브라운 스웨이드 재킷','미우미우 네이비 테일러드 코트'],
   shoes:[...STYLES.미우미우.shoes,'미우미우 블랙 스퀘어토 앵클 부츠','미우미우 다크 브라운 라운드토 가죽 부츠'],
-  acc:[...STYLES.미우미우.acc,'미우미우 블랙 마테라세 숄더백','미우미우 코냑 브라운 가죽 토트백','미우미우 다크 브라운 가죽 숄더백']
+  acc:STYLES.미우미우.acc.filter(x=>!/백|가방|클러치/.test(x))
 };
 const BSH_KAYA_CHANEL={
   top:['샤넬 블랙 실크 블라우스','샤넬 아이보리 캐시미어 크루넥 니트','샤넬 네이비 캐시미어 카디건','샤넬 화이트 코튼 셔츠','샤넬 블랙 리브 니트 탑','샤넬 크림 보트넥 니트','샤넬 차콜 캐시미어 니트','샤넬 더스티 로즈 캐시미어 카디건','샤넬 블랙 앤 아이보리 스트라이프 니트'],
   bottom:['샤넬 블랙 울 스트레이트 트라우저','샤넬 차콜 테일러드 와이드 팬츠','샤넬 블랙 미디 펜슬 스커트','샤넬 네이비 울 미디 스커트','샤넬 아이보리 울 스트레이트 팬츠','샤넬 진청 스트레이트 데님','더 로우 블랙 울 와이드 트라우저','토템 차콜 울 슬랙스'],
   outer:['샤넬 블랙 트위드 재킷(간결한 금장 단추)','샤넬 아이보리 부클레 트위드 재킷','샤넬 네이비 트위드 재킷','샤넬 차콜 테일러드 울 재킷','샤넬 블랙 앤 아이보리 트위드 재킷','샤넬 더스티 로즈 트위드 재킷','샤넬 블랙 울 롱코트','샤넬 블랙 가죽 재킷','없음','없음'],
   shoes:['샤넬 블랙 가죽 로퍼','샤넬 베이지 앤 블랙 투톤 슬링백','샤넬 블랙 라운드토 가죽 롱부츠','샤넬 블랙 스퀘어토 앵클 부츠','샤넬 블랙 투톤 발레 플랫','샤넬 다크 브라운 가죽 로퍼','샤넬 블랙 라운드토 첼시 부츠'],
-  acc:['샤넬 블랙 클래식 플랩백','샤넬 블랙 2.55 체인백','샤넬 블랙 보이백','샤넬 아이보리 미니 플랩백','샤넬 다크 브라운 가죽 숄더백','작은 진주 귀걸이','작은 골드 이어링','없음']
+  acc:['작은 진주 귀걸이','작은 골드 이어링','없음']
 };
 const BSH_KAYA_DRESS={
   dress:['샤넬 블랙 실크 크레이프 칼럼 드레스','샤넬 미드나잇 네이비 실크 새틴 미디 드레스','샤넬 블랙 벨벳 이브닝 드레스','샤넬 딥 버건디 실크 롱 드레스','미우미우 블랙 실크 슬립 미디 드레스','미우미우 딥 네이비 새틴 미디 드레스','미우미우 다크 브라운 실크 바이어스컷 드레스','미우미우 차콜 울 실크 미디 드레스'],
   shoes:['샤넬 블랙 투톤 슬링백 힐','샤넬 블랙 스트랩 샌들 힐','미우미우 블랙 가죽 메리제인 힐','미우미우 블랙 스트랩 샌들 힐'],
-  bag:['샤넬 블랙 미니 플랩백','샤넬 블랙 새틴 클러치','미우미우 블랙 마테라세 미니백','미우미우 블랙 미니 클러치','없음']
+  // 가방은 아래 모델명 기반 별도 풀에서 선택.
 };
+// 백수현 방 최카야의 가방은 실제 브랜드의 대표 모델명과 특징으로만 지정.
+const BSH_KAYA_BAGS={
+  미우미우:[
+    '미우미우 아르카디(Arcadie) 블랙 마테라세 가죽 스몰백(둥근 직사각 실루엣, 짧은 더블 핸들)',
+    '미우미우 아르카디(Arcadie) 코냑 브라운 마테라세 가죽 스몰백',
+    '미우미우 완더(Wander) 블랙 마테라세 가죽 미니 호보백(반달형, 짧은 핸들)',
+    '미우미우 완더(Wander) 다크 브라운 마테라세 가죽 미니 호보백',
+    '미우미우 아방튀르(Aventure) 다크 브라운 가죽 스몰백(구조적인 형태, 더블 핸들)'
+  ],
+  샤넬:[
+    '샤넬 클래식 11.12 블랙 미디엄 플랩백(다이아몬드 퀼팅, 가죽을 엮은 체인, 작은 CC 잠금장치)',
+    '샤넬 클래식 미니 블랙 플랩백(다이아몬드 퀼팅, 체인 스트랩)',
+    '샤넬 2.55 블랙 에이지드 카프스킨 리이슈 플랩백(직사각 마드모아젤 잠금장치, 메탈 체인)',
+    '샤넬 클래식 11.12 아이보리 스몰 플랩백(다이아몬드 퀼팅, 가죽을 엮은 체인)',
+    '샤넬 보이 샤넬(Boy Chanel) 블랙 스몰 플랩백(구조적인 직사각 형태, 체인)'
+  ],
+  매니시시크:[
+    '더 로우 마고(Margaux) 10 블랙 가죽백(절제된 사다리꼴 실루엣, 더블 핸들)',
+    '더 로우 파크(Park) 스몰 블랙 가죽 토트',
+    '생로랑 르 5 아 7(Le 5 à 7) 블랙 가죽 숄더백(간결한 YSL 잠금장치)',
+    '셀린느 클래식 트리옹프 블랙 가죽 숄더백(구조적인 직사각 형태, 트리옹프 잠금장치)',
+    '보테가 베네타 미니 조디(Mini Jodie) 블랙 인트레치아토 가죽백(매듭 손잡이)',
+    '프라다 클레오(Cleo) 블랙 브러시드 가죽백(간결한 곡선 실루엣)'
+  ],
+  프렌치시크:[
+    '르메르 스몰 크루아상(Croissant) 다크 브라운 가죽백(부드러운 곡선 형태)',
+    '셀린느 클래식 트리옹프 탄 가죽 숄더백',
+    '셀린느 아바(Ava) 블랙 가죽 숄더백(반달형)',
+    '에르메스 피코탄 락(Picotin Lock) 18 에토프 가죽백(미니멀 버킷 형태, 더블 핸들)',
+    '보테가 베네타 안디아모(Andiamo) 스몰 다크 브라운 인트레치아토 가죽백(매듭형 메탈 디테일)',
+    '더 로우 마고(Margaux) 10 다크 브라운 가죽백'
+  ],
+  formal:[
+    '샤넬 클래식 미니 블랙 플랩백(다이아몬드 퀼팅, 얇은 체인 스트랩)',
+    '샤넬 2.55 미니 블랙 리이슈 플랩백(마드모아젤 잠금장치)',
+    '미우미우 완더(Wander) 블랙 마테라세 가죽 미니백',
+    '미우미우 아르카디(Arcadie) 블랙 마테라세 가죽 미니백',
+    '보테가 베네타 노트(Knot) 블랙 클러치(매듭형 잠금장치)',
+    '생로랑 케이트(Kate) 블랙 스몰 체인백(작은 YSL 잠금장치)'
+  ]
+};
+const BSH_BAG_LAST='chat2img_codex_last_baek_kaya_bag';
+function pickBaekKayaBag(scene,style,formal){
+  const sc=stripRuleLines(scene||'');
+  // 집에서 쉬거나 잠을 자는 장면에는 핸드백을 억지로 들려주지 않음.
+  if(!formal&&/침실|침대|잠옷|파자마|거실|집에서 쉬|샤워|목욕|주방|부엌|식탁/.test(sc)&&!/외출|출근|쇼핑|집을 나|현관|귀가|집에 돌아/.test(sc))return '';
+  const pool=BSH_KAYA_BAGS[formal?'formal':style]||BSH_KAYA_BAGS.매니시시크;
+  let last='';try{last=localStorage.getItem(BSH_BAG_LAST)||'';}catch(e){}
+  const bag=rnd(pool.filter(x=>x!==last));try{localStorage.setItem(BSH_BAG_LAST,bag);}catch(e){}
+  return bag;
+}
 const BSH_KAYA_LAST='chat2img_codex_last_baek_kaya';
 function makeBaekKayaOutfit(scene,formal){
   const sc=scene||'';
   if(formal){
-    if(/신부|웨딩드레스|우리 결혼식|본식|웨딩 촬영|웨딩촬영|스튜디오 촬영/.test(sc)||Math.random()<0.30)return pickGown(sc);
+    if(/신부|웨딩드레스|우리 결혼식|본식|웨딩 촬영|웨딩촬영|스튜디오 촬영/.test(sc))return pickGown(sc);
+    if(Math.random()<0.30){
+      const gown=pickGown(sc);
+      const parts=gown.split(', ').filter(x=>!GOWN.bag.includes(x));
+      const bag=pickBaekKayaBag(sc,'formal',true);if(bag)parts.push(bag);
+      return parts.join(', ');
+    }
     const d=BSH_KAYA_DRESS,parts=[rnd(d.dress),rnd(d.shoes)];
-    const bag=rnd(d.bag);if(bag!=='없음')parts.push(bag);
+    const bag=pickBaekKayaBag(sc,'formal',true);if(bag)parts.push(bag);
     const jewel=rnd(GOWN.jewel);if(jewel!=='없음')parts.push(jewel);
     if(/겨울|추워|추운|눈 오|눈이|영하|밤바람|쌀쌀/.test(sc))parts.push(rnd(GOWN.outer));
     return '드레스 — '+parts.join(', ');
@@ -1137,7 +1194,8 @@ function makeBaekKayaOutfit(scene,formal){
   if(/겨울|추운 날|영하|눈밭/.test(sc)&&outer==='없음')outer=rnd(st.outer.filter(x=>x!=='없음'));
   const parts=[top,bottom];if(outer!=='없음')parts.push(outer);
   parts.push(fitShoes(rnd(st.shoes),st.shoes,bottom,outer));
-  const acc=rnd(st.acc);if(acc!=='없음')parts.push(acc);
+  const acc=rnd((st.acc||['없음']).filter(x=>!/백|가방|클러치/.test(x)));if(acc&&acc!=='없음')parts.push(acc);
+  const bag=pickBaekKayaBag(sc,name,false);if(bag)parts.push(bag);
   return name+' 룩 — '+parts.join(', ');
 }
 function pickBaekKayaOutfit(scene,formal){
@@ -1153,7 +1211,7 @@ function baekKayaDirection(scene){
   const fh=pickFHair(scene,formal,false);
   console.log('[Chat2Img-Codex] 백수현 방 최카야 의상:',outfit);
   return '\n\n[최카야 전용 의상 — 백수현 방] '+outfit+(formal?GOWN_RULE:OUTFIT_RULE)+
-    ' 미우미우·샤넬의 현대적이고 시크한 고급 소재와 핏을 참고한다. 과장된 로고, 유아틱한 차림, 과한 트위드 장식, 촌스러운 올드한 코디는 피한다. 최카야의 기존 외형과 170cm 장신 성인 체형은 유지한다. 현재 장면에 최카야가 실제 입고 있는 의상이 지정된 경우 해당 부분만 우선 적용하고 나머지는 랜덤 조합을 따른다. 참조사진의 기존 옷은 반복하지 않는다. 최카야가 실제 등장하는 경우에만 적용하고 등장인물을 추가하지 않는다.'+
+    ' 미우미우·샤넬의 현대적이고 시크한 고급 소재와 핏을 참고한다. 과장된 로고, 유아틱한 차림, 과한 트위드 장식, 촌스러운 올드한 코디는 피한다. 가방은 위에서 지정된 실제 명품 브랜드 모델의 고유한 형태와 소재, 손잡이, 잠금장치, 크기를 참고해 정확히 표현한다. 막연한 가죽 숄더백·토트백·무명 핸드백으로 바꾸거나 가짜 브랜드 로고·임의의 장식·과장된 체인·과도하게 큰 가방을 추가하지 않는다. 지정한 가방은 장면에 자연스럽게 어울릴 때만 들거나 곁에 놓고, 실내 휴식 장면이나 가방이 불필요한 장면에서는 생략한다. 현재 장면에 명시된 가방은 우선한다. 최카야의 기존 외형과 170cm 장신 성인 체형은 유지한다. 현재 장면에 최카야가 실제 입고 있는 의상이 지정된 경우 해당 부분만 우선 적용하고 나머지는 랜덤 조합을 따른다. 참조사진의 기존 옷은 반복하지 않는다. 최카야가 실제 등장하는 경우에만 적용하고 등장인물을 추가하지 않는다.'+
     '\n유저(여주) 헤어: '+fh+F_HAIR_RULE;
 }
 
@@ -2753,6 +2811,6 @@ Promise.resolve(coreBoot).then(()=>{
   collapsePanel(1);
   bootNotice.remove();
   window.__C2I_CODEX_BUNDLED_BOOTING__=false;
-  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.10 실행 완료');
+  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.11 실행 완료');
 }).catch(reportBootFailure);
 })();

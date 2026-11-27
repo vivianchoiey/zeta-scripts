@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.7
+// @version      1.45.8
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1607,6 +1607,35 @@ const F_SENTINEL_UNIFORM=[
 const F_SENTINEL_RULE='. S급 센티넬다운 세련되고 날렵한 전투복. 사복은 입히지 않는다. 백호 귀와 꼬리는 원래대로 유지하고 꼬리는 옷 밖으로 나온다.';
 // =====================================================
 
+// 공통 인체 구조 검토: 의상·화풍·캐릭터 설정과 독립적으로 최종 생성 요청에 1회만 부착.
+const C2I_ANATOMY_MARKER='[공통 인체 구조·동작 검토]';
+const C2I_ANATOMY_RULE='\n\n'+C2I_ANATOMY_MARKER+'\n'+[
+  '이미지를 생성하기 전에 현재 장면의 인물별 골격, 포즈, 신체 접촉 위치, 카메라 원근을 먼저 점검하고 정확한 구조로 그린다. 기존 캐릭터별 외형, 신장, 체형, 장애나 보조기구, 의상, 화풍, 표정, 장면 및 등장인원 설정을 우선 보존한다.',
+  '일반적인 인간형 인물은 각각 독립된 머리·목·몸통·골반과 좌우 팔다리를 가진다. 별도의 신체 설정이 없다면 팔 두 개, 다리 두 개, 손 두 개이며, 각 손은 엄지 포함 다섯 손가락이다. 어깨부터 팔꿈치·손목·손, 골반부터 무릎·발목·발까지 연결과 관절 방향을 자연스럽게 표현한다. 기존 설정에 있는 수인 귀·꼬리, 비인간형 또는 동물 형태에는 해당 종과 설정에 맞는 해부학을 적용하고 인간형 규칙을 강제하지 않는다.',
+  '손의 좌우 구분, 엄지 위치, 손바닥과 손등 방향, 손가락 길이와 관절을 정확하게 유지한다. 물건을 잡으면 손가락이 실제로 감싸 쥐고, 손이나 물건이 서로 관통하지 않는다. 손가락 추가·융합·중복·누락, 뒤틀린 손목, 떨어져 나온 손과 팔은 그리지 않는다.',
+  '포옹, 손잡기, 부축 등 두 사람 이상이 접촉하는 장면에서는 각 손과 팔다리가 누구의 것인지 어깨와 골반까지 자연스럽게 연결되도록 구성한다. 서로 겹쳐 가려진 부분은 올바른 앞뒤 관계를 유지하며, 겹친 신체를 한 덩어리로 융합하거나 보이지 않는 팔다리를 중복해서 추가하지 않는다.',
+  '앉기, 눕기, 걷기, 물건 잡기 등은 무게중심, 관절의 가동 범위, 지면·가구와 닿는 위치를 자연스럽게 표현한다. 신체가 다른 인물이나 가구를 관통하거나 공중에 뜨지 않도록 한다(장면에서 의도된 동작이나 특수 설정 제외).',
+  '인물별 신장과 체형 차이는 지정된 설정에 맞춰 같은 공간의 일관된 스케일과 원근으로 표현한다. 별도의 연출 지시가 없다면 과장된 머리 크기, 지나치게 짧은 팔다리, 광각 왜곡이나 높은 시점으로 인한 비율 왜곡을 피한다. 의도적으로 지정한 치비·SD 등 화풍과 카메라 구도는 유지한다.',
+  '장면에 필요한 손과 신체는 자연스럽게 읽히도록 구도를 잡되 화면 밖에 있거나 다른 물체에 가려진 신체를 억지로 노출하지 않는다. 복잡한 동작은 핵심 행동을 유지하면서 해부학적으로 성립하도록 정리한다.',
+  '최종 이미지를 완성하기 전에 등장인물별로 보이는 손·손가락·팔다리의 연결, 좌우 방향, 접촉면, 비율을 점검하고 눈에 띄는 구조 오류를 가능한 범위에서 바로잡는다. 점검 문구 자체는 이미지에 그리지 않는다.'
+].join('\n');
+function applyC2IAnatomy(input,init){
+  // 이 코냅샷의 생성 요청에만 적용하며 다른 fetch 요청은 건드리지 않는다.
+  try{
+    const url=typeof input==='string'?input:(input&&input.url)||'';
+    if(!/\/generate(\?|$)/.test(url)||!init||typeof init.body!=='string')return init;
+    const body=JSON.parse(init.body);
+    if(!body||typeof body.prompt!=='string'||!Array.isArray(body.refs)||!['solo','scene'].includes(body.mode)||!body.prompt.includes('Scene description:'))return init;
+    if(body.prompt.includes(C2I_ANATOMY_MARKER))return init;
+    body.prompt+=C2I_ANATOMY_RULE;
+    console.log('[Chat2Img-Codex] 공통 인체 구조 검토 지시 적용');
+    return {...init,body:JSON.stringify(body)};
+  }catch(e){
+    console.warn('[Chat2Img-Codex] 공통 인체 구조 지시 적용 오류:',e&&e.message);
+    return init;
+  }
+}
+
 const _fetch=window.fetch;
 // 제타 화면이 api.zeta-ai.io에 보내는 로그인 헤더를 기억 (아이폰처럼 저장소에서 토큰을 못 찾는 경우용)
 const _grabAuth=(h)=>{try{if(!h)return;const get=k=>typeof h.get==='function'?h.get(k):(Array.isArray(h)?(h.find(x=>String(x[0]).toLowerCase()===k)||[])[1]:(h[k]||h[k.replace(/^./,c=>c.toUpperCase())]));const v=get('authorization');if(v)window.__ZETA_AUTH__=String(v);}catch(_){}};
@@ -1872,7 +1901,7 @@ window.fetch=function(input,init){
       }
     }
   }catch(e){console.warn('[Chat2Img-Codex] 의상 주입 오류:',e&&e.message,e&&e.stack&&e.stack.split('\n').slice(0,3).join(' | '));}
-  return _fetch.call(this,input,init);
+  return _fetch.call(this,input,applyC2IAnatomy(input,init));
 };
 // =====================================================
 
@@ -2609,6 +2638,6 @@ Promise.resolve(coreBoot).then(()=>{
   collapsePanel(1);
   bootNotice.remove();
   window.__C2I_CODEX_BUNDLED_BOOTING__=false;
-  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.7 실행 완료');
+  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.8 실행 완료');
 }).catch(reportBootFailure);
 })();

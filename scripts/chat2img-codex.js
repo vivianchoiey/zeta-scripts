@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.14
+// @version      1.45.15
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -338,7 +338,7 @@ const GUDAL_STYLES={
   '화이트셔츠':{color:['블랙','차콜','미드나잇 네이비'],fabric:['매트 울','울'],cut:['슬림핏 싱글 재킷','더블 브레스티드 재킷','조끼만 입고 재킷 없음'],shirt:['화이트 셔츠 맨 위 단추 풀림','화이트 셔츠 단추 두 개 풀림','화이트 셔츠에 블랙 타이 느슨하게'],sleeve:['재킷 입음','셔츠 소매 팔꿈치까지 걷어 양팔 문신 드러남','조끼 차림에 소매 걷어 문신 드러남'],shoes:['블랙 옥스퍼드','블랙 더비','블랙 첼시 부츠'],acc:['실버 반지','없음','없음']},
   '스트라이프':{color:['블랙','차콜','네이비'],fabric:['핀스트라이프 울','초크 스트라이프 울'],cut:['더블 브레스티드 재킷','피크 라펠 싱글 재킷','쓰리피스(조끼 포함)'],shirt:['블랙 셔츠','화이트 셔츠 단추 풀림','다크 그레이 셔츠'],sleeve:['재킷 입음','재킷 입음','재킷 벗고 조끼 차림, 소매 걷어 문신 드러남'],shoes:['블랙 옥스퍼드','블랙 첼시 부츠'],acc:['실버 반지','없음']},
 };
-const GUDAL_RULE='. 고급 수트지만 단정하게 차려입은 느낌이 아니라 건들거리는 건달 느낌. 몸에 딱 맞는 핏. 소매를 걷거나 재킷을 벗은 장면에서는 양팔 이레즈미 풀 슬리브 문신이 보여야 한다. 베이지·브라운·밝은 회색·번쩍이는 원단·헐렁한 핏 금지.';
+const GUDAL_RULE='. 조직의 보스다운 고급 테일러링과 느긋한 권위. 회사원이나 경호원처럼 획일적인 차림이 아니다. 넓은 라펠, 자연스러운 어깨선, 고급 원단과 잘 맞는 수트 팬츠. 단추를 풀거나 타이를 느슨하게 하는 자연스러운 여유. 기존 이레즈미 문신은 옷 밖으로 실제 노출되는 부위에만 표현한다. 번쩍이는 원단과 과도하게 타이트한 핏은 피한다.';
 function makeGudalSuit(){
   const name=rnd(Object.keys(GUDAL_STYLES));const st=GUDAL_STYLES[name];
   const cut=rnd(st.cut);
@@ -346,8 +346,8 @@ function makeGudalSuit(){
   let sl=rnd(st.sleeve);if(/조끼만/.test(cut))sl='조끼 차림에 소매 걷어 문신 드러남';
   if(sl!=='재킷 입음')parts.push(sl);
   parts.push(rnd(st.shoes));
-  const acc=rnd(st.acc);if(acc!=='없음')parts.push(acc);
-  return `${name} 수트 — ${parts.join(', ')}`;
+  const brand=rnd(['톰 포드','생로랑','제냐','조르지오 아르마니','브리오니','랄프로렌 퍼플라벨','키톤','까날리']);
+  return `${brand} 스타일 ${name} 수트 — ${parts.join(', ')}`;
 }
 const LAST_GUDAL_KEY='chat2img_codex_last_gudal';
 function pickGudalSuit(){
@@ -356,6 +356,99 @@ function pickGudalSuit(){
   try{localStorage.setItem(LAST_GUDAL_KEY,pick);}catch(e){}
   return pick;
 }
+
+const GUDAL_NAME_RE=/구달|\bGu\s*dal\b/i;
+const GUDAL_CASUAL={
+ top:['생로랑 블랙 실크 셔츠','톰 포드 화이트 코튼 셔츠(단추 두 개 풀림)','제냐 다크 네이비 오픈칼라 셔츠','르메르 차콜 코튼 셔츠','더 로우 블랙 크루넥 티셔츠','선스펠 화이트 반팔 티셔츠','아워레가시 차콜 헨리넥','로로피아나 블랙 캐시미어 니트','제냐 네이비 니트 폴로','생로랑 버건디 실크 셔츠','오라리 차콜 코튼 롱슬리브','톰 포드 블랙 오픈칼라 셔츠','제임스 퍼스 블랙 반팔 티셔츠','아워레가시 차콜 셔츠'],
+ bottom:['생로랑 블랙 울 스트레이트 팬츠','제냐 차콜 울 와이드 팬츠','르메르 블랙 코튼 트라우저','아워레가시 진청 스트레이트 데님','오라리 진청 와이드 데님','톰 포드 블랙 슬랙스','더 로우 다크 네이비 팬츠','랄프로렌 퍼플라벨 차콜 플란넬 팬츠'],
+ outer:['생로랑 블랙 가죽 라이더 재킷','벨스타프 블랙 V 레이서 가죽 재킷','톰 포드 블랙 스웨이드 재킷','제냐 차콜 캐시미어 코트','르메르 블랙 울 롱 코트','아워레가시 블랙 울 재킷','로로피아나 다크 네이비 캐시미어 카디건'],
+ shoes:['생로랑 블랙 첼시 부츠','존 롭 블랙 로퍼','에드워드 그린 블랙 더비','커먼 프로젝트 블랙 가죽 스니커즈','아디다스 삼바 블랙','뉴발란스 990 차콜','보테가 베네타 블랙 가죽 부츠']
+};
+const GUDAL_HOME={
+ top:['선스펠 흰색 코튼 반팔 티셔츠','제임스 퍼스 블랙 반팔 티셔츠','오라리 차콜 롱슬리브','더 로우 블랙 코튼 티셔츠','로로피아나 차콜 캐시미어 니트','아워레가시 화이트 헨리넥','한로 블랙 코튼 라운지 티셔츠','랄프로렌 네이비 코튼 셔츠'],
+ bottom:['차콜 코튼 라운지 팬츠','블랙 와이드 스웨트팬츠','네이비 코튼 드로스트링 팬츠','그레이 스트레이트 스웨트팬츠','로로피아나 차콜 니트 팬츠','한로 블랙 모달 라운지 팬츠'],
+ sleep:['데릭 로즈 블랙 실크 파자마 셋업','한로 네이비 코튼 파자마 셋업','제임스 퍼스 흰 반팔 티셔츠와 차콜 라운지 팬츠','올리비아 본 할레 블랙 실크 파자마 셋업','랄프로렌 네이비 코튼 파자마 셔츠와 긴바지','릴리실크 차콜 실크 파자마 셋업']
+};
+const GUDAL_KAYA_STYLES={
+ 미니멀캐주얼:{
+ top:['유니클로 U 화이트 크루넥 티셔츠','코스 차콜 슬림 롱슬리브','아르켓 아이보리 코튼 셔츠','무인양품 네이비 스트라이프 티셔츠','마시모두띠 블랙 리브 니트','앤아더스토리즈 크림 니트 카디건','자라 화이트 포플린 셔츠','에이치앤엠 그레이 코튼 맨투맨','코스 블랙 슬리브리스 탑','아르켓 버건디 크루넥 니트'],
+ bottom:['리바이스 진청 501 스트레이트 데님','코스 차콜 와이드 트라우저','유니클로 크림 와이드 팬츠','아르켓 진청 스트레이트 데님','자라 블랙 와이드 팬츠','마시모두띠 브라운 울 트라우저','무인양품 네이비 코튼 팬츠'],
+ outer:['코스 블랙 울 블레이저','아르켓 베이지 트렌치코트','앤아더스토리즈 차콜 울 코트','유니클로 크림 니트 카디건','자라 블랙 가죽 라이더 재킷'],
+ shoes:['뉴발란스 530 실버','아디다스 삼바 화이트','컨버스 척 70 블랙','바가본드 블랙 로퍼','오니츠카 타이거 멕시코 66 아이보리','아식스 젤 1130 화이트 실버']},
+ 스트리트캐주얼:{
+ top:['스투시 스타일 화이트 오버핏 무지 티셔츠','아워레가시 차콜 롱슬리브','디키즈 화이트 워크 셔츠','칼하트 WIP 그레이 후드티','커버낫 네이비 맨투맨(작은 자수)','스컬프터 블랙 슬림 반팔 티셔츠','나이키 크림 후드티','아디다스 차콜 크루넥 맨투맨','마뗑킴 블랙 코튼 티셔츠(작은 로고)','아크네 스튜디오 더스티 블루 니트'],
+ bottom:['리바이스 진청 와이드 데님','디키즈 차콜 와이드 워크 팬츠','칼하트 WIP 올리브 카고 팬츠','스컬프터 진청 배럴 데님','나이키 그레이 와이드 스웨트팬츠','아디다스 블랙 와이드 트랙 팬츠','자라 네이비 와이드 팬츠'],
+ outer:['아워레가시 블랙 울 오버셔츠','디키즈 차콜 워크 재킷','아크네 스튜디오 블랙 가죽 라이더 재킷','칼하트 WIP 다크 브라운 초어 코트','자라 블랙 롱 코트'],
+ shoes:['나이키 에어 포스 1 화이트','뉴발란스 2002R 그레이','아디다스 가젤 네이비','살로몬 XT-6 블랙','컨버스 척 70 아이보리','아식스 젤 카야노 14 실버']},
+ 스포티시크:{
+ top:['룰루레몬 블랙 슬림 롱슬리브','알로 요가 아이보리 코튼 티셔츠','나이키 그레이 오버핏 맨투맨','아디다스 화이트 크루넥 티셔츠','바를리 오트밀 하프집업 니트','아르켓 네이비 스웨트셔츠','뉴발란스 버터 옐로 코튼 티셔츠','나이키 블랙 후드티'],
+ bottom:['룰루레몬 차콜 와이드 스웨트팬츠','알로 요가 블랙 스트레이트 라운지 팬츠','아디다스 네이비 트랙 팬츠','나이키 그레이 테이퍼드 조거 팬츠','바를리 크림 와이드 스웨트팬츠','유니클로 진청 스트레이트 데님'],
+ outer:['아르켓 블랙 긴 코튼 코트','코스 차콜 오버핏 블레이저','바를리 아이보리 니트 카디건','아크테릭스 블랙 미니멀 방수 셸 재킷'],
+ shoes:['뉴발란스 9060 그레이','아식스 젤 님버스 화이트','나이키 코르테즈 화이트 블랙','살로몬 XT-6 아이보리','아디다스 핸드볼 스페지알 네이비']},
+ 프렌치캐주얼:{
+ top:['세인트제임스 네이비 화이트 스트라이프 티셔츠','아페쎄 화이트 코튼 티셔츠','폴로 랄프로렌 하늘색 옥스퍼드 셔츠','세잔 크림 니트 카디건','아르켓 더스티 핑크 크루넥 니트','마시모두띠 블랙 실크 혼방 블라우스','앤아더스토리즈 버터 옐로 니트','아페쎄 블랙 보트넥 티셔츠','코스 화이트 슬림 반팔 니트'],
+ bottom:['아페쎄 진청 스트레이트 데님','세잔 네이비 미디 스커트','마시모두띠 크림 와이드 팬츠','리바이스 진청 부츠컷 데님','코스 블랙 미디 스커트','아르켓 카멜 스트레이트 팬츠'],
+ outer:['아페쎄 베이지 트렌치코트','세잔 네이비 니트 카디건','코스 차콜 롱 코트','마시모두띠 다크 브라운 가죽 라이더 재킷'],
+ shoes:['르페토 블랙 발레 플랫','아디다스 삼바 아이보리','바가본드 블랙 로퍼','컨버스 척 70 블랙','바가본드 브라운 라운드토 앵클 부츠']}
+};
+const GUDAL_KAYA_DRESSES=['코스 블랙 미디 원피스','앤아더스토리즈 딥 버건디 니트 원피스','세잔 네이비 버튼 프런트 미디 원피스','마시모두띠 초콜릿 브라운 슬립 미디 원피스','자라 차콜 슬리브리스 원피스','아르켓 아이보리 코튼 셔츠 원피스','르메르 블랙 저지 미디 원피스','미우미우 차콜 미니멀 울 원피스'];
+const GUDAL_KAYA_HOME={
+ top:['유니클로 U 화이트 반팔 티셔츠','무인양품 아이보리 코튼 롱슬리브','코스 그레이 크루넥 티셔츠','제임스 퍼스 블랙 코튼 티셔츠','아르켓 더스티 핑크 맨투맨','나이키 차콜 후드티','스킨 크림 모달 티셔츠','에버제이 파우더 블루 라운지 상의','바를리 오트밀 니트','유니클로 네이비 스트라이프 티셔츠'],
+ bottom:['유니클로 그레이 와이드 스웨트팬츠','무인양품 네이비 코튼 라운지 팬츠','코스 블랙 저지 와이드 팬츠','나이키 차콜 조거 팬츠','에버제이 크림 모달 라운지 팬츠','스킨 아이보리 라운지 팬츠','아르켓 그레이 코튼 이지 팬츠','바를리 오트밀 스트레이트 스웨트팬츠'],
+ sleep:['무인양품 아이보리 코튼 파자마 셔츠와 긴바지','유니클로 네이비 소프트 코튼 파자마 셋업','에버제이 더스티 핑크 모달 파자마 셋업','스킨 크림 와플 니트 라운지 셋업','릴리실크 샴페인 실크 파자마 셔츠와 긴바지','루냐 딥 네이비 실크 슬립 미디 원피스','한로 그레이 코튼 라운지 셋업','올리비아 본 할레 아이보리 실크 파자마 셋업']
+};
+function gudalRepeat(key,make){
+ let last='';try{last=localStorage.getItem(key)||'';}catch(e){}
+ let out=make();for(let i=0;out===last&&i<20;i++)out=make();try{localStorage.setItem(key,out);}catch(e){}return out;
+}
+function gudalSceneMode(scene,kind=specialScene(scene)){
+ const sc=stripRuleLines(scene);
+ if(kind==='swim'||kind==='sleep')return kind;
+ if(/맨몸|알몸|상의\s*탈의|탈의 중|목욕 중|샤워 중|속옷만|상체 노출/.test(sc))return 'keep';
+ if(FORMAL_RE.test(sc)||/조직 회의|조직의 회의|업무 중|보스의 사무실|접견|부하들과 회의|거래 현장|정장 차림|수트 차림/.test(sc))return 'suit';
+ if(baekKayaHomeKind(sc,kind)||/구달(?:의)? 집|구달(?:의)? 저택/.test(sc))return 'home';
+ if(/사복|캐주얼|휴일|비번|데이트|카페|산책|쇼핑|영화관|편의점|분식집|여행|장보기|마트|공원|운동|헬스|러닝|조깅/.test(sc))return 'casual';
+ return 'default';
+}
+function gudalManDirection(scene,mode){
+ if(mode==='keep')return '';
+ const sc=stripRuleLines(scene);
+ const outfit=gudalRepeat('chat2img_codex_gudal_'+mode,()=>{
+  if(mode==='home')return '실내복 — '+[rnd(GUDAL_HOME.top),rnd(GUDAL_HOME.bottom),'맨발 또는 실내 슬리퍼'].join(', ');
+  if(mode==='sleep')return '잠옷 — '+rnd(GUDAL_HOME.sleep)+', 맨발';
+  if(mode==='swim')return '수영복 — '+rnd(['블랙','차콜','미드나잇 네이비'])+' 무지 스윔 쇼츠, 맨발 또는 슬라이드 샌들';
+  if(mode==='casual'){
+   const p=[rnd(GUDAL_CASUAL.top),rnd(GUDAL_CASUAL.bottom)];
+   if(!/여름|폭염|무더위/.test(sc)&&(/겨울|추운|영하|눈 오/.test(sc)||Math.random()<.45))p.push(rnd(GUDAL_CASUAL.outer));p.push(rnd(GUDAL_CASUAL.shoes));return '보스 사복 — '+p.join(', ');
+  }
+  return pickGudalSuit();
+ });
+ const rule=mode==='suit'||mode==='default'?GUDAL_RULE:'. 장면에 맞는 편안하고 성숙한 남성의 차림. 고급스러운 핏과 소재. 옷 밖으로 노출되는 기존 이레즈미 문신만 표현한다.';
+ return '\n\n[구달 전용 의상 — 이번 장면] '+outfit+rule+' 현재 구달이 실제 착용하는 것으로 명시된 옷을 우선하고 나머지만 보완한다. 다른 사람의 옷, 과거의 옷, 단순 언급은 현재 의상으로 취급하지 않는다. 얼굴·머리·표정·문신 디자인은 바꾸지 않는다. 지정하지 않은 반지·시계·목걸이 등 장신구는 추가하지 않는다. 구달이 실제 등장할 때만 적용한다.';
+}
+function makeGudalKayaOutfit(scene,mode){
+ const sc=stripRuleLines(scene);
+ if(mode==='home')return '실내복 — '+[rnd(GUDAL_KAYA_HOME.top),rnd(GUDAL_KAYA_HOME.bottom),rnd(['맨발','흰 코튼 양말','실내 슬리퍼'])].join(', ');
+ if(mode==='sleep')return '잠옷 — '+rnd(GUDAL_KAYA_HOME.sleep)+', 맨발';
+ if(mode==='swim')return makeFemaleSpecial('swim').split(', ').filter(x=>!/라탄 백|선글라스/.test(x)).join(', ');
+ if(mode==='keep')return '';
+ if(mode==='suit'&&FORMAL_RE.test(sc))return pickGown(sc).split(', ').filter(x=>!GOWN.bag.includes(x)&&!GOWN.jewel.includes(x)).join(', ');
+ const r=Math.random();
+ if(r>=.90)return '시크한 원피스 룩 — '+rnd(GUDAL_KAYA_DRESSES)+', '+rnd(['블랙 가죽 로퍼','화이트 스니커즈','블랙 라운드토 앵클 부츠','블랙 발레 플랫']);
+ const name=r<.30?'미니멀캐주얼':r<.55?'스트리트캐주얼':r<.75?'스포티시크':'프렌치캐주얼',st=GUDAL_KAYA_STYLES[name];
+ const p=[rnd(st.top),rnd(st.bottom)];
+ if(!/여름|폭염|무더위/.test(sc)&&(/겨울|추운|영하|눈 오/.test(sc)||Math.random()<.38))p.push(rnd(st.outer));p.push(rnd(st.shoes));return name+' 룩 — '+p.join(', ');
+}
+function gudalKayaDirection(scene,mode){
+ if(mode==='keep')return '';
+ const formal=mode==='suit'&&FORMAL_RE.test(stripRuleLines(scene));
+ let outfit=gudalRepeat('chat2img_codex_gudal_kaya_'+mode,()=>makeGudalKayaOutfit(scene,mode));if(!outfit)return '';
+ const eligible=!['home','sleep','swim','keep'].includes(mode)&&!/^웨딩드레스 —/.test(outfit)&&!/운동|헬스|러닝|조깅/.test(scene);
+ const bag=eligible&&(formal||Math.random()<.35)?pickKayaDesignerBag(scene,'',formal):'';
+ if(bag)outfit+=', '+bag;
+ return '\n\n[최카야 전용 의상 — 구달 방] '+outfit+'. 고아 출신이라는 배경 때문에 옷을 초라하거나 낡게 고정하지 않는다. 세련된 성인 여성의 자연스러운 옷차림. 캐주얼은 고급 브랜드와 일상 브랜드를 자연스럽게 섞고 핏과 색 조합으로 멋을 낸다. 유아틱한 장식, 과도한 로고는 피한다. 명시된 현재 의상은 우선하고 나머지만 자동 의상을 적용한다. 단순 언급·과거 의상·다른 사람의 의상은 현재 카야의 의상으로 간주하지 않는다. 참조 이미지의 옷은 복제하지 않는다. 얼굴·머리·체형·표정과 장면은 유지한다. 지정하지 않은 장신구는 추가하지 않는다.'+(bag?KAYA_DESIGNER_BAG_RULE:' 자동으로 다른 가방을 더 추가하지 않는다.')+'\n유저(여주) 헤어: '+pickFHair(scene,formal,false)+F_HAIR_RULE;
+}
+
 const LAST_SUIT_KEY='chat2img_codex_last_suit';
 function pickSuit(){
   let last='';try{last=localStorage.getItem(LAST_SUIT_KEY)||'';}catch(e){}
@@ -2123,6 +2216,9 @@ window.fetch=function(input,init){
         const baekKaya=baekRoom&&/카야|\bKaya\b/i.test(p)&&!(body.mode==='solo'&&body.soloTarget!=='persona');
         const sharedKayaBag=isModernAdultKayaBagRoom(characterText,sceneText,body);
         const sceneKind=specialScene(sceneText);
+        const gudalRoom=GUDAL_NAME_RE.test(characterText)||(!baekRoom&&GUDAL_NAME_RE.test(sceneText));
+        const gudalKaya=gudalRoom&&sharedKayaBag&&!(body.mode==='solo'&&body.soloTarget!=='persona');
+        const gudalMode=gudalRoom?gudalSceneMode(sceneText,sceneKind):null;
         const baekHomeKind=baekKaya&&!off&&!skip&&sharedKayaBag?baekKayaHomeKind(sceneText,sceneKind):null;
         if(daisukeRoom){
           body.prompt=buildDV1980Prompt(p,sceneIdx>=0?sceneText:'',off||dv1980KeepSceneClothes(sceneIdx>=0?'':p));
@@ -2132,7 +2228,9 @@ window.fetch=function(input,init){
           const kind=sceneKind;
           const head=sceneIdx>=0?p.slice(0,sceneIdx):p;
           let add='';
-          if(baekHomeKind==='sleep'){
+          if(gudalKaya){
+            add=gudalKayaDirection(sceneText,gudalMode);
+          }else if(baekHomeKind==='sleep'){
             add=kayaSeolgiHomeDirection('sleep','백수현');
           }else if(kayaHomeKind==='sleep'){
             add=kayaSeolgiHomeDirection(kayaHomeKind);
@@ -2142,6 +2240,7 @@ window.fetch=function(input,init){
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+fo+(kind==='sleep'?F_SLEEP_RULE:F_SWIM_RULE);
             console.log('[Chat2Img-Codex] 여주 '+kind+':',fo);
           }
+          if(gudalRoom&&!(body.mode==='solo'&&body.soloTarget==='persona'))add+=gudalManDirection(sceneText,gudalMode);
           if(head.includes('이지수')){
             const jo=makeYuniSpecial(kind).replace(/\(토끼 귀가 밖으로 나오게\)/g,'');
             add+='\n\n이지수 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+jo+(kind==='sleep'?J_SLEEP_RULE:J_SWIM_RULE);
@@ -2190,6 +2289,8 @@ window.fetch=function(input,init){
             const kh=makeKayaHSOutfit(sceneText);
             add='\n\n최카야 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+kh+KAYA_HS_RULE;
             console.log('[Chat2Img-Codex] 카야(고등학생) 의상:',kh);
+          }else if(gudalKaya){
+            add=gudalKayaDirection(sceneText,gudalMode);
           }else if(baekKaya){
             if(baekHomeKind){
               add=kayaSeolgiHomeDirection(baekHomeKind,'백수현');
@@ -2249,12 +2350,8 @@ window.fetch=function(input,init){
           if(baekRoom&&!(body.mode==='solo'&&body.soloTarget==='persona')){
             add+=baekOutfitDirection(sjScene,sjHome);
           }
-          // 구달 방: 수트 장면이면 수트 스타일 랜덤
-          if(p.includes('구달')&&!/사복|캐주얼|후드|티셔츠|스웻|잠옷|환자복|수영복|맨몸|상의 탈의|메이드복/.test(sceneText)){
-            let gs=pickGudalSuit();if(FORMAL_RE.test(sceneText))gs+=', '+rnd(['가슴 주머니에 블랙 실크 행커치프','가슴 주머니에 흰 리넨 행커치프(일자 접기)','가슴 주머니에 버건디 실크 행커치프']);if(/겨울|눈 오|눈이|추워|추운|영하|비 오|비가|빗속|야외|밖에서/.test(sceneText)&&Math.random()<0.5)gs+=', 수트 위에 '+rnd(['벨스타프 블랙 V 레이서 가죽 재킷','벨스타프 트라이얼마스터 블랙 왁스 재킷','폴로 랄프로렌 블랙 캐시미어 오버코트'])+'를 걸침';
-            add+='\n\n구달 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+gs+GUDAL_RULE+' 문신 규칙은 기존대로 유지.';
-            console.log('[Chat2Img-Codex] 구달 수트:',gs);
-          }
+          // 구달 전용: 보스 수트, 사복, 집옷. 여성 단독 생성에서는 제외.
+          if(gudalRoom&&!(body.mode==='solo'&&body.soloTarget==='persona'))add+=gudalManDirection(sceneText,gudalMode);
           // 서무겸: 정장이 아닌 전용 워크웨어·캐주얼. 명시된 특수 의상과 옷 고정은 우선.
           if(characterText.includes('서무겸')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워/.test(sceneText)){
             const mg=pickMugyeomOutfit(sceneIdx>=0?sceneText:'');

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.21
+// @version      1.45.22
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -2648,8 +2648,27 @@ const coreBoot=(async()=>{
     function readStore(key,fallback){ try{ const v=JSON.parse(localStorage.getItem(key)||'null'); return v??fallback; }catch(_){ return fallback; } }
     function writeStore(key,value){ try{ localStorage.setItem(key,JSON.stringify(value)); return true; }catch(_){ return false; } }
     function loadConfig(){ return {...DEFAULTS,...readStore(STORE,{})}; }
-    function loadHistory(){ const v=readStore(HISTORY_STORE,[]); return Array.isArray(v)?v.slice(0,HISTORY_LIMIT):[]; }
-    function saveHistory(){ writeStore(HISTORY_STORE,state.history.slice(0,HISTORY_LIMIT)); }
+    // 기존 전역 v1 이력은 그대로 보존. 확인 가능한 방 ID가 있는 이미지부터 분리.
+    function historyRoomId(value){return String(value||'').toLowerCase();}
+    function historyRoomKey(room){return HISTORY_STORE+':room:'+historyRoomId(room);}
+    function historyItemKey(x){return x.filename||x.imagePath||x.imageUrl||x.id||'';}
+    function historyItemRoom(x){return historyRoomId(x.roomId||x.room_id||x.chatRoomId);}
+    function loadHistory(room=roomIdNow()){
+      room=historyRoomId(room);if(!room)return [];
+      const v=readStore(historyRoomKey(room),[]);return Array.isArray(v)?v.filter(x=>historyItemRoom(x)===room).slice(0,HISTORY_LIMIT):[];
+    }
+    function saveRoomHistory(room,items){if(room)writeStore(historyRoomKey(room),items.filter(x=>historyItemRoom(x)===room).slice(0,HISTORY_LIMIT));}
+    function saveHistory(){saveRoomHistory(state.historyRoom,state.history);}
+    function scopedHistoryItems(items,room,known,scoped){
+      const keys=new Set(known.map(historyItemKey).filter(Boolean));
+      return items.filter(x=>x&&typeof x==='object'&&historyItemKey(x)&&(historyItemRoom(x)===room||(!historyItemRoom(x)&&(scoped||keys.has(historyItemKey(x)))))).map(x=>({...x,roomId:room}));
+    }
+    function mergeRoomHistory(...lists){const seen=new Set();return lists.flat().filter(x=>{const key=historyItemKey(x);if(!key||seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0));}
+    function syncHistoryRoom(){
+      const room=historyRoomId(roomIdNow());if(room===state.historyRoom)return false;
+      state.historyRoom=room;state.history=loadHistory(room);state.historyCursor=0;state.historyHasMore=false;state.historyTotal=0;state.historyError='';state.serverHistory=false;state.historyLocalOnly=false;state.historyLoading=false;state.historyRoomConfirmed=false;state.historyToken=(state.historyToken||0)+1;
+      return true;
+    }
     function esc(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
     function bridgeBase(){ return (els.baseUrl.value.trim()||DEFAULTS.baseUrl).replace(/\/+$/,''); }
     function joinBridge(path){ const p=String(path||''); return /^https?:\/\//i.test(p)?p:`${bridgeBase()}${p.startsWith('/')?'':'/'}${p}`; }
@@ -2664,6 +2683,7 @@ const coreBoot=(async()=>{
       fabMoved:false,
       loading:false,
       result:null,
+      historyRoom:historyRoomId(roomIdNow()),
       history:loadHistory(),
       picker:null,
     };
@@ -2841,7 +2861,7 @@ const coreBoot=(async()=>{
       state.activeTab=tab;
       shadow.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===tab));
       shadow.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.dataset.view===tab));
-      if(tab==='history'){ renderHistory(); fetchServerHistory(false); }
+      if(tab==='history'){ syncHistoryRoom();renderHistory();fetchServerHistory(false); }
       saveConfig();
     }
     function setStatus(el,kind,text){ el.className=`status ${kind||''}`.trim(); el.textContent=text||''; el.classList.toggle('hidden',!text); }
@@ -3206,17 +3226,23 @@ ${scene}`].filter(Boolean).join('\n\n');}
       return joinBridge(raw);
     }
     function historySrc(item){const u=historyImageUrl(item);return u+(u.includes('?')?'&':'?')+'h='+encodeURIComponent(item.id||item.filename||'');}
-    function addHistory(data){
-      const item={id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,createdAt:Date.now(),filename:data.filename||'',imagePath:String(data.imageUrl||''),elapsedMs:Number(data.elapsedMs||0)};
-      state.history=[item,...state.history.filter(x=>x.filename!==item.filename)];if(!state.serverHistory)state.history=state.history.slice(0,HISTORY_LIMIT);saveHistory();renderHistory();
+    function addHistory(data,room){
+      room=historyRoomId(room);
+      const item={id:data.id||Date.now()+'-'+Math.random().toString(36).slice(2,8),createdAt:Number(data.createdAt)||Date.now(),filename:data.filename||'',imagePath:String(data.imageUrl||''),elapsedMs:Number(data.elapsedMs||0),roomId:room};
+      if(!room){const old=readStore(HISTORY_STORE,[]);writeStore(HISTORY_STORE,[item,...(Array.isArray(old)?old:[])].slice(0,HISTORY_LIMIT));return;}
+      syncHistoryRoom();
+      const previous=room===state.historyRoom?state.history:loadHistory(room);
+      const next=mergeRoomHistory([item],previous);
+      saveRoomHistory(room,next);
+      if(room===state.historyRoom){state.history=state.serverHistory?next:next.slice(0,HISTORY_LIMIT);renderHistory();}
     }
     async function downloadUrl(url,filename){
       const res=await fetch(url);if(!res.ok)throw new Error(`이미지 저장 실패 (HTTP ${res.status})`);const blob=await res.blob();const object=URL.createObjectURL(blob);const a=document.createElement('a');a.href=object;a.download=filename||'codex-image.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(object),1500);
     }
-    async function requestHistory(limit,before){
+    async function requestHistory(limit,before,room){
       const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),8000);
       try{
-        const res=await fetch(bridgeBase()+'/history?limit='+limit+(before?'&before='+encodeURIComponent(before):''),{cache:'no-store',signal:controller.signal});
+        const res=await fetch(bridgeBase()+'/history?limit='+limit+'&roomId='+encodeURIComponent(room)+(before?'&before='+encodeURIComponent(before):''),{cache:'no-store',signal:controller.signal});
         if(!res.ok)throw new Error('HTTP '+res.status);
         const data=await res.json();
         if(!data||!Array.isArray(data.items)||data.ok===false)throw new Error(data?.error||'이력 API 응답 형식 오류');
@@ -3224,34 +3250,43 @@ ${scene}`].filter(Boolean).join('\n\n');}
       }catch(e){if(e.name==='AbortError')throw new Error('서버 이력 응답 시간 초과');throw e;}finally{clearTimeout(timer);}
     }
     async function fetchServerHistory(more){
+      if(syncHistoryRoom())more=false;
+      const room=state.historyRoom;if(!room){renderHistory();return;}
       if(state.historyLoading)return;
+      const token=state.historyToken=(state.historyToken||0)+1;
       state.historyLoading=true;state.historyError='';renderHistory();
       const before=more?state.historyCursor:0;
+      const current=()=>state.historyToken===token&&historyRoomId(roomIdNow())===room&&state.historyRoom===room;
       try{
         let data;
-        try{data=await requestHistory(60,before);}catch(e){
-          if(/HTTP (?:4\d\d)|응답 형식/.test(e.message))throw e;
-          data=await requestHistory(10,before);
+        try{data=await requestHistory(60,before,room);}catch(e){
+          if(!current()||/HTTP (?:4\d\d)|응답 형식/.test(e.message))throw e;
+          data=await requestHistory(10,before,room);
         }
-        const items=data.items.filter(x=>x&&typeof x==='object'&&(x.filename||x.imagePath||x.imageUrl));
-        const last=items[items.length-1];
-        if(last)state.historyCursor=last.createdAt;
-        else if(!more)state.historyCursor=0;
-        const prior=more?state.history:[];
-        const seen=new Set();const merged=[...prior,...items].filter(x=>{const key=x.filename||x.imagePath||x.imageUrl;if(seen.has(key))return false;seen.add(key);return true;});
-        state.serverHistory=true;state.historyHasMore=!!data.hasMore&&!!last?.createdAt;state.historyTotal=Number(data.total??merged.length);
-        state.historyLocalOnly=false;
-        if(merged.length){state.history=merged;saveHistory();}
-        else if(!more){state.historyLocalOnly=state.history.length>0;}
-      }catch(e){state.historyError=e?.message||String(e);if(!more){state.serverHistory=false;state.historyHasMore=false;state.historyLocalOnly=false;}console.warn('[Chat2Img-Codex] 이력 조회 실패:',state.historyError);}
-      finally{state.historyLoading=false;renderHistory();}
+        if(!current())return;
+        const all=data.items.filter(x=>x&&typeof x==='object'&&historyItemKey(x));
+        const scoped=historyRoomId(data.roomId||data.room_id)===room;
+        const known=mergeRoomHistory(state.history,loadHistory(room));
+        const items=scopedHistoryItems(all,room,known,scoped);
+        const last=all[all.length-1];
+        state.historyCursor=last?.createdAt||0;
+        state.history=mergeRoomHistory(items,known);
+        state.historyRoomConfirmed=scoped||all.some(x=>!!historyItemRoom(x));
+        state.serverHistory=state.historyRoomConfirmed;
+        state.historyHasMore=!!data.hasMore&&!!state.historyCursor;
+        state.historyTotal=scoped?Number(data.total??state.history.length):state.history.length;
+        saveHistory();
+      }catch(e){if(current()){state.historyError=e?.message||String(e);if(!more){state.serverHistory=false;state.historyHasMore=false;state.historyRoomConfirmed=false;}console.warn('[Chat2Img-Codex] 방별 이력 조회 실패:',state.historyError);}}
+      finally{if(current()){state.historyLoading=false;renderHistory();}}
     }
     function renderHistory(){
+      syncHistoryRoom();
       const label=shadow.getElementById('historyLabel'),refresh=shadow.getElementById('refreshHistory');
-      if(refresh)refresh.disabled=!!state.historyLoading;
-      if(label)label.textContent=state.historyLoading?'모든 기기 이력 불러오는 중…':state.historyError?'서버 이력 조회 실패 · '+state.historyError+' (기존 기록 유지)':state.historyLocalOnly?'서버 이력 0개 · 이 기기 캐시 표시':state.serverHistory?'모든 기기 이력 · 맥에 저장된 이미지 '+state.historyTotal+'개':'이 기기 이력 · 최대 30개';
-      if(!state.history.length){els.historyList.innerHTML='<div class="emptyHistory">생성 이력이 없습니다.</div>';return;}
-      els.historyList.innerHTML=`<div class="historyGrid">${state.history.map((item,i)=>`<div class="historyItem"><img class="historyImg" data-himg="${i}" alt="history"><div class="historyInfo">${esc(new Date(item.createdAt).toLocaleString())}</div><div class="historyActions"><button class="tiny" data-open-history="${i}">보기</button><button class="tiny" data-save-history="${i}">저장</button></div></div>`).join('')}</div>${state.serverHistory&&state.historyHasMore?'<div class="row" style="justify-content:center;margin-top:9px"><button class="btn ghost" data-more-history="1">더 보기</button></div>':''}`;
+      if(refresh)refresh.disabled=!!state.historyLoading||!state.historyRoom;
+      if(label)label.textContent=!state.historyRoom?'채팅방에 들어가면 이력이 표시됩니다':state.historyLoading?'이 채팅방 이력 불러오는 중…':state.historyError?'서버 이력 조회 실패 · '+state.historyError+' (이 방의 저장 기록 유지)':state.historyRoomConfirmed?'이 채팅방 · 모든 기기 이력 '+state.historyTotal+'개':'이 채팅방 · 이 기기 기록 '+state.history.length+'개 (서버 방별 동기화 미확인)';
+      const more=state.historyHasMore?'<div class="row" style="justify-content:center;margin-top:9px"><button class="btn ghost" data-more-history="1">더 보기</button></div>':'';
+      if(!state.history.length){els.historyList.innerHTML='<div class="emptyHistory">이 채팅방의 확인된 생성 이력이 없습니다.</div>'+more;return;}
+      els.historyList.innerHTML=`<div class="historyGrid">${state.history.map((item,i)=>`<div class="historyItem"><img class="historyImg" data-himg="${i}" alt="history"><div class="historyInfo">${esc(new Date(item.createdAt).toLocaleString())}</div><div class="historyActions"><button class="tiny" data-open-history="${i}">보기</button><button class="tiny" data-save-history="${i}">저장</button></div></div>`).join('')}</div>${more}`;
       els.historyList.querySelectorAll('[data-himg]').forEach(img=>{const item=state.history[Number(img.dataset.himg)];img.src=historySrc(item);img.onerror=()=>{img.style.opacity='.25';};});
     }
     function showHistoryItem(index){
@@ -3260,12 +3295,13 @@ ${scene}`].filter(Boolean).join('\n\n');}
 
     async function generate(){
       if(state.loading)return;let prompt='';try{saveConfig();prompt=buildPrompt();state.loading=true;els.generate.disabled=true;setStatus(els.runStatus,'','Codex 이미지 생성 중...');
-        const payload={prompt,mode:els.modeSolo.checked?'solo':'scene',soloTarget:els.soloTarget.value,sizeHint:els.sizeHint.value,qualityHint:els.qualityHint.value,refs:gatherRefs()};const res=await fetch(`${bridgeBase()}/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await res.json().catch(()=>({ok:false,error:`HTTP ${res.status}`}));if(!res.ok||!data.ok)throw new Error(data.error||`HTTP ${res.status}`);
-        const imageUrl=joinBridge(data.imageUrl);state.result={...data,imageUrl,createdAt:Date.now()};els.resultImg.src=imageUrl+'?t='+Date.now();els.resultEmpty.classList.add('hidden');els.resultContent.classList.remove('hidden');els.resultMeta.textContent=`완료 · ${(Number(data.elapsedMs||0)/1000).toFixed(1)}초${data.filename?' · '+data.filename:''}`;const details=[];if(data.warning)details.push(`warning: ${data.warning}`);setStatus(els.resultStatus,details.length?'':'ok',details.join('\n\n')||'이미지 생성 완료');addHistory(data);setStatus(els.runStatus,'ok','이미지 생성 완료');switchTab('result');
+        const generationRoom=historyRoomId(roomIdNow());const payload={prompt,roomId:generationRoom,mode:els.modeSolo.checked?'solo':'scene',soloTarget:els.soloTarget.value,sizeHint:els.sizeHint.value,qualityHint:els.qualityHint.value,refs:gatherRefs()};const res=await fetch(`${bridgeBase()}/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await res.json().catch(()=>({ok:false,error:`HTTP ${res.status}`}));if(!res.ok||!data.ok)throw new Error(data.error||`HTTP ${res.status}`);
+        const imageUrl=joinBridge(data.imageUrl);state.result={...data,imageUrl,createdAt:Date.now()};els.resultImg.src=imageUrl+'?t='+Date.now();els.resultEmpty.classList.add('hidden');els.resultContent.classList.remove('hidden');els.resultMeta.textContent=`완료 · ${(Number(data.elapsedMs||0)/1000).toFixed(1)}초${data.filename?' · '+data.filename:''}`;const details=[];if(data.warning)details.push(`warning: ${data.warning}`);setStatus(els.resultStatus,details.length?'':'ok',details.join('\n\n')||'이미지 생성 완료');addHistory(data,generationRoom);setStatus(els.runStatus,'ok','이미지 생성 완료');switchTab('result');
       }catch(e){setStatus(els.runStatus,'err',e?.message||String(e));switchTab('create');}finally{state.loading=false;els.generate.disabled=false;}
     }
 
     hydrate();switchTab(state.activeTab);setOpen(true);renderHistory();if(state.result){};
+    const historyRoomWatch=setInterval(()=>{if(syncHistoryRoom()&&state.activeTab==='history'){renderHistory();fetchServerHistory(false);}},700);
 
     function applyFabPosition(pos){
       if(!pos||!Number.isFinite(pos.x)||!Number.isFinite(pos.y))return;const size=30,pad=4;const x=Math.max(pad,Math.min(innerWidth-size-pad,pos.x)),y=Math.max(pad,Math.min(innerHeight-size-pad,pos.y));els.fab.style.left=x+'px';els.fab.style.top=y+'px';els.fab.style.right='auto';els.fab.style.bottom='auto';
@@ -3283,9 +3319,9 @@ ${scene}`].filter(Boolean).join('\n\n');}
     els.checkStatus.addEventListener('click',()=>checkStatus(true));els.generate.addEventListener('click',generate);els.backCreate.addEventListener('click',()=>switchTab('create'));
     els.saveImage.addEventListener('click',()=>{if(!state.result?.imageUrl)return;downloadUrl(state.result.imageUrl,state.result.filename||'codex-image.png').catch(e=>setStatus(els.resultStatus,'err',e?.message||String(e)));});
     shadow.getElementById('refreshHistory').addEventListener('click',()=>fetchServerHistory(false));
-    els.clearHistory.addEventListener('click',async()=>{if(!state.history.length||state.historyLoading)return;
-      if(state.serverHistory){if(!confirm('모든 기기의 이력 목록을 비울까요?\n맥에 저장된 이미지 파일은 지우지 않습니다.'))return;try{await fetch(`${bridgeBase()}/history/clear`,{method:'POST'});}catch(_){}}
-      else if(!confirm('이 기기의 이력 목록을 비울까요?\n서버의 원본 이미지 파일은 삭제하지 않습니다.'))return;
+    // 구형 서버의 전역 /history/clear는 절대 호출하지 않는다.
+    els.clearHistory.addEventListener('click',()=>{syncHistoryRoom();if(!state.history.length||state.historyLoading)return;
+      if(!confirm('이 기기에 저장된 현재 채팅방 이력만 비울까요?\n맥 서버의 원본 이미지와 다른 채팅방 이력은 삭제하지 않습니다. 서버 이력은 다시 조회될 수 있습니다.'))return;
       state.history=[];state.historyHasMore=false;state.historyTotal=0;saveHistory();renderHistory();});
     els.historyList.addEventListener('click',e=>{const more=e.target.closest?.('[data-more-history]');if(more){more.disabled=true;more.textContent='불러오는 중…';fetchServerHistory(true);return;}const open=e.target.closest?.('[data-open-history]'),save=e.target.closest?.('[data-save-history]');if(open){showHistoryItem(Number(open.dataset.openHistory));return;}if(save){const item=state.history[Number(save.dataset.saveHistory)];if(item)downloadUrl(historyImageUrl(item),item.filename||'codex-image.png').catch(err=>alert(err?.message||String(err)));}});
     for(const el of [els.baseUrl,els.scene,els.soloTarget,els.genre,els.stylePreset,els.sizeHint,els.qualityHint,els.extraPrompt]){el.addEventListener('change',saveConfig);el.addEventListener('input',saveConfig);}
@@ -3298,7 +3334,7 @@ ${scene}`].filter(Boolean).join('\n\n');}
     // Do not block UI while checking the bridge.
     checkStatus(false);
 
-    window[KEY]={version:VERSION,toggle,destroy(){finishPicker(false);try{rangeStyle.remove();}catch(_){}try{wrap.remove();}catch(_){}try{delete window[KEY];}catch(_){window[KEY]=undefined;}}};
+    window[KEY]={version:VERSION,toggle,destroy(){clearInterval(historyRoomWatch);finishPicker(false);try{rangeStyle.remove();}catch(_){}try{wrap.remove();}catch(_){}try{delete window[KEY];}catch(_){window[KEY]=undefined;}}};
   } catch(error){
     console.error('[Chat2Img-Codex] boot failed',error);
     try{alert('[Chat2Img-Codex] 실행 실패\n'+(error?.stack||error?.message||String(error)));}catch(_){}

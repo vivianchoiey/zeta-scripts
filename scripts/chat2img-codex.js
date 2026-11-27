@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.18
+// @version      1.45.19
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -358,6 +358,68 @@ const GUDAL_CASUAL=[
  {top:['더 로우 블랙 크루넥 티셔츠','선스펠 화이트 고급 코튼 티셔츠','제임스 퍼스 차콜 반팔 티셔츠','오라리 차콜 코튼 롱슬리브'],bottom:['아워레가시 진청 스트레이트 데님','오라리 깨끗한 진청 스트레이트 데님','르메르 블랙 테이퍼드 트라우저'],outer:['생로랑 블랙 가죽 라이더 재킷','톰 포드 블랙 스웨이드 재킷','아워레가시 블랙 울 재킷'],shoes:['뉴발란스 990v6 블랙','뉴발란스 993 그레이','생로랑 SL/61 화이트 블랙 로우탑','생로랑 블랙 첼시 부츠']},
  {top:['로로피아나 블랙 캐시미어 크루넥 니트','제냐 차콜 캐시미어 니트','톰 포드 블랙 니트 폴로','르메르 다크 브라운 니트'],bottom:['더 로우 다크 네이비 스트레이트 팬츠','랄프로렌 퍼플라벨 차콜 플란넬 팬츠','제냐 블랙 울 팬츠'],outer:['로로피아나 다크 네이비 캐시미어 코트','르메르 블랙 울 롱 코트','톰 포드 블랙 스웨이드 재킷'],shoes:['존 롭 블랙 로퍼','뉴발란스 990v6 블랙','생로랑 블랙 첼시 부츠']}
 ];
+// 구달·최카야 공용 스니커즈: 모델 단위 선택 후 색상 선택. 현재 판매 SKU 보장이 아닌 디자인 참고.
+const GUDAL_SNEAKER_CATALOG={
+ retro:[
+  ['아디다스 삼바 OG',['화이트 블랙','블랙 화이트']],['아디다스 가젤 인도어',['버건디','네이비']],['아디다스 핸드볼 스페지알',['다크 브라운','네이비','블랙']],['아디다스 SL 72 OG',['네이비 크림','화이트 블루']],
+  ['푸마 스피드캣 OG',['블랙 화이트','다크 브라운','레드 화이트']],['오니츠카 타이거 멕시코 66',['크림 블랙','화이트 네이비']],['나이키 코르테즈',['화이트 블랙','크림 네이비']],['나이키 데이브레이크',['크림 그레이','네이비 화이트']],['나이키 킬샷 2',['세일 네이비','화이트 그린']],['반스 올드스쿨',['블랙 화이트','네이비 화이트']],['반스 어센틱',['블랙','오프 화이트']],
+  ['푸마 팔레르모',['크림 다크 그린','네이비 화이트']],['오니츠카 타이거 GSM',['화이트 네이비','크림 블랙']],['컨버스 척 70 로우',['블랙','아이보리']],['리복 클럽 C 85',['빈티지 화이트 그린','화이트 네이비']],['아디다스 도쿄',['오프화이트 블랙','블랙 화이트']]
+ ],
+ runner:[
+  ['뉴발란스 990v3',['그레이','네이비']],['뉴발란스 990v4',['그레이','블랙']],['뉴발란스 990v5',['그레이','블랙']],['뉴발란스 990v6',['그레이','블랙','네이비']],['뉴발란스 991v2',['그레이','네이비']],['뉴발란스 992',['그레이','네이비']],['뉴발란스 993',['그레이','블랙']],['뉴발란스 2002R',['그레이','차콜']],['뉴발란스 1906R',['실버 화이트','실버 블랙']],['뉴발란스 740',['화이트 실버','화이트 네이비']],
+  ['나이키 에어 맥스 1',['화이트 그레이','화이트 레드']],['나이키 에어 맥스 97',['실버 불릿','블랙']],['아식스 젤 카야노 14',['크림 블랙','화이트 실버']],['아식스 젤 NYC',['크림 그레이','그레이 블랙']],['아식스 젤 1130',['화이트 실버','크림 블랙']],
+  ['뉴발란스 574',['그레이','네이비']],['뉴발란스 327',['크림 그레이','화이트 블랙']],['나이키 P-6000',['실버 화이트','화이트 블랙']],['나이키 V2K Run',['실버 화이트','크림 그레이']],['써코니 재즈 오리지널',['네이비 크림','그레이 화이트']]
+ ],
+ court:[['나이키 에어 포스 1 로우',['화이트','블랙']]]
+};
+// 카야 전용: 발레 플랫, 메리제인, 로퍼. 원피스/스커트/단정한 팬츠와 매치.
+const GUDAL_KAYA_FLATS=[
+ ['흐꺙 Harmony 스퀘어토 발레 플랫',['블랙 가죽','화이트 가죽','네이비 가죽']],
+ ['흐꺙 Honor 메리제인 플랫',['블랙','크림']],
+ ['레페토 Cendrillon 발레 플랫',['블랙','버건디','크림']],
+ ['레페토 Lio 메리제인',['블랙','버건디']],
+ ['포르셀리 발레 플랫',['블랙','다크 브라운','크림']],
+ ['아라이아 메쉬 메리제인 플랫',['블랙','아이보리']],
+ ['미우미우 가죽 발레리나 플랫',['블랙','브라운']],
+ ['페라가모 Vara 리본 디테일 펌프스(낮은 굽)',['블랙']],
+ ['더 로우 Ava 메리제인 플랫',['블랙']],
+ ['샤넬 투톤 발레리나 플랫',['베이지 블랙']],
+ ['셀린느 루코 가죽 로퍼',['블랙','다크 브라운']],
+ ['구찌 조르단 홀스빗 로퍼',['블랙','다크 브라운']],
+ ['토즈 가죽 페니 로퍼',['블랙','다크 브라운']],
+ ['바가본드 가죽 메리제인 플랫',['블랙','버건디']],
+ ['세잔 가죽 발레 플랫',['블랙','다크 브라운']]
+];
+function gudalShoePick(role,category,rows){
+ const key='chat2img_codex_gudal_shoe_recent_'+role;
+ let recent=[];try{recent=JSON.parse(localStorage.getItem(key)||'[]');if(!Array.isArray(recent))recent=[];}catch(e){recent=[];}
+ let available=rows.filter(r=>!recent.includes(r[0]));if(!available.length)available=rows;
+ const row=rnd(available),color=rnd(row[1]);
+ try{localStorage.setItem(key,JSON.stringify([row[0],...recent.filter(x=>x!==row[0])].slice(0,6)));}catch(e){}
+ return row[0]+' '+color;
+}
+function gudalSneaker(role,groups){
+ return gudalShoePick(role,'sneaker',groups.flatMap(g=>GUDAL_SNEAKER_CATALOG[g]));
+}
+function gudalManShoes(st){
+ const idx=GUDAL_CASUAL.indexOf(st),r=Math.random();
+ if(idx===0)return r<.15?gudalSneaker('man',['retro']):rnd(st.shoes);
+ if(idx===1)return r<.80?gudalSneaker('man',['retro','runner','court']):rnd(st.shoes.filter(x=>/부츠|로퍼|더비/.test(x)));
+ return r<.35?gudalSneaker('man',['runner','retro']):rnd(st.shoes.filter(x=>/부츠|로퍼|더비/.test(x)));
+}
+function gudalKayaShoes(style,st,bottom,scene){
+ const skirt=/스커트|원피스/.test(bottom),cold=/겨울|영하|눈 오|눈이 내|추운 날/.test(scene),r=Math.random();
+ if(skirt){
+  if(cold&&r<.38)return rnd(['토템 블랙 라운드토 롱부츠','셀린느 블랙 첼시 부츠','토템 블랙 스퀘어토 앵클 부츠']);
+  if(r<.82||cold)return gudalShoePick('kaya','flats',GUDAL_KAYA_FLATS);
+  return gudalSneaker('kaya',['retro']);
+ }
+ if(style==='스포티시크'||style==='스트리트캐주얼')return gudalSneaker('kaya',['retro','runner','court']);
+ if(cold&&r<.25)return rnd(['토템 블랙 라운드토 앵클 부츠','셀린느 블랙 첼시 부츠','토템 브라운 스퀘어토 앵클 부츠']);
+ if(r<.42)return gudalShoePick('kaya','flats',GUDAL_KAYA_FLATS);
+ return gudalSneaker('kaya',style==='프렌치캐주얼'?['retro']:['retro','runner','court']);
+}
+
 const GUDAL_TRAINING=['블랙 무지 기능성 반팔 티셔츠와 차콜 스트레이트 트레이닝 팬츠, 온 클라우드 6 블랙','차콜 슬림 기능성 긴팔 티셔츠와 블랙 미니멀 트레이닝 팬츠, 아식스 젤 카야노 블랙 단색'];
 const GUDAL_HOME={
  top:['선스펠 흰색 코튼 반팔 티셔츠','제임스 퍼스 블랙 반팔 티셔츠','오라리 차콜 롱슬리브','더 로우 블랙 코튼 티셔츠','로로피아나 차콜 캐시미어 니트','아워레가시 화이트 헨리넥','한로 블랙 코튼 라운지 티셔츠','랄프로렌 네이비 코튼 셔츠'],
@@ -420,12 +482,12 @@ function gudalManDirection(scene,mode){
   if(mode==='casual'){
    const st=rnd(GUDAL_CASUAL),p=[rnd(st.top),rnd(st.bottom)];
    if(!/여름|폭염|무더위/.test(sc)&&(/겨울|추운|영하|눈 오/.test(sc)||Math.random()<.45))p.push(rnd(st.outer));
-   p.push(rnd(st.shoes));return '보스 사복 — '+p.join(', ');
+   p.push(gudalManShoes(st));return '보스 사복 — '+p.join(', ');
   }
   return pickGudalSuit();
  });
  const rule=mode==='suit'||mode==='default'?GUDAL_RULE:'. 장면에 맞는 편안하고 성숙한 남성의 차림. 고급스러운 핏과 소재. 옷 밖으로 노출되는 기존 이레즈미 문신만 표현한다.';
- return '\n\n[구달 전용 의상 — 이번 장면] '+outfit+rule+' 현재 구달이 실제 착용하는 것으로 명시된 옷을 우선하고 나머지만 보완한다. 다른 사람의 옷, 과거의 옷, 단순 언급은 현재 의상으로 취급하지 않는다. 얼굴·머리·표정·문신 디자인은 바꾸지 않는다. 지정하지 않은 반지·시계·목걸이 등 장신구는 추가하지 않는다. 운동화는 지정 모델의 낮고 정돈된 실루엣과 소재 및 배색을 유지하며, 투박한 등산화·과도하게 두꺼운 밑창·형광색·값싼 번쩍임은 피한다. 구달이 실제 등장할 때만 적용한다.';
+ return '\n\n[구달 전용 의상 — 이번 장면] '+outfit+rule+' 현재 구달이 실제 착용하는 것으로 명시된 옷을 우선하고 나머지만 보완한다. 다른 사람의 옷, 과거의 옷, 단순 언급은 현재 의상으로 취급하지 않는다. 얼굴·머리·표정·문신 디자인은 바꾸지 않는다. 지정하지 않은 반지·시계·목걸이 등 장신구는 추가하지 않는다. 운동화는 지정된 실제 모델 고유의 실루엣·밑창·소재 및 배색을 유지하며 임의로 과장하지 않는다. 투박한 등산화, 형광색, 값싼 번쩍임은 피한다. 구달이 실제 등장할 때만 적용한다.';
 }
 function makeGudalKayaOutfit(scene,mode){
  const sc=stripRuleLines(scene);
@@ -435,10 +497,10 @@ function makeGudalKayaOutfit(scene,mode){
  if(mode==='keep')return '';
  if(mode==='suit'&&FORMAL_RE.test(sc))return pickGown(sc).split(', ').filter(x=>!GOWN.bag.includes(x)&&!GOWN.jewel.includes(x)).join(', ');
  const r=Math.random();
- if(r>=.90)return '시크한 원피스 룩 — '+rnd(GUDAL_KAYA_DRESSES)+', '+rnd(['더 로우 블랙 가죽 로퍼','아디다스 삼바 OG 화이트 블랙','토템 블랙 라운드토 앵클 부츠','르페토 블랙 발레 플랫']);
+ if(r>=.90){const dress=rnd(GUDAL_KAYA_DRESSES);return '시크한 원피스 룩 — '+dress+', '+gudalKayaShoes('프렌치캐주얼',null,dress,sc);}
  const name=r<.35?'미니멀캐주얼':r<.55?'스트리트캐주얼':r<.65?'스포티시크':'프렌치캐주얼',st=rnd(GUDAL_KAYA_STYLES[name]);
  const p=[rnd(st.top),rnd(st.bottom)];
- if(!/여름|폭염|무더위/.test(sc)&&(/겨울|추운|영하|눈 오/.test(sc)||Math.random()<.38))p.push(rnd(st.outer));p.push(rnd(st.shoes));return name+' 룩 — '+p.join(', ');
+ if(!/여름|폭염|무더위/.test(sc)&&(/겨울|추운|영하|눈 오/.test(sc)||Math.random()<.38))p.push(rnd(st.outer));p.push(gudalKayaShoes(name,st,p[1],sc));return name+' 룩 — '+p.join(', ');
 }
 function gudalKayaDirection(scene,mode){
  if(mode==='keep')return '';
@@ -447,7 +509,7 @@ function gudalKayaDirection(scene,mode){
  const eligible=!['home','sleep','swim','keep'].includes(mode)&&!/^웨딩드레스 —/.test(outfit)&&!/운동|헬스|러닝|조깅/.test(scene);
  const bag=eligible&&(formal||Math.random()<.35)?pickKayaDesignerBag(scene,'',formal):'';
  if(bag)outfit+=', '+bag;
- return '\n\n[최카야 전용 의상 — 구달 방] '+outfit+'. 고아 출신이라는 배경 때문에 옷을 초라하거나 낡게 고정하지 않는다. 세련된 성인 여성의 자연스러운 옷차림. 캐주얼은 패션 에디토리얼의 오프듀티 스타일처럼 세련된 실루엣과 정확한 핏, 절제된 색 조합을 유지한다. 상의·하의·겉옷·신발을 하나의 완성된 룩으로 연출하며 선택된 코디를 임의로 다른 스타일로 바꾸지 않는다. 투박한 등산화·과하게 두꺼운 어글리 스니커즈·형광 운동화·값싼 플라스틱 소재·큰 로고·촌스러운 배색·과도한 오버핏·후줄근한 츄리닝 조합은 피한다. 운동화는 지정된 모델의 낮고 정돈된 실루엣과 정확한 색상을 유지한다. 실내복은 편안하고 깔끔하게 표현한다. 명시된 현재 의상은 우선하고 나머지만 자동 의상을 적용한다. 단순 언급·과거 의상·다른 사람의 의상은 현재 카야의 의상으로 간주하지 않는다. 참조 이미지의 옷은 복제하지 않는다. 얼굴·머리·체형·표정과 장면은 유지한다. 지정하지 않은 장신구는 추가하지 않는다.'+(bag?KAYA_DESIGNER_BAG_RULE:' 자동으로 다른 가방을 더 추가하지 않는다.')+'\n유저(여주) 헤어: '+pickFHair(scene,formal,false)+F_HAIR_RULE;
+ return '\n\n[최카야 전용 의상 — 구달 방] '+outfit+'. 고아 출신이라는 배경 때문에 옷을 초라하거나 낡게 고정하지 않는다. 세련된 성인 여성의 자연스러운 옷차림. 캐주얼은 패션 에디토리얼의 오프듀티 스타일처럼 세련된 실루엣과 정확한 핏, 절제된 색 조합을 유지한다. 상의·하의·겉옷·신발을 하나의 완성된 룩으로 연출하며 선택된 코디를 임의로 다른 스타일로 바꾸지 않는다. 투박한 등산화·과하게 두꺼운 어글리 스니커즈·형광 운동화·값싼 플라스틱 소재·큰 로고·촌스러운 배색·과도한 오버핏·후줄근한 츄리닝 조합은 피한다. 운동화와 플랫·메리제인·로퍼는 지정 모델 고유의 앞코, 밑창, 스트랩, 소재와 색상을 유지한다. 뉴발란스·아식스 등 러닝화의 정상적인 볼륨은 유지하고 억지로 납작하게 바꾸지 않는다. 실내복은 편안하고 깔끔하게 표현한다. 명시된 현재 의상은 우선하고 나머지만 자동 의상을 적용한다. 단순 언급·과거 의상·다른 사람의 의상은 현재 카야의 의상으로 간주하지 않는다. 참조 이미지의 옷은 복제하지 않는다. 얼굴·머리·체형·표정과 장면은 유지한다. 지정하지 않은 장신구는 추가하지 않는다.'+(bag?KAYA_DESIGNER_BAG_RULE:' 자동으로 다른 가방을 더 추가하지 않는다.')+'\n유저(여주) 헤어: '+pickFHair(scene,formal,false)+F_HAIR_RULE;
 }
 
 const LAST_SUIT_KEY='chat2img_codex_last_suit';

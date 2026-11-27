@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.13
+// @version      1.45.14
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -774,8 +774,8 @@ function makeKayaSeolgiHome(kind){
   pieces.push(rnd(h.shoes));
   return {text:category+' — '+pieces.join(', '),topKey,bottomKey,type};
 }
-function pickKayaSeolgiHome(kind){
-  let previous={};try{previous=JSON.parse(localStorage.getItem(KAYA_SEOLGI_LAST)||'{}')||{};}catch(e){}
+function pickKayaSeolgiHome(kind,historyKey=KAYA_SEOLGI_LAST){
+  let previous={};try{previous=JSON.parse(localStorage.getItem(historyKey)||'{}')||{};}catch(e){}
   let outfit=makeKayaSeolgiHome(kind);
   const score=o=>(o.text===previous.text?4:0)+(o.topKey===previous.topKey?1:0)+(o.bottomKey===previous.bottomKey?2:0);
   let best=score(outfit);
@@ -783,14 +783,14 @@ function pickKayaSeolgiHome(kind){
     const candidate=makeKayaSeolgiHome(kind),n=score(candidate);
     if(n<best){outfit=candidate;best=n;}
   }
-  try{localStorage.setItem(KAYA_SEOLGI_LAST,JSON.stringify(outfit));}catch(e){}
+  try{localStorage.setItem(historyKey,JSON.stringify(outfit));}catch(e){}
   return outfit;
 }
-function kayaSeolgiHomeDirection(kind){
-  const outfit=pickKayaSeolgiHome(kind);
-  console.log('[Chat2Img-Codex] 설기 방 최카야 '+(kind==='sleep'?'잠옷':'실내복')+':',outfit.text);
+function kayaSeolgiHomeDirection(kind,room='설기'){
+  const outfit=pickKayaSeolgiHome(kind,room==='백수현'?'chat2img_codex_last_kaya_baek_home':KAYA_SEOLGI_LAST);
+  console.log('[Chat2Img-Codex] '+room+' 방 최카야 '+(kind==='sleep'?'잠옷':'실내복')+':',outfit.text);
   return '\n\n[최카야 전용 '+(kind==='sleep'?'잠옷':'실내복')+' — 이번 장면 우선 적용] '+outfit.text+
-    '. 최카야가 설기와 집에서 지내는 장면에 맞는 세련되고 고급스러운 브랜드 홈웨어. 브랜드명은 소재와 핏의 미학 참고용이며 로고나 문자, 가짜 상표를 크게 그리지 않는다. 실크는 자연스러운 은은한 광택과 부드러운 드레이프, 니트와 코튼은 고급스러운 질감으로 표현한다. 과도한 레이스, 프릴, 리본, 유아틱한 캐릭터 무늬, 과한 노출, 번쩍이는 값싼 새틴 느낌은 피한다. 하이힐, 실외 운동화, 구두, 외출용 코트, 가방, 정장, 화려한 장식은 추가하지 않는다. 최카야의 얼굴·머리색·머리 길이·체형·표정·자세·기존 액세서리와 캐릭터 설정은 유지한다. 참조사진은 외형 확인용이며 기존 옷을 그대로 복제하지 않는다. 이번 장면에서 최카야가 실제 입고 있다고 명시한 옷이나 이번 장면용 추가 지시가 있으면 해당 부분만 우선하고 나머지는 위 랜덤 의상을 적용한다. 설기의 의상에는 적용하지 않는다. 최카야가 실제 등장할 때만 그리며 인물 수와 배경은 바꾸지 않는다.';
+    '. 최카야가 집에서 지내는 장면에 맞는 세련되고 고급스러운 브랜드 홈웨어. 브랜드명은 소재와 핏의 미학 참고용이며 로고나 문자, 가짜 상표를 크게 그리지 않는다. 실크는 자연스러운 은은한 광택과 부드러운 드레이프, 니트와 코튼은 고급스러운 질감으로 표현한다. 과도한 레이스, 프릴, 리본, 유아틱한 캐릭터 무늬, 과한 노출, 번쩍이는 값싼 새틴 느낌은 피한다. 하이힐, 실외 운동화, 구두, 외출용 코트, 가방, 정장, 화려한 장식은 추가하지 않는다. 최카야의 얼굴·머리색·머리 길이·체형·표정·자세·기존 액세서리와 캐릭터 설정은 유지한다. 참조사진은 외형 확인용이며 기존 옷을 그대로 복제하지 않는다. 이번 장면에서 최카야가 실제 입고 있다고 명시한 옷이나 이번 장면용 추가 지시가 있으면 해당 부분만 우선하고 나머지는 위 랜덤 의상을 적용한다. 다른 인물의 의상에는 적용하지 않는다. 최카야가 실제 등장할 때만 그리며 인물 수와 배경은 바꾸지 않는다.';
 }
 
 // ===== 다이스케·비비안: 1980년 일본 가상 세계관 전용 =====
@@ -1472,6 +1472,18 @@ function pickBaekKayaOutfit(scene,formal){
   try{localStorage.setItem(BSH_KAYA_LAST,outfit);}catch(e){}
   return outfit;
 }
+function baekKayaHomeKind(scene,kind=specialScene(scene)){
+  const sc=stripRuleLines(scene);
+  if(kind==='swim'||/맨몸|알몸|상의\s*탈의|탈의 중|목욕 중|샤워 중|속옷만|상체 노출/.test(sc))return null;
+  if(kind==='sleep')return 'sleep';
+  const chunks=sc.split(/\n+|(?<=[.!?。！？])\s+|[;；]/).filter(x=>x.trim());
+  let home=false;
+  for(const t of chunks){
+    if(/(?:집|저택|자택|본가|숙소)(?:에서| 안|에(?:서| 도착| 돌아| 들어| 있| 오| 온| 왔))|(?:백수현|수현|최카야|카야)(?:의)? 집|우리 집|거실|침실|안방|소파|부엌|주방|식탁|침대|이불|홈웨어|실내복|집옷/.test(t))home=true;
+    if(/집(?:에서|을) (?:나와|나서|나갔|나가는)|현관을 나서|집 밖에서|외출 중|카페에서|레스토랑에서|식당에서|쇼핑몰에서|공원에서|길거리에서|회사에서|직장에서|파티장에서|행사장에서|결혼식장에서|수영장에서|헬스장에서|체육관에서/.test(t)&&!/내일|나중에|예정|계획|갔다가|다녀와|돌아와|돌아왔/.test(t))home=false;
+  }
+  return home?'home':null;
+}
 function baekKayaDirection(scene){
   const formal=FORMAL_RE.test(scene);
   const outfit=pickBaekKayaOutfit(scene,formal);
@@ -1544,10 +1556,24 @@ function pickYuniOutfit(scene){
 // =====================================================
 
 // ===== 잠옷·수영복 장면 전용 풀 (대화에 잠옷/수영복 관련 단어가 있을 때) =====
+// 단순 단어 언급·예정·회상이 아니라 현재 수영/착용 증거를 판정한다.
 function specialScene(scene){
-  if(/수영복|비키니|수영장|해수욕|워터파크|래시가드|물놀이/.test(scene))return'swim';
-  if(/잠옷|파자마|잘 준비|잠자리에|자기 전/.test(scene))return'sleep';
-  return null;
+  const sc=stripRuleLines(scene).replace(/^Scene description:\s*/i,'');
+  const swimWord=/수영복|비키니|수영장|해수욕|워터파크|래시가드|물놀이|수영\s*중|swimsuit|bikini|swimwear/i;
+  const swimNow=/(?:수영복|비키니|래시가드|swimsuit|bikini|swimwear)(?:을|를|으로|로| 차림으로| 차림인| 차림의)?\s*(?:입고|입은|입었다|입는다|입어\s*있|갈아입었|갈아입는|갈아입고|착용한|차림|on\b)|(?:수영장|워터파크|해수욕장|해변|풀장)(?:의|에|으로|에서)?\s*(?:도착|들어[갔간가]|안에서|물에|물속|수영을|수영하|헤엄|물놀이하|물놀이를|몸을 담그)|(?:수영|물놀이)(?:를|을)?\s*(?:하고 있|하는 중|중이다|중인|하며|하다가|한다)|헤엄(?:치고 있|을 치고 있|치는 중)|물속에서\s*(?:헤엄|수영|놀)|\b(?:wearing (?:a )?(?:swimsuit|bikini)|swimming in (?:the )?pool)\b/i;
+  const notNow=/내일|다음\s*(?:주|달|번)|나중에|언젠가|예정|계획|예약|주문|구매|쇼핑|장바구니|어제|지난번|지난\s*주|예전에|회상|기억|다녀(?:왔|와|온|오)|갔다\s*왔|돌아(?:왔|와|온)|벗(?:었|고|는|어)|말하|이야기|얘기|물어|제안|갈까|가자|가고 싶|갈\s*(?:거|것|래|까|예정)|가기로|갈\s*때|입을까|입을\s*(?:거|것|래|예정)|입고 싶|입지\s*않|안\s*입|아니라|않기로|안\s*가|가지\s*않|입으면|가면|가려고|입으려고|입어\s*볼|입어야|tomorrow|next week|yesterday|planning|ordered/i;
+  const homeNow=/(?:집|저택|자택|숙소)(?:에\s*(?:돌아|도착|들어|있)|에서| 안)|거실|침실|소파|부엌|주방|식탁|침대|이불|집옷|홈웨어|실내복/;
+  const sleepNow=/잠옷|파자마|잘 준비|잠자리에|자기 전|취침|잠들|잠을 자|기상 직후/;
+  let kind=null;
+  // 뒤쪽의 현재 장면 전환이 앞쪽의 수영 장면을 덮어쓴다.
+  const chunks=sc.split(/\n+|(?<=[.!?。！？])\s+|[;；]/).filter(x=>x.trim());
+  for(const chunk of chunks){
+    const t=chunk.trim();
+    if(swimWord.test(t)&&swimNow.test(t)&&!notNow.test(t)){kind='swim';continue;}
+    if(sleepNow.test(t)&&!/(?:내일|나중에|어제|지난번|주문|구매|입을까|입지\s*않)/.test(t)){kind='sleep';continue;}
+    if(homeNow.test(t)&&(!swimWord.test(t)||notNow.test(t)||!swimNow.test(t)))kind=null;
+  }
+  return kind;
 }
 const F_SLEEP={
   color:['아이보리','샴페인','크림','블랙','네이비','더스티 핑크','스카이블루','세이지','버건디','연회색','라벤더'],
@@ -2096,15 +2122,19 @@ window.fetch=function(input,init){
         const baekRoom=BSH_NAME_RE.test(characterText)||BSH_NAME_RE.test(sceneText);
         const baekKaya=baekRoom&&/카야|\bKaya\b/i.test(p)&&!(body.mode==='solo'&&body.soloTarget!=='persona');
         const sharedKayaBag=isModernAdultKayaBagRoom(characterText,sceneText,body);
+        const sceneKind=specialScene(sceneText);
+        const baekHomeKind=baekKaya&&!off&&!skip&&sharedKayaBag?baekKayaHomeKind(sceneText,sceneKind):null;
         if(daisukeRoom){
           body.prompt=buildDV1980Prompt(p,sceneIdx>=0?sceneText:'',off||dv1980KeepSceneClothes(sceneIdx>=0?'':p));
           init={...init,body:JSON.stringify(body)};
-        }else if(!off&&!skip&&specialScene(sceneText)&&!(sceneIdx>=0?p.slice(0,sceneIdx):p).includes('최모아')){
+        }else if(!off&&!skip&&sceneKind&&!(sceneIdx>=0?p.slice(0,sceneIdx):p).includes('최모아')){
           // 잠옷·수영복 장면: 여주와 윤이만 전용 풀에서 랜덤. 다른 남캐는 대화 그대로
-          const kind=specialScene(sceneText);
+          const kind=sceneKind;
           const head=sceneIdx>=0?p.slice(0,sceneIdx):p;
           let add='';
-          if(kayaHomeKind==='sleep'){
+          if(baekHomeKind==='sleep'){
+            add=kayaSeolgiHomeDirection('sleep','백수현');
+          }else if(kayaHomeKind==='sleep'){
             add=kayaSeolgiHomeDirection(kayaHomeKind);
           }else{
             let fo=makeFemaleSpecial(kind);
@@ -2134,7 +2164,7 @@ window.fetch=function(input,init){
           }
           body.prompt=p+add+(/권이림|권지우|백준희|비타/.test(p)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복·동화풍 반바지 제외)'):NO_BUCKET);
           init={...init,body:JSON.stringify(body)};
-        }else if(!off&&!skip&&!specialScene(sceneText)){
+        }else if(!off&&!skip&&!sceneKind){
           let add='';
           if(p.includes('최모아')&&!p.includes('#모아업그레이드')){
             const mo=pickMoaOutfit();
@@ -2161,7 +2191,11 @@ window.fetch=function(input,init){
             add='\n\n최카야 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+kh+KAYA_HS_RULE;
             console.log('[Chat2Img-Codex] 카야(고등학생) 의상:',kh);
           }else if(baekKaya){
-            add=baekKayaDirection(sceneText);
+            if(baekHomeKind){
+              add=kayaSeolgiHomeDirection(baekHomeKind,'백수현');
+              const fh=pickFHair(sceneText,false,false);
+              add+='\n유저(여주) 헤어: '+fh+F_HAIR_RULE;
+            }else add=baekKayaDirection(sceneText);
           }else if(kayaHomeKind){
             add=kayaSeolgiHomeDirection(kayaHomeKind);
             const fh=pickFHair(sceneText,false,false);

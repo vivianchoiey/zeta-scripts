@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.4
+// @version      1.45.5
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -559,8 +559,8 @@ function seolgiStyle(scene){
   if(/집에서|집 안|집안|거실|침실|소파|부엌|주방|자취방/.test(scene))return 'home';
   if(/여름|한여름|무더위|폭염|더운 날|해수욕/.test(scene))return 'summer';
   if(/겨울|한겨울|혹한|눈 오는|눈 내리는|추운 날|영하|눈밭/.test(scene))return 'winter';
-  if(/데이트|레스토랑|기념일|근사한 식당/.test(scene))return rnd(['date','jpwork','jpwork','minimal']);
-  return rnd(['jpwork','jpwork','jpwork','jpwork','jpwork','street','street','minimal']);
+  if(/데이트|레스토랑|기념일|근사한 식당/.test(scene))return rnd(['date','date','jpwork','minimal','preppy']);
+  return rnd(['jpwork','jpwork','street','street','minimal','minimal','preppy','date']);
 }
 function makeSeolgiOutfit(scene){
   const style=seolgiStyle(scene);
@@ -575,7 +575,7 @@ function makeSeolgiOutfit(scene){
     return '격식 있는 테일러링 — '+[`${c} ${fabric} ${cut} (재킷과 팬츠 같은 색·소재)`,shirt,tie,shoes,acc].filter(t=>t!=='없음').join(', ');
   }
   if(style==='jpwork')return '일본 워크웨어 캐주얼 — '+rnd(SEOLGI_JP_OUT)+', '+rnd(SEOLGI_JP_SHOES);
-  if(style==='home'&&Math.random()<0.6)return '홈웨어 — '+rnd(SEOLGI_JP_HOME)+', 실내 맨발';
+  if(style==='home'&&Math.random()<0.12)return '홈웨어 — '+rnd(SEOLGI_JP_HOME)+', 실내 맨발';
   const st=SEOLGI_STYLES[style];
   const top=seolgiColor(rnd(st.top),'top');
   const bottom=seolgiColor(rnd(st.bottom),'bottom');
@@ -589,12 +589,43 @@ function makeSeolgiOutfit(scene){
 }
 const SEOLGI_RULE='. 설기는 성인 남성 눈표범 캐릭터이며 이번에는 의상만 변경한다. 기존 얼굴·눈매·은빛 머리·푸른 눈·둥근 눈표범 귀·꼬리·체형·표정·자세·관계·배경은 절대 바꾸지 않는다. 머리카락은 매끄럽게 유지하고 눈표범 귀와 꼬리가 자연스럽게 보이게 한다. 사람 체형을 털로 덮거나 얼굴을 동물 얼굴로 바꾸지 않는다. 작거나 앳된 어린아이 체형, 치비 비율, 동물 탈·마스코트복, 귀를 가리는 모자, 큰 로고, 알록달록한 조잡한 조합, 과장된 액세서리는 금지한다. 성인 남성이 세련되고 잘 맞는 옷을 입은 느낌으로 소재와 핏을 자연스럽게 표현한다. 장면에 맞는 복장과 계절을 우선하고 여름에는 불필요한 두꺼운 외투를, 실내에서는 불필요한 겉옷을 강제로 입히지 않는다. 눈표범 귀와 꼬리는 원래 설정대로 유지하되 새 장식이나 의상을 임의로 추가하지 않는다.';
 const LAST_SEOLGI_KEY='chat2img_codex_last_seolgi';
-function pickSeolgiOutfit(scene){
+// 잠옷·수영복도 설기 전용 조합으로 생성. 일반 의상 풀은 그대로 보존.
+function makeSeolgiSpecial(kind){
+  if(kind==='sleep'){
+    const top=seolgiColor(rnd(['부드러운 코튼 반팔 티셔츠','코튼 긴팔 티셔츠','와플 헨리넥 롱슬리브','가벼운 맨투맨','파이핑 코튼 파자마 셔츠','잔줄 스트라이프 파자마 셔츠','얇은 니트 라운지 상의','코튼 오픈칼라 잠옷 셔츠']),'top');
+    const bottom=seolgiColor(rnd(['무지 코튼 파자마 긴바지','잔체크 파자마 팬츠','잔줄 스트라이프 코튼 잠옷 바지','부드러운 스웨트 팬츠','와플 라운지 팬츠','편안한 저지 조거 팬츠','무지 코튼 잠옷 쇼츠','얇은 니트 라운지 팬츠']),'bottom');
+    return '잠옷 — '+[top.text,bottom.text,rnd(['맨발','흰 양말','실내 슬리퍼'])].join(', ');
+  }
+  const top=rnd(['상의 없이','상의 없이','화이트 래시가드','블랙 래시가드','네이비 래시가드','아이보리 래시가드']);
+  const bottom=rnd(['블랙','네이비','올리브','차콜','코발트 블루','버건디','그레이','세이지 그린'])+' '+rnd(['무지 스윔 쇼츠','잔줄 스트라이프 스윔 쇼츠','무릎 위 보드쇼츠','단정한 스포츠 수영복 반바지']);
+  return '수영복 — '+[top,bottom,rnd(['맨발','슬라이드 샌들'])].join(', ');
+}
+function seolgiOutfitParts(outfit){
+  const items=String(outfit||'').split(' — ').pop().split(', ').filter(Boolean);
+  const bottom=items.find(x=>/팬츠|슬랙스|쇼츠|바지|수트|트렁크/.test(x))||'';
+  const top=items.find(x=>x!==bottom&&/셔츠|니트|맨투맨|후드|가디건|재킷|래시가드|상의|폴로|스웨트|스웻|집업|롱슬리브/.test(x))||items[0]||'';
+  return {top,bottom};
+}
+function pickSeolgiOutfit(scene,kind){
   let last='';try{last=localStorage.getItem(LAST_SEOLGI_KEY)||'';}catch(e){}
-  let outfit=makeSeolgiOutfit(scene),tries=0;
-  while(outfit===last&&tries++<12)outfit=makeSeolgiOutfit(scene);
+  const prev=seolgiOutfitParts(last);
+  const make=()=>kind?makeSeolgiSpecial(kind):makeSeolgiOutfit(scene);
+  const score=o=>{
+    const parts=seolgiOutfitParts(o);
+    return (o===last?4:0)+(prev.top&&parts.top===prev.top?1:0)+(prev.bottom&&parts.bottom===prev.bottom?2:0);
+  };
+  let outfit=make(),best=score(outfit);
+  for(let tries=0;best>0&&tries<48;tries++){
+    const candidate=make(),n=score(candidate);
+    if(n<best){outfit=candidate;best=n;}
+  }
   try{localStorage.setItem(LAST_SEOLGI_KEY,outfit);}catch(e){}
   return outfit;
+}
+const SEOLGI_NAME_RE=/설기|\bSeolgi\b/i;
+function seolgiDirection(outfit){
+  return '\n\n[설기 전용 의상 지시 — 이번 생성에서 우선 적용] '+outfit+SEOLGI_RULE+
+    ' 참조사진은 설기의 얼굴·머리·눈·귀·꼬리·체형을 확인하는 용도로만 사용한다. 참조사진 속 기존 상의·하의·색·무늬·잠옷을 복제하지 말고 이번에 선택된 상의와 하의를 실제 이미지에 반영한다. 고정 외형 설명의 평소 옷, 예전 장면의 옷, 다른 사람의 옷, 단순히 언급한 옷은 이번 의상으로 간주하지 않는다. 현재 장면에서 설기가 실제 입고 있다고 명시한 의상이나 추가 지시에 이번 장면용으로 명시한 의상만 우선한다. 일부 의상만 명시됐다면 그 부분만 유지하고 나머지는 위 랜덤 조합에서 적용한다. 지정이 없으면 참조사진의 딸기무늬 바지 등 기존 의상을 반복하지 않는다. 이 규칙은 설기가 실제 등장하는 경우에만 적용하고 인물 수와 장면은 바꾸지 않는다.';
 }
 
 // =====================================================
@@ -1550,15 +1581,6 @@ window.fetch=function(input,init){
             add+='\n\n서무겸 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+mg+MUGYEOM_RULE;
             console.log('[Chat2Img-Codex] 서무겸 의상:',mg);
           }
-          // 설기: 상황에 맞춰 여러 스타일의 상·하의·아우터·신발을 각각 랜덤 조합.
-          // 고정 외형 유지, 특수 의상/명시적 옷 고정/탈의 장면은 위 조건 또는 아래 조건으로 보호.
-          if(characterText.includes('설기')&&SEOLGI_ANIMAL_RE.test(sceneText)){
-            add+=SEOLGI_ANIMAL_DESC;console.log('[Chat2Img-Codex] 설기 설표 모습: 옷 랜덤 건너뜀');
-          }else if(characterText.includes('설기')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|상체 노출/.test(sceneText)){
-            const sg=pickSeolgiOutfit(sceneIdx>=0?sceneText:'');
-            add+='\n\n설기 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+sg+SEOLGI_RULE;
-            console.log('[Chat2Img-Codex] 설기 의상:',sg);
-          }
           // 이지수: 프레피·캐주얼 랜덤 조합, 집에서는 편한 차림. 탈의·잠옷 등 장면은 건너뜀
           if(characterText.includes('이지수')&&!/맨몸|상의\s*탈의|알몸|탈의 중|목욕|샤워|속옷만|잠옷|파자마|수영복/.test(sceneText)){
             const jo=pickJisuOutfit(sceneIdx>=0?sceneText:'');
@@ -1645,6 +1667,27 @@ window.fetch=function(input,init){
           }
           body.prompt=p+add+(/권이림|권지우/.test(p)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복·동화풍 반바지 제외)'):NO_BUCKET);
           init={...init,body:JSON.stringify(body)};
+        }
+        // 설기는 일반/특수 의상 분기와 독립 처리: 대화에 이름만 있는 경우도 인식.
+        // 다른 인물 단독 생성, 명시적 옷 고정, 특수 세계관은 기존 우선순위를 유지.
+        const seolgiDetected=SEOLGI_NAME_RE.test(characterText)||SEOLGI_NAME_RE.test(sceneText);
+        if(seolgiDetected){
+          const personaOnly=body.mode==='solo'&&body.soloTarget==='persona';
+          if(personaOnly||daisukeRoom||off||skip){
+            console.log('[Chat2Img-Codex] 설기 의상 건너뜀:',personaOnly?'여주 단독':daisukeRoom?'다이스케 전용':off?'옷 고정/지정':'특수 의상/장르');
+          }else if(SEOLGI_ANIMAL_RE.test(sceneText)){
+            body.prompt+=SEOLGI_ANIMAL_DESC;
+            init={...init,body:JSON.stringify(body)};
+            console.log('[Chat2Img-Codex] 설기 설표 모습: 옷 랜덤 건너뜀');
+          }else if(/맨몸|상의\s*탈의|알몸|탈의 중|목욕 중|샤워 중|속옷만|상체 노출/.test(stripRuleLines(sceneText))){
+            console.log('[Chat2Img-Codex] 설기 의상 건너뜀: 탈의/목욕 장면');
+          }else{
+            const sgKind=specialScene(stripRuleLines(sceneText));
+            const sg=pickSeolgiOutfit(sceneIdx>=0?sceneText:'',sgKind);
+            body.prompt+=seolgiDirection(sg);
+            init={...init,body:JSON.stringify(body)};
+            console.log('[Chat2Img-Codex] 설기 의상:',sg);
+          }
         }
         // 옷 랜덤이 꺼진 장면(#옷고정, 메이드복 등)에도 버킷햇 금지는 항상 붙임
         const nbX=/권이림|권지우|백준희|비타/.test(body.prompt)?NO_BUCKET_IRIM.replace('권이림의','권이림·권지우의').replace('(수영복·잠옷 제외)','(수영복·잠옷·축구 경기복·동화풍 반바지 제외)'):NO_BUCKET;
@@ -2392,6 +2435,6 @@ Promise.resolve(coreBoot).then(()=>{
   collapsePanel(1);
   bootNotice.remove();
   window.__C2I_CODEX_BUNDLED_BOOTING__=false;
-  console.log('[Chat2Img-Codex] 본체 내장 버전 1.11.1 실행 완료');
+  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.5 실행 완료');
 }).catch(reportBootFailure);
 })();

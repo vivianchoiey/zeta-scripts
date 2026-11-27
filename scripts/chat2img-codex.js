@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.12
+// @version      1.45.13
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -1400,9 +1400,9 @@ const BSH_BAG_COLORS={
 const BSH_BAG_LAST='chat2img_codex_last_baek_kaya_bag';
 const BSH_BAG_RECENT='chat2img_codex_recent_baek_kaya_bag_models_v2';
 const BSH_BAG_KIND={handle:'단정한 톱핸들 또는 해당 모델의 고유한 손잡이 구조',shoulder:'해당 모델 고유의 숄더 실루엣과 스트랩',chain:'고유한 플랩·잠금장치 및 스트랩 구조',cross:'몸에 맞는 자연스러운 스트랩과 고유 실루엣',tote:'모델 고유의 토트 실루엣과 자연스러운 크기',evening:'모델 고유의 미니백 또는 클러치 형태'};
-function pickBaekKayaBag(scene,style,formal){
+function pickKayaDesignerBag(scene,style,formal){
   const sc=stripRuleLines(scene||'');
-  if(!formal&&/침실|침대|잠옷|파자마|거실|집에서 쉬|샤워|목욕|주방|부엌|식탁/.test(sc)&&!/외출|출근|쇼핑|집을 나|현관|귀가|집에 돌아/.test(sc))return '';
+  if(!formal&&/침실|침대|잠옷|파자마|거실|집에서|집 안|집안|홈웨어|실내복|집옷|샤워|목욕|주방|부엌|식탁|운동 중|헬스장|체육관|수영 중/.test(sc)&&!/외출|출근|쇼핑|집을 나|현관|귀가|집에 돌아/.test(sc))return '';
   let pool=formal?BSH_BAG_CATALOG.filter(x=>x[2]==='evening'||x[2]==='chain'):BSH_BAG_CATALOG;
   // 미우미우/샤넬 룩에서도 다른 명품 브랜드를 자연스럽게 섞는다.
   const brand=style==='미우미우'||style==='샤넬'?style:'';
@@ -1415,6 +1415,25 @@ function pickBaekKayaBag(scene,style,formal){
   const bag=key+' '+color+' 가방 ('+BSH_BAG_KIND[row[2]]+'; 해당 모델의 실제 디자인 기준)';
   try{localStorage.setItem(BSH_BAG_LAST,bag);localStorage.setItem(BSH_BAG_RECENT,JSON.stringify([key,...recent.filter(x=>x!==key)].slice(0,30)));}catch(e){}
   return bag;
+}
+// 동일한 카탈로그와 localStorage 최근 30회 기록을 모든 현대 성인 카야 방이 공유.
+function pickBaekKayaBag(scene,style,formal){return pickKayaDesignerBag(scene,style,formal);}
+const KAYA_DESIGNER_BAG_RULE=' 가방은 지정한 명품 브랜드의 구체적인 모델명과 실제 디자인 특징(형태, 소재, 손잡이, 잠금장치, 크기)을 참고한다. 무명 핸드백이나 임의 디자인, 가짜 로고, 과장된 장식 및 체인으로 바꾸지 않는다. 현재 장면에 최카야의 가방이 직접 지정돼 있으면 그 가방을 우선한다. 가방이 불필요한 실내 휴식, 업무, 운동 등의 장면에서는 억지로 추가하지 않는다. 최카야가 실제 등장할 때만 적용하고 등장인물 및 외형·의상·헤어는 변경하지 않는다.';
+function isModernAdultKayaBagRoom(profile,scene,body){
+  const p=String(profile||''),sc=String(scene||''),all=p+' '+sc;
+  if(!/카야|\bKaya\b/i.test(all)||body.mode==='solo'&&body.soloTarget!=='persona')return false;
+  if(/다이스케|서담윤|권지우|최모아|페르녹스|반드시 군복|사복을 입지 않는다|사복은 절대 금지|Romance-fantasy setting|Historical period setting/.test(p)||VITA_ROOM(all)||KAYA_ANIMAL_RE.test(sc))return false;
+  if(/최카야[^\n]{0,40}(?:고등학생|중학생|초등학생|미성년|1[0-7]세|1[0-7]살)/.test(p))return false;
+  return true;
+}
+function withKayaDesignerBag(outfit,scene,formal,anchor,pinkOn){
+  // 기존 여주 의상에서 가방 항목만 제거. 남캐/다른 인물의 액세서리에는 적용하지 않음.
+  if(/^웨딩드레스 —/.test(outfit)||anchor)return outfit;
+  const parts=outfit.split(', ').filter(x=>!/백(?:\(|$| |을|를)|가방|클러치|토트(?:\(|$| )/.test(x));
+  const style=pinkOn?'미우미우':outfit.split(' 룩 — ')[0];
+  const bag=pickKayaDesignerBag(scene,style,formal);
+  if(bag)parts.push(bag);
+  return parts.join(', ');
 }
 const BSH_KAYA_LAST='chat2img_codex_last_baek_kaya';
 function makeBaekKayaOutfit(scene,formal){
@@ -2076,6 +2095,7 @@ window.fetch=function(input,init){
         const kayaHomeKind=!off&&!skip&&!daisukeRoom?kayaSeolgiHomeKind(characterText,sceneText,body):null;
         const baekRoom=BSH_NAME_RE.test(characterText)||BSH_NAME_RE.test(sceneText);
         const baekKaya=baekRoom&&/카야|\bKaya\b/i.test(p)&&!(body.mode==='solo'&&body.soloTarget!=='persona');
+        const sharedKayaBag=isModernAdultKayaBagRoom(characterText,sceneText,body);
         if(daisukeRoom){
           body.prompt=buildDV1980Prompt(p,sceneIdx>=0?sceneText:'',off||dv1980KeepSceneClothes(sceneIdx>=0?'':p));
           init={...init,body:JSON.stringify(body)};
@@ -2087,7 +2107,8 @@ window.fetch=function(input,init){
           if(kayaHomeKind==='sleep'){
             add=kayaSeolgiHomeDirection(kayaHomeKind);
           }else{
-            const fo=makeFemaleSpecial(kind);
+            let fo=makeFemaleSpecial(kind);
+            if(sharedKayaBag&&kind==='swim')fo=fo.split(', ').filter(x=>x!=='라탄 백').join(', ');
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+fo+(kind==='sleep'?F_SLEEP_RULE:F_SWIM_RULE);
             console.log('[Chat2Img-Codex] 여주 '+kind+':',fo);
           }
@@ -2151,9 +2172,11 @@ window.fetch=function(input,init){
             let lastPink='';try{lastPink=localStorage.getItem('c2i_last_pink')||'';}catch(e){}
             const pinkOn=!formal&&!anchor&&lastPink!=='1'&&Math.random()<(p.slice(0,sceneIdx>=0?sceneIdx:p.length).includes('권사혁')?0.25:0.12);
             try{localStorage.setItem('c2i_last_pink',pinkOn?'1':'0');}catch(e){}
-            const outfit=formal?pickGown(sceneText):anchor?makeAnchorOutfit():pinkOn?makePinkOutfit(sceneText):pickOutfit();
+            let outfit=formal?pickGown(sceneText):anchor?makeAnchorOutfit():pinkOn?makePinkOutfit(sceneText):pickOutfit();
+            if(sharedKayaBag)outfit=withKayaDesignerBag(outfit,sceneText,formal,anchor,pinkOn);
             add='\n\n유저(여주) 의상 (대화 내용에 이 인물이 입은 옷이 나와 있으면 대화 속 옷을 그대로 그리고 아래는 무시한다. 대화에 옷 언급이 없을 때만 아래 옷을 입힌다): '+outfit+(formal?GOWN_RULE:anchor?ANCHOR_RULE:pinkOn?PINK_RULE:OUTFIT_RULE);
             const fh=pickFHair(sceneText,formal,anchor);
+            if(sharedKayaBag)add+=KAYA_DESIGNER_BAG_RULE;
             add+='\n유저(여주) 헤어: '+fh+F_HAIR_RULE;
             console.log('[Chat2Img-Codex] 여주 의상:',outfit,'/ 헤어:',fh);
           }
@@ -3059,6 +3082,6 @@ Promise.resolve(coreBoot).then(()=>{
   collapsePanel(1);
   bootNotice.remove();
   window.__C2I_CODEX_BUNDLED_BOOTING__=false;
-  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.12 실행 완료');
+  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.13 실행 완료');
 }).catch(reportBootFailure);
 })();

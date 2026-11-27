@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Chat2Img-Codex 자동 실행
 // @namespace    zeta-local
-// @version      1.45.6
+// @version      1.45.7
 // @description  Chat2Img-Codex 자동 로드 + 기존 의상 조합 및 1980년 일본 다이스케·비비안 전용 조합
 // @match        https://zeta-ai.io/*
 // @match        https://*.zeta-ai.io/*
@@ -552,11 +552,80 @@ function seolgiColor(item,slot,topColor){
   const color=rnd(colors);
   return {color,text:color+' '+item};
 }
+// 설기 전용 브랜드 홈웨어·잠옷: 특정 판매 상품이 아니라 브랜드의 소재/핏을 참고.
+const SEOLGI_BRAND_HOME={
+  tops:[
+    ['오라리(AURALEE)','부드러운 코튼 반팔 티셔츠'],['오라리(AURALEE)','수피마 코튼 롱슬리브'],['오라리(AURALEE)','가벼운 크루넥 맨투맨'],
+    ['그라피페이퍼(Graphpaper)','여유 있는 코튼 크루넥 티셔츠'],['그라피페이퍼(Graphpaper)','탄탄한 코튼 스웨트셔츠'],
+    ['더블탭스(WTAPS)','여유 있는 무지 롱슬리브'],['더블탭스(WTAPS)','미니멀 크루넥 맨투맨'],['더블탭스(WTAPS)','편안한 코튼 후드티'],
+    ['네이버후드(NEIGHBORHOOD)','탄탄한 코튼 크루넥 맨투맨'],['니들스(NEEDLES)','부드러운 저지 트랙 상의'],
+    ['코모리(COMOLI)','부드러운 코튼 긴팔 티셔츠'],['코모리(COMOLI)','여유 있는 코튼 헨리넥'],
+    ['선스펠(Sunspel)','고급 코튼 크루넥 티셔츠'],['선스펠(Sunspel)','부드러운 코튼 헨리넥 티셔츠'],
+    ['폴로 랄프로렌','코튼 크루넥 맨투맨'],['폴로 랄프로렌','심플한 코튼 반팔 티셔츠'],['폴로 랄프로렌','가벼운 후드 집업'],
+    ['로로피아나(Loro Piana)','얇은 캐시미어 크루넥 니트'],['로로피아나(Loro Piana)','부드러운 니트 폴로'],
+    ['르메르(LEMAIRE)','편안한 코튼 롱슬리브'],['더 로우(The Row)','미니멀 코튼 티셔츠'],
+    ['한로(HANRO)','부드러운 모달 라운지 티셔츠'],['레이닝 챔프(Reigning Champ)','코튼 크루넥 스웨트셔츠'],
+    ['나이키','미니멀 크루넥 스웨트셔츠'],['비즈빔(visvim)','부드러운 코튼 헨리넥']
+  ],
+  bottoms:[
+    ['오라리(AURALEE)','부드러운 코튼 스웨트팬츠'],['오라리(AURALEE)','여유 있는 저지 스트레이트 팬츠'],
+    ['그라피페이퍼(Graphpaper)','와이드 코튼 스웨트팬츠'],['그라피페이퍼(Graphpaper)','밴딩 스트레이트 이지 팬츠'],
+    ['더블탭스(WTAPS)','코튼 트레이닝 팬츠'],['네이버후드(NEIGHBORHOOD)','여유 있는 스웨트팬츠'],
+    ['니들스(NEEDLES)','직선으로 떨어지는 트랙팬츠(절제된 옆선)'],['코모리(COMOLI)','부드러운 코튼 이지 팬츠'],
+    ['선스펠(Sunspel)','편안한 코튼 라운지 팬츠'],['폴로 랄프로렌','코튼 스웨트팬츠'],['폴로 랄프로렌','편안한 조거 팬츠'],
+    ['로로피아나(Loro Piana)','부드러운 니트 라운지 팬츠'],['르메르(LEMAIRE)','밴딩 와이드 코튼 팬츠'],
+    ['더 로우(The Row)','여유 있는 코튼 라운지 팬츠'],['한로(HANRO)','모달 스트레이트 라운지 팬츠'],
+    ['Reigning Champ','테이퍼드 코튼 스웨트팬츠'],['나이키','미니멀 코튼 스웻팬츠']
+  ],
+  outer:[
+    ['오라리(AURALEE)','가벼운 니트 가디건'],['그라피페이퍼(Graphpaper)','부드러운 코튼 집업 가디건'],
+    ['코모리(COMOLI)','얇은 코튼 가디건'],['로로피아나(Loro Piana)','가벼운 캐시미어 가디건'],
+    ['선스펠(Sunspel)','부드러운 니트 가디건'],['폴로 랄프로렌','편안한 후드 집업']
+  ],
+  pajamaSets:[
+    ['데릭 로즈(Derek Rose)','파이핑 코튼 파자마 셔츠','코튼 파자마 긴바지'],
+    ['데릭 로즈(Derek Rose)','잔줄 스트라이프 코튼 파자마 셔츠','같은 잔줄 스트라이프 코튼 잠옷 바지'],
+    ['데릭 로즈(Derek Rose)','부드러운 모달 롱슬리브','모달 스트레이트 라운지 팬츠'],
+    ['올리비아 본 할레(Olivia von Halle)','파이핑 실크 오픈칼라 잠옷 셔츠','실크 스트레이트 파자마 팬츠'],
+    ['올리비아 본 할레(Olivia von Halle)','간결한 실크 긴팔 파자마 셔츠','실크 라운지 긴바지'],
+    ['릴리실크(LILYSILK)','실크 파이핑 파자마 셔츠','실크 파자마 긴바지'],
+    ['한로(HANRO)','부드러운 코튼 저지 긴팔 티셔츠','코튼 저지 라운지 팬츠'],
+    ['한로(HANRO)','편안한 모달 반팔 티셔츠','부드러운 모달 라운지 긴바지'],
+    ['선스펠(Sunspel)','코튼 크루넥 반팔 티셔츠','부드러운 코튼 라운지 팬츠'],
+    ['폴로 랄프로렌','잔체크 코튼 파자마 셔츠','같은 잔체크 코튼 파자마 팬츠'],
+    ['폴로 랄프로렌','코튼 반팔 티셔츠','무지 코튼 파자마 긴바지'],
+    ['브룩스 브라더스(Brooks Brothers)','클래식 잔줄 스트라이프 파자마 셔츠','같은 잔줄 스트라이프 잠옷 바지'],
+    ['짐머리(Zimmerli)','부드러운 코튼 헨리넥 롱슬리브','코튼 라운지 팬츠'],
+    ['로로피아나(Loro Piana)','얇은 캐시미어 니트','부드러운 니트 라운지 팬츠']
+  ],
+  shoes:['실내 맨발','실내 맨발','화이트 코튼 양말','오트밀 코튼 양말','차콜 코튼 양말','심플한 실내 슬리퍼'],
+  topColors:['화이트','오프화이트','아이보리','오트밀','라이트 그레이','차콜','블랙','네이비','딥 브라운','올리브','더스티 블루','세이지 그린','버건디'],
+  bottomColors:['오프화이트','오트밀','라이트 그레이','그레이','차콜','블랙','네이비','베이지','모카 브라운','다크 올리브'],
+  pajamaColors:['아이보리','크림','오트밀','라이트 그레이','차콜','네이비','미드나잇 네이비','더스티 블루','딥 브라운','세이지 그린','딥 버건디'],
+  outerColors:['아이보리','오트밀','그레이','차콜','네이비','베이지']
+};
+function makeSeolgiBrandHome(kind){
+  const h=SEOLGI_BRAND_HOME;
+  const branded=(item,color)=>item[0]+' 스타일의 '+color+' '+item[1];
+  const parts=[];
+  if(kind==='sleep'){
+    const item=rnd(h.pajamaSets),color=rnd(h.pajamaColors);
+    parts.push(branded([item[0],item[1]],color),branded([item[0],item[2]],color));
+  }else{
+    // 기존 일본 브랜드와 폴로 등의 취향을 유지하되 상하의는 독립 조합.
+    const top=rnd(h.tops),bottom=rnd(h.bottoms);
+    const c=rnd(h.topColors),b=rnd(h.bottomColors);
+    parts.push(branded(top,c),branded(bottom,b));
+    if(Math.random()<0.25)parts.push(branded(rnd(h.outer),rnd(h.outerColors)));
+  }
+  parts.push(rnd(h.shoes));
+  return (kind==='sleep'?'브랜드 잠옷':'브랜드 홈웨어')+' — '+parts.join(', ');
+}
 function seolgiStyle(scene){
   // 고정 프롬프트의 직업·세계관 설명이 아니라 이번 Scene description만 확인.
   if(/결혼식|시상식|연회|무도회|격식|공식 행사|정장 차림|턱시도|갈라 행사|리셉션/.test(scene))return 'formal';
   if(/헬스장|운동 중|러닝|조깅|트레이닝|체육관|웨이트/.test(scene))return 'active';
-  if(/집에서|집 안|집안|거실|침실|소파|부엌|주방|자취방/.test(scene))return 'home';
+  if(/집에서|집 안|집안|집에(?:서| 도착| 돌아| 들어| 있| 오| 온| 왔)|(?:설기|카야)(?:의)? 집|우리 집|거실|침실|소파|부엌|주방|자취방|식탁|침대|이불|안방|홈웨어|실내복|집옷/.test(scene)&&!/집(?:에서|을) (?:나와|나서|나갔|나가)|현관을 나서|집 밖에서|외출 중|카페에서|레스토랑에서|공원에서|길거리에서|직장에서|학교에서/.test(scene))return 'home';
   if(/여름|한여름|무더위|폭염|더운 날|해수욕/.test(scene))return 'summer';
   if(/겨울|한겨울|혹한|눈 오는|눈 내리는|추운 날|영하|눈밭/.test(scene))return 'winter';
   if(/데이트|레스토랑|기념일|근사한 식당/.test(scene))return rnd(['date','date','jpwork','minimal','preppy']);
@@ -575,7 +644,7 @@ function makeSeolgiOutfit(scene){
     return '격식 있는 테일러링 — '+[`${c} ${fabric} ${cut} (재킷과 팬츠 같은 색·소재)`,shirt,tie,shoes,acc].filter(t=>t!=='없음').join(', ');
   }
   if(style==='jpwork')return '일본 워크웨어 캐주얼 — '+rnd(SEOLGI_JP_OUT)+', '+rnd(SEOLGI_JP_SHOES);
-  if(style==='home'&&Math.random()<0.12)return '홈웨어 — '+rnd(SEOLGI_JP_HOME)+', 실내 맨발';
+  if(style==='home')return makeSeolgiBrandHome('home');
   const st=SEOLGI_STYLES[style];
   const top=seolgiColor(rnd(st.top),'top');
   const bottom=seolgiColor(rnd(st.bottom),'bottom');
@@ -591,11 +660,7 @@ const SEOLGI_RULE='. 설기는 성인 남성 눈표범 캐릭터이며 이번에
 const LAST_SEOLGI_KEY='chat2img_codex_last_seolgi';
 // 잠옷·수영복도 설기 전용 조합으로 생성. 일반 의상 풀은 그대로 보존.
 function makeSeolgiSpecial(kind){
-  if(kind==='sleep'){
-    const top=seolgiColor(rnd(['부드러운 코튼 반팔 티셔츠','코튼 긴팔 티셔츠','와플 헨리넥 롱슬리브','가벼운 맨투맨','파이핑 코튼 파자마 셔츠','잔줄 스트라이프 파자마 셔츠','얇은 니트 라운지 상의','코튼 오픈칼라 잠옷 셔츠']),'top');
-    const bottom=seolgiColor(rnd(['무지 코튼 파자마 긴바지','잔체크 파자마 팬츠','잔줄 스트라이프 코튼 잠옷 바지','부드러운 스웨트 팬츠','와플 라운지 팬츠','편안한 저지 조거 팬츠','무지 코튼 잠옷 쇼츠','얇은 니트 라운지 팬츠']),'bottom');
-    return '잠옷 — '+[top.text,bottom.text,rnd(['맨발','흰 양말','실내 슬리퍼'])].join(', ');
-  }
+  if(kind==='sleep')return makeSeolgiBrandHome('sleep');
   const top=rnd(['상의 없이','상의 없이','화이트 래시가드','블랙 래시가드','네이비 래시가드','아이보리 래시가드']);
   const bottom=rnd(['블랙','네이비','올리브','차콜','코발트 블루','버건디','그레이','세이지 그린'])+' '+rnd(['무지 스윔 쇼츠','잔줄 스트라이프 스윔 쇼츠','무릎 위 보드쇼츠','단정한 스포츠 수영복 반바지']);
   return '수영복 — '+[top,bottom,rnd(['맨발','슬라이드 샌들'])].join(', ');
@@ -625,6 +690,7 @@ function pickSeolgiOutfit(scene,kind){
 const SEOLGI_NAME_RE=/설기|\bSeolgi\b/i;
 function seolgiDirection(outfit){
   return '\n\n[설기 전용 의상 지시 — 이번 생성에서 우선 적용] '+outfit+SEOLGI_RULE+
+    (/^브랜드 (?:홈웨어|잠옷)/.test(outfit)?' 실내복과 잠옷은 선택한 브랜드의 성인 남성용 미니멀 라운지웨어 디자인을 참고한다. 브랜드 로고나 문자를 크게 그리지 않고 소재의 질감, 핏, 색 조합을 자연스럽게 살린다. 실크는 과도한 광택 없이 은은하게 표현한다. 과한 프린트, 유아틱한 캐릭터 무늬, 요란한 배색, 늘어진 싸구려 원단 느낌, 실외 신발, 외출용 재킷은 추가하지 않는다.':'')+
     ' 참조사진은 설기의 얼굴·머리·눈·귀·꼬리·체형을 확인하는 용도로만 사용한다. 참조사진 속 기존 상의·하의·색·무늬·잠옷을 복제하지 말고 이번에 선택된 상의와 하의를 실제 이미지에 반영한다. 고정 외형 설명의 평소 옷, 예전 장면의 옷, 다른 사람의 옷, 단순히 언급한 옷은 이번 의상으로 간주하지 않는다. 현재 장면에서 설기가 실제 입고 있다고 명시한 의상이나 추가 지시에 이번 장면용으로 명시한 의상만 우선한다. 일부 의상만 명시됐다면 그 부분만 유지하고 나머지는 위 랜덤 조합에서 적용한다. 지정이 없으면 참조사진의 딸기무늬 바지 등 기존 의상을 반복하지 않는다. 이 규칙은 설기가 실제 등장하는 경우에만 적용하고 인물 수와 장면은 바꾸지 않는다.';
 }
 
@@ -1789,7 +1855,8 @@ window.fetch=function(input,init){
           }else if(/맨몸|상의\s*탈의|알몸|탈의 중|목욕 중|샤워 중|속옷만|상체 노출/.test(stripRuleLines(sceneText))){
             console.log('[Chat2Img-Codex] 설기 의상 건너뜀: 탈의/목욕 장면');
           }else{
-            const sgKind=specialScene(stripRuleLines(sceneText));
+            const sgScene=stripRuleLines(sceneText);
+            const sgKind=specialScene(sgScene)||(seolgiStyle(sgScene)==='home'&&/잠들|잠을 자|취침|밤에 침대|기상 직후/.test(sgScene)?'sleep':null);
             const sg=pickSeolgiOutfit(sceneIdx>=0?sceneText:'',sgKind);
             body.prompt+=seolgiDirection(sg);
             init={...init,body:JSON.stringify(body)};
@@ -2542,6 +2609,6 @@ Promise.resolve(coreBoot).then(()=>{
   collapsePanel(1);
   bootNotice.remove();
   window.__C2I_CODEX_BUNDLED_BOOTING__=false;
-  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.6 실행 완료');
+  console.log('[Chat2Img-Codex] 본체 내장 버전 1.45.7 실행 완료');
 }).catch(reportBootFailure);
 })();
